@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+coverage/
+artifacts/
+
+# Runtime state — never overwrite production data on deploy
+.actura/

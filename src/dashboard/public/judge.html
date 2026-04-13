@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Actura — Judge Walkthrough</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: #080b11; color: #c9d1dc; font-family: 'JetBrains Mono','SF Mono','Cascadia Code',monospace; font-size: 12px; line-height: 1.5; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+    h1 { font-size: 20px; font-weight: 800; color: #edf2f7; letter-spacing: 1px; margin-bottom: 4px; }
+    h2 { font-size: 13px; font-weight: 700; color: #60a5fa; letter-spacing: 0.5px; margin: 20px 0 8px; text-transform: uppercase; }
+    .subtitle { font-size: 11px; color: #7c8a9e; margin-bottom: 20px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .card { background: #0c1018; border: 1px solid #1c2536; border-radius: 6px; padding: 12px 14px; }
+    .card-title { font-size: 9px; font-weight: 700; color: #7c8a9e; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+    .metric { font-size: 20px; font-weight: 800; line-height: 1; }
+    .metric-sub { font-size: 9px; color: #7c8a9e; margin-top: 4px; }
+    .kv { display: flex; justify-content: space-between; padding: 3px 0; font-size: 10.5px; }
+    .kv-key { color: #7c8a9e; }
+    .kv-val { color: #c9d1dc; font-weight: 500; text-align: right; max-width: 60%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 3px; margin: 2px 2px; }
+    .badge-green { color: #34d399; background: #34d39914; }
+    .badge-blue { color: #60a5fa; background: #60a5fa14; }
+    .badge-cyan { color: #22d3ee; background: #22d3ee14; }
+    .badge-warn { color: #fbbf24; background: #fbbf2414; }
+    .badge-purple { color: #a78bfa; background: #a78bfa14; }
+    .green { color: #34d399; }
+    .blue { color: #60a5fa; }
+    .cyan { color: #22d3ee; }
+    .warn { color: #fbbf24; }
+    .red { color: #f87171; }
+    .check { font-size: 10.5px; padding: 3px 0; display: flex; gap: 6px; }
+    .check-pass::before { content: '✓'; color: #34d399; font-weight: 700; }
+    .check-fail::before { content: '✗'; color: #f87171; font-weight: 700; }
+    a { color: #60a5fa; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .artifact-list { max-height: 200px; overflow-y: auto; }
+    .artifact-row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; padding: 4px 0; border-bottom: 1px solid #1c253620; font-size: 10px; align-items: center; }
+    .share-box { background: #111621; border: 1px solid #253045; border-radius: 6px; padding: 12px; margin-top: 8px; font-size: 10.5px; white-space: pre-wrap; color: #c9d1dc; cursor: pointer; position: relative; }
+    .share-box:hover { border-color: #60a5fa; }
+    .share-box::after { content: 'click to copy'; position: absolute; top: 4px; right: 8px; font-size: 8px; color: #4b5668; }
+    .copied { color: #34d399 !important; }
+    .divider { border: none; border-top: 1px solid #1c2536; margin: 16px 0; }
+    #loading { text-align: center; padding: 60px; color: #7c8a9e; }
+    .footer { text-align: center; margin-top: 24px; padding: 12px; font-size: 9px; color: #4b5668; border-top: 1px solid #1c2536; }
+  </style>
+</head>
+<body>
+  <header style="display:flex;align-items:center;height:40px;padding:0 16px;border-bottom:1px solid #1c2536;background:#0c1018;gap:16px">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="width:22px;height:22px;border-radius:4px;background:linear-gradient(135deg,#34d399,#22d3ee);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#080b11">A</div>
+      <span style="font-size:13px;font-weight:800;color:#edf2f7;letter-spacing:1px">ACTURA</span>
+    </div>
+    <nav style="display:flex;gap:10px;margin-left:16px">
+      <a href="/" style="color:#7c8a9e;font-size:10px;font-weight:600;text-decoration:none;padding:4px 10px;border-radius:4px">Dashboard</a>
+      <a href="/trades" style="color:#7c8a9e;font-size:10px;font-weight:600;text-decoration:none;padding:4px 10px;border-radius:4px">Trade History</a>
+      <a href="/judge" style="color:#fbbf24;font-size:10px;font-weight:600;text-decoration:none;padding:4px 10px;border-radius:4px;background:#fbbf2415">Judge Mode</a>
+    </nav>
+  </header>
+  <div class="container">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:2px">
+      <div style="width:28px;height:28px;border-radius:5px;background:linear-gradient(135deg,#34d399,#22d3ee);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#080b11">A</div>
+      <h1>ACTURA <span style="font-size:11px;color:#7c8a9e;font-weight:500">Judge Walkthrough</span></h1>
+    </div>
+    <div class="subtitle">ERC-8004 Trust-Governed Autonomous Capital Runtime — Hackathon Submission Overview</div>
+
+    <div id="loading">Loading agent data…</div>
+    <div id="content" style="display:none">
+
+      <!-- 1. Identity -->
+      <h2>1. Agent Identity (ERC-8004)</h2>
+      <div class="grid3">
+        <div class="card">
+          <div class="card-title">Agent ID</div>
+          <div class="metric cyan" id="agentId">—</div>
+          <div class="metric-sub">On-chain identity token</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Trust Score</div>
+          <div class="metric green" id="trustScore">—</div>
+          <div class="metric-sub" id="trustTier">—</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Status</div>
+          <div class="metric" id="agentStatus">—</div>
+          <div class="metric-sub" id="cycleCount">—</div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:8px">
+        <div class="card-title">On-Chain Registries</div>
+        <div class="kv"><span class="kv-key">Agent Registry</span><span class="kv-val cyan" id="agentRegistryAddr">—</span></div>
+        <div class="kv"><span class="kv-key">Risk Router</span><span class="kv-val cyan" id="riskRouterAddr">—</span></div>
+        <div class="kv"><span class="kv-key">Hackathon Vault</span><span class="kv-val cyan" id="vaultAddr">—</span></div>
+        <div class="kv"><span class="kv-key">Reputation Registry</span><span class="kv-val cyan" id="reputationReg">—</span></div>
+        <div class="kv"><span class="kv-key">Validation Registry</span><span class="kv-val cyan" id="validationReg">—</span></div>
+        <div class="kv"><span class="kv-key">Network</span><span class="kv-val" id="networkName">Sepolia (11155111)</span></div>
+        <div class="kv"><span class="kv-key">Vault Balance</span><span class="kv-val green" id="vaultBalance">—</span></div>
+        <div class="kv"><span class="kv-key">Wallet Balance</span><span class="kv-val" id="walletBalance">—</span></div>
+        <div class="kv"><span class="kv-key">Validation Score</span><span class="kv-val cyan" id="validationScore">—</span></div>
+        <div class="kv"><span class="kv-key">Reputation Score</span><span class="kv-val" id="reputationScore" style="color:#a78bfa">—</span></div>
+        <div class="kv"><span class="kv-key">Owner Wallet</span><span class="kv-val" id="ownerWallet">—</span></div>
+      </div>
+
+      <!-- 2. Technology Stack -->
+      <h2>2. Technology Compliance</h2>
+      <div class="card">
+        <div class="card-title">Required Technologies Implemented</div>
+        <div id="techChecks"></div>
+      </div>
+
+      <!-- 3. Latest Artifacts -->
+      <h2>3. Validation Artifacts (IPFS)</h2>
+      <div class="card">
+        <div class="card-title">Recent Trade Decision Artifacts</div>
+        <div class="artifact-list" id="artifactList"></div>
+        <div class="metric-sub" style="margin-top:6px" id="artifactCount">—</div>
+      </div>
+
+      <!-- 4. Risk & Market State -->
+      <h2>4. Risk Management & Market State</h2>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Risk Engine</div>
+          <div class="kv"><span class="kv-key">Capital</span><span class="kv-val green" id="capital">—</span></div>
+          <div class="kv"><span class="kv-key">Volatility</span><span class="kv-val" id="volatility">—</span></div>
+          <div class="kv"><span class="kv-key">Circuit Breaker</span><span class="kv-val" id="circuitBreaker">—</span></div>
+          <div class="kv"><span class="kv-key">Open Positions</span><span class="kv-val" id="openPositions">—</span></div>
+          <div class="kv"><span class="kv-key">Total Trades</span><span class="kv-val" id="totalTrades">—</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Market State</div>
+          <div class="kv"><span class="kv-key">Trading Pair</span><span class="kv-val">WETH/USDC</span></div>
+          <div class="kv"><span class="kv-key">Current Price</span><span class="kv-val green" id="currentPrice">—</span></div>
+          <div class="kv"><span class="kv-key">Data Sources</span><span class="kv-val" id="dataSources">—</span></div>
+          <div class="kv"><span class="kv-key">DEX Routing</span><span class="kv-val" id="dexRouting">—</span></div>
+        </div>
+      </div>
+
+      <!-- 5. PnL & Performance -->
+      <h2>5. Performance — Risk-Adjusted Metrics</h2>
+      <div class="grid3" style="margin-bottom:12px">
+        <div class="card">
+          <div class="card-title">Sharpe Ratio</div>
+          <div class="metric cyan" id="sharpe">—</div>
+          <div class="metric-sub">Risk-adjusted return (excess return / volatility)</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Sortino Ratio</div>
+          <div class="metric cyan" id="sortino">—</div>
+          <div class="metric-sub">Downside-risk-adjusted return</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Max Drawdown</div>
+          <div class="metric warn" id="maxDD">—</div>
+          <div class="metric-sub">Worst peak-to-trough decline</div>
+        </div>
+      </div>
+      <div class="grid3" style="margin-bottom:12px">
+        <div class="card">
+          <div class="card-title">Calmar Ratio</div>
+          <div class="metric blue" id="calmar">—</div>
+          <div class="metric-sub">Return / max drawdown</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Profit Factor</div>
+          <div class="metric blue" id="profitFactor">—</div>
+          <div class="metric-sub">Gross profit / gross loss</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Total Return</div>
+          <div class="metric green" id="totalReturn">—</div>
+          <div class="metric-sub">Net return since inception</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Trade Stats</div>
+        <div class="grid3" id="tradeStats"></div>
+      </div>
+
+      <!-- 6. MCP Surface -->
+      <h2>6. MCP Interface</h2>
+      <div class="card">
+        <div class="card-title">Model Context Protocol Tools</div>
+        <div id="mcpTools" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+        <div class="metric-sub" style="margin-top:8px" id="mcpEndpoint">—</div>
+      </div>
+
+      <!-- 7. SAGE — Self-Adapting Generative Engine -->
+      <h2>7. SAGE (Self-Adapting Generative Engine)</h2>
+      <div class="card" style="margin-bottom:8px">
+        <div class="card-title">Self-Adapting Generative Engine</div>
+        <div class="grid3" style="margin-bottom:10px">
+          <div><div style="font-size:8px;color:#7c8a9e;text-transform:uppercase;letter-spacing:1px">Status</div><div style="font-size:16px;font-weight:700" id="sageStatus">—</div></div>
+          <div><div style="font-size:8px;color:#7c8a9e;text-transform:uppercase;letter-spacing:1px">Reflections</div><div style="font-size:16px;font-weight:700;color:#22d3ee" id="sageReflections">0</div></div>
+          <div><div style="font-size:8px;color:#7c8a9e;text-transform:uppercase;letter-spacing:1px">Playbook Rules</div><div style="font-size:16px;font-weight:700;color:#a78bfa" id="sageRules">0</div></div>
+        </div>
+        <div class="card-title" style="margin-top:8px">Signal Weights (SAGE-Tuned vs Default)</div>
+        <div id="sageWeights"></div>
+        <div class="metric-sub" style="margin-top:8px">SAGE (Self-Adapting Generative Engine) uses Gemini 2.5 Pro to reflect on trade outcomes and auto-tune signal weights within CAGE bounds. Kill switch: SAGE_ENABLED=false</div>
+      </div>
+
+      <!-- 9. Governance Pipeline -->
+      <h2>8. Governance Pipeline (8-Stage Gate)</h2>
+      <div class="card">
+        <div id="govPipeline" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        <div class="metric-sub" style="margin-top:8px">Every trade passes through: Signal → Risk → Governance → Security → Simulation → Validation → Signing → Submission</div>
+      </div>
+
+      <!-- 10. Verification Links -->
+      <h2>9. Verification Links</h2>
+      <div class="card">
+        <div class="kv"><span class="kv-key">Dashboard</span><span class="kv-val"><a href="/" id="dashLink">Main Dashboard</a></span></div>
+        <div class="kv"><span class="kv-key">Trade History</span><span class="kv-val"><a href="/trades">Trade Log</a></span></div>
+        <div class="kv"><span class="kv-key">MCP Endpoint</span><span class="kv-val"><a href="/mcp" id="mcpLink">/mcp</a></span></div>
+        <div class="kv"><span class="kv-key">Agent Card (A2A)</span><span class="kv-val"><a href="/.well-known/agent-card.json">/.well-known/agent-card.json</a></span></div>
+        <div class="kv"><span class="kv-key">Health Check</span><span class="kv-val"><a href="/api/health">/api/health</a></span></div>
+        <div class="kv"><span class="kv-key">GitHub Repo</span><span class="kv-val"><a href="https://github.com/othnielObasi/actura-gacr-agent" target="_blank">othnielObasi/actura-gacr-agent</a></span></div>
+      </div>
+
+      <!-- 11. Social Share -->
+      <h2>10. Share</h2>
+      <div class="card">
+        <div class="card-title">Quick Trade Summary (click to copy)</div>
+        <div class="share-box" id="shareBox" onclick="copyShare()">Loading…</div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap" id="socialLinks">
+          <a id="shareTwitter" target="_blank" rel="noopener" class="badge badge-blue" style="text-decoration:none;padding:5px 12px;font-size:10px;cursor:pointer">Post on X / Twitter</a>
+          <a id="shareFarcaster" target="_blank" rel="noopener" class="badge badge-purple" style="text-decoration:none;padding:5px 12px;font-size:10px;cursor:pointer">Cast on Farcaster</a>
+          <a id="shareLinkedIn" target="_blank" rel="noopener" class="badge badge-cyan" style="text-decoration:none;padding:5px 12px;font-size:10px;cursor:pointer">Share on LinkedIn</a>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="footer">
+      Actura — ERC-8004 GACR Agent · Built for the Surge Hackathon · <a href="https://early.surge.xyz" target="_blank">early.surge.xyz</a>
+    </div>
+  </div>
+
+  <script>
+    const STAGES = ['Signal','Risk','Govern','Secure','Simulate','Validate','Sign','Submit'];
+    const TECH = [
+      ['ERC-8004 (Identity, Reputation, Validation)', true],
+      ['EIP-712 (Typed data signing)', true],
+      ['EIP-1271 (Smart contract signature verification)', true],
+      ['EIP-155 (Replay-protected transactions)', true],
+      ['Model Context Protocol (MCP)', true],
+      ['Agent-to-Agent Protocol (A2A)', true],
+      ['IPFS Artifact Storage (Pinata)', true],
+      ['Aerodrome Finance (mainnet-ready, testnet→Uniswap fallback)', true],
+      ['Uniswap V3 (testnet active)', true],
+      ['Kraken REST API (price feed)', true],
+      ['CoinGecko + DeFiLlama (price feeds)', true],
+      ['On-chain Event Indexer', true],
+      ['AI Reasoning (Claude → Gemini → OpenAI)', true],
+    ];
+
+    async function load() {
+      try {
+        const [status, checkpoints, reputation, tradeStats, artifacts, health, sageStatus, sagePlaybook, sandbox] = await Promise.all([
+          fetch('/api/status').then(r=>r.json()).catch(()=>null),
+          fetch('/api/checkpoints?limit=5').then(r=>r.json()).catch(()=>null),
+          fetch('/api/reputation/history?limit=10').then(r=>r.json()).catch(()=>null),
+          fetch('/api/performance').then(r=>r.json()).catch(()=>null),
+          fetch('/api/artifacts?limit=10').then(r=>r.json()).catch(()=>null),
+          fetch('/api/health').then(r=>r.json()).catch(()=>null),
+          fetch('/api/sage/status').then(r=>r.json()).catch(()=>null),
+          fetch('/api/sage/playbook').then(r=>r.json()).catch(()=>null),
+          fetch('/api/sandbox').then(r=>r.json()).catch(()=>null),
+        ]);
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+
+        // Identity — use sandbox data (hackathon shared contracts)
+        const agentId = sandbox?.agentId || health?.agentId || status?.agent?.agentId || '—';
+        document.getElementById('agentId').textContent = agentId;
+
+        // Trust
+        const hist = reputation?.history || [];
+        const latest = hist[hist.length - 1];
+        if (latest) {
+          document.getElementById('trustScore').textContent = latest.trustScore?.toFixed(0) || '—';
+          document.getElementById('trustTier').textContent = (latest.trustTier || '—').toUpperCase() + ' · ' + (latest.status || '—');
+        }
+
+        // Status
+        const running = status?.agent?.running;
+        const el = document.getElementById('agentStatus');
+        el.textContent = running ? 'RUNNING' : 'STOPPED';
+        el.className = 'metric ' + (running ? 'green' : 'red');
+        document.getElementById('cycleCount').textContent = `Cycle ${status?.agent?.cycleCount || 0}`;
+
+        // Registries — prioritize sandbox (hackathon shared contracts)
+        const shortAddr = (a) => a ? a.slice(0, 6) + '…' + a.slice(-4) : '—';
+        const etherscanBase = (sandbox?.chainId === 11155111) ? 'https://sepolia.etherscan.io' : 'https://sepolia.basescan.org';
+        const linkAddr = (a) => a ? `<a href="${etherscanBase}/address/${a}" target="_blank" style="color:#22d3ee">${shortAddr(a)}</a>` : '—';
+        if (sandbox?.contracts) {
+          document.getElementById('agentRegistryAddr').innerHTML = linkAddr(sandbox.contracts.agentRegistry);
+          document.getElementById('riskRouterAddr').innerHTML = linkAddr(sandbox.contracts.riskRouter);
+          document.getElementById('vaultAddr').innerHTML = linkAddr(sandbox.contracts.hackathonVault);
+          document.getElementById('reputationReg').innerHTML = linkAddr(sandbox.contracts.reputationRegistry);
+          document.getElementById('validationReg').innerHTML = linkAddr(sandbox.contracts.validationRegistry);
+        } else if (health) {
+          document.getElementById('reputationReg').textContent = health.reputationRegistry || '—';
+          document.getElementById('validationReg').textContent = health.validationRegistry || '—';
+        }
+        document.getElementById('networkName').textContent = sandbox ? `${sandbox.network} (${sandbox.chainId})` : 'Sepolia (11155111)';
+        document.getElementById('vaultBalance').textContent = sandbox?.vaultBalance ? sandbox.vaultBalance + ' ETH' : '—';
+        document.getElementById('walletBalance').textContent = sandbox?.walletBalance ? Number(sandbox.walletBalance).toFixed(3) + ' ETH' : '—';
+        document.getElementById('validationScore').textContent = sandbox?.validationScore > 0 ? sandbox.validationScore + '/100' : '—';
+        document.getElementById('reputationScore').textContent = sandbox?.reputationScore > 0 ? sandbox.reputationScore + '/100' : '—';
+        document.getElementById('ownerWallet').textContent = health?.ownerAddress || sandbox?.walletAddress || '—';
+
+        // Tech checks
+        const techEl = document.getElementById('techChecks');
+        techEl.innerHTML = TECH.map(([name, ok]) =>
+          `<div class="check ${ok ? 'check-pass' : 'check-fail'}">${name}</div>`
+        ).join('');
+
+        // Artifacts
+        const artEl = document.getElementById('artifactList');
+        if (artifacts?.artifacts?.length > 0) {
+          artEl.innerHTML = artifacts.artifacts.map(a =>
+            `<div class="artifact-row">
+              <span>${a.timestamp?.substring(0, 19) || '—'}</span>
+              <span class="cyan">${(a.cid || '—').substring(0, 16)}…</span>
+              <a href="${a.ipfsUrl || '#'}" target="_blank" style="font-size:9px">View on IPFS →</a>
+            </div>`
+          ).join('');
+          document.getElementById('artifactCount').textContent = `${artifacts.total || artifacts.artifacts.length} total artifacts generated`;
+        } else {
+          artEl.innerHTML = '<div style="color:#7c8a9e;padding:8px 0">No artifacts yet — agent needs to run at least one cycle</div>';
+        }
+
+        // Risk
+        document.getElementById('capital').textContent = '$' + (status?.capital?.toFixed(2) || '0');
+        // volatility is an object {current, ratio, regime}, not a number
+        const volObj = status?.risk?.volatility;
+        document.getElementById('volatility').textContent = volObj ? (volObj.ratio?.toFixed(2) + 'x · σ' + (volObj.current * 100)?.toFixed(2) + '% · ' + (volObj.regime || '')) : '—';
+        // circuitBreaker is an object {state, active}, not a boolean
+        const cbObj = status?.risk?.circuitBreaker;
+        const cbEl = document.getElementById('circuitBreaker');
+        cbEl.textContent = cbObj?.active ? 'TRIPPED' : (cbObj?.state || 'ARMED');
+        cbEl.style.color = cbObj?.active ? '#f87171' : '#34d399';
+        document.getElementById('openPositions').textContent = status?.risk?.openPositions || 0;
+        // totalTrades from state may reset; use performance stats if available
+        document.getElementById('totalTrades').textContent = tradeStats?.totalTrades || status?.risk?.totalTrades || 0;
+
+        // Market
+        const price = status?.market?.currentPrice;
+        document.getElementById('currentPrice').textContent = price ? '$' + price.toFixed(2) : '—';
+        document.getElementById('dataSources').textContent = 'Kraken REST (primary) → CoinGecko (fallback)';
+        document.getElementById('dexRouting').textContent = 'Uniswap V3 (testnet) · Aerodrome (mainnet-ready)';
+
+        // Trade Stats + Risk-Adjusted Metrics
+        const tsEl = document.getElementById('tradeStats');
+        if (tradeStats) {
+          // Risk-adjusted metrics cards
+          const s = tradeStats;
+          const fmt = (v, suffix='') => v != null && v !== 0 ? v.toFixed(2) + suffix : '—';
+          document.getElementById('sharpe').textContent = fmt(s.sharpeRatio);
+          document.getElementById('sortino').textContent = fmt(s.sortinoRatio);
+          document.getElementById('maxDD').textContent = s.maxDrawdownPct != null ? s.maxDrawdownPct.toFixed(2) + '%' : '—';
+          document.getElementById('calmar').textContent = fmt(s.calmarRatio);
+          document.getElementById('profitFactor').textContent = fmt(s.profitFactor);
+          document.getElementById('totalReturn').textContent = s.totalReturnPct != null ? s.totalReturnPct.toFixed(2) + '%' : '—';
+
+          // Color coding
+          const sharpeEl = document.getElementById('sharpe');
+          sharpeEl.className = 'metric ' + (s.sharpeRatio > 0 ? 'green' : s.sharpeRatio < 0 ? 'red' : 'cyan');
+          const sortinoEl = document.getElementById('sortino');
+          sortinoEl.className = 'metric ' + (s.sortinoRatio > 0 ? 'green' : s.sortinoRatio < 0 ? 'red' : 'cyan');
+          const returnEl = document.getElementById('totalReturn');
+          returnEl.className = 'metric ' + (s.totalReturnPct > 0 ? 'green' : s.totalReturnPct < 0 ? 'red' : 'cyan');
+
+          tsEl.innerHTML = [
+            ['Total Trades', s.totalTrades || 0],
+            ['Win Rate', (s.winRate || 0).toFixed(1) + '%'],
+            ['Total PnL', '$' + (s.totalPnl || 0).toFixed(2)],
+            ['Avg Win', '$' + (s.avgWin || 0).toFixed(2)],
+            ['Avg Loss', '$' + (s.avgLoss || 0).toFixed(2)],
+            ['Equity', '$' + (s.currentEquity || 0).toFixed(0)],
+          ].map(([k, v]) => `<div><div style="font-size:8px;color:#7c8a9e;text-transform:uppercase;letter-spacing:1px">${k}</div><div style="font-size:16px;font-weight:700;color:#edf2f7">${v}</div></div>`).join('');
+        } else {
+          tsEl.innerHTML = '<div style="color:#7c8a9e">No trades recorded yet</div>';
+        }
+
+        // SAGE
+        if (sageStatus) {
+          const el = document.getElementById('sageStatus');
+          el.textContent = sageStatus.enabled ? 'ENABLED' : 'DISABLED';
+          el.style.color = sageStatus.enabled ? '#34d399' : '#f87171';
+          document.getElementById('sageReflections').textContent = sageStatus.reflectionCount || 0;
+          document.getElementById('sageRules').textContent = sageStatus.activeRules || 0;
+          const defaults = { trend: 0.6, ret5: 1.8, ret20: 1.1, crossover: 0.15, rsi: 0.6, zscore: 0.5, sentiment: 0.12 };
+          const w = sageStatus.weights || defaults;
+          const cage = sageStatus.cage || {};
+          const wEl = document.getElementById('sageWeights');
+          wEl.innerHTML = Object.keys(defaults).map(k => {
+            const cur = (w[k] || 0).toFixed(2);
+            const def = defaults[k].toFixed(2);
+            const changed = Math.abs(w[k] - defaults[k]) > 0.001;
+            const bounds = cage[k] ? `[${cage[k][0]}, ${cage[k][1]}]` : '';
+            return `<div class="kv"><span class="kv-key">${k}</span><span class="kv-val" style="color:${changed ? '#fbbf24' : '#c9d1dc'}">${cur} ${changed ? '← ' + def : ''} <span style="color:#4b5668;font-size:9px">${bounds}</span></span></div>`;
+          }).join('');
+        }
+
+        // MCP
+        const mcpEl = document.getElementById('mcpTools');
+        const tools = ['get_market_state','get_trust_state','get_capital_rights','get_mandate_state','get_dex_routing',
+          'get_positions','get_performance_metrics','get_trade_history','explain_trade','get_validation_status',
+          'get_reputation_summary','get_kraken_market','get_indexed_events',
+          'get_kraken_balance','get_kraken_orders','get_kraken_trades',
+          'propose_trade','execute_trade','pause_agent','resume_agent','emergency_stop'];
+        mcpEl.innerHTML = tools.map(t => {
+          const cls = t.startsWith('get_') || t === 'explain_trade' ? 'badge-green' : t.includes('trade') ? 'badge-warn' : 'badge-purple';
+          return `<span class="badge ${cls}">${t}</span>`;
+        }).join('');
+        document.getElementById('mcpEndpoint').textContent = 'MCP endpoint: /mcp · Resources: 11 · Tools: ' + tools.length;
+
+        // Gov pipeline
+        const govEl = document.getElementById('govPipeline');
+        govEl.innerHTML = STAGES.map((s, i) =>
+          `<div style="flex:1;text-align:center;padding:8px 4px;background:#111621;border:1px solid #253045;border-radius:4px">
+            <div style="font-size:16px;font-weight:800;color:#34d399">${i + 1}</div>
+            <div style="font-size:9px;color:#7c8a9e;margin-top:2px">${s}</div>
+          </div>`
+        ).join('<div style="display:flex;align-items:center;color:#4b5668;font-size:10px">→</div>');
+
+        // Share — fetch from share API
+        let shareText;
+        const perf = tradeStats || {};
+        const totalTradesCount = perf.totalTrades || status?.risk?.totalTrades || 0;
+        const winRatePct = perf.winRate != null ? perf.winRate.toFixed(0) : '—';
+        const totalPnlUsd = perf.totalPnl != null ? (perf.totalPnl >= 0 ? '+' : '') + perf.totalPnl.toFixed(2) : '0';
+        const totalReturnStr = perf.totalReturnPct != null ? (perf.totalReturnPct >= 0 ? '+' : '') + perf.totalReturnPct.toFixed(2) + '%' : '—';
+        const trustStr = latest?.trustScore?.toFixed(0) || '—';
+        const capitalStr = status?.capital?.toFixed(0) || '—';
+        const artCount = artifacts?.total || artifacts?.artifacts?.length || 0;
+        const openPos = status?.risk?.openPositions || 0;
+        const validScoreStr = sandbox?.validationScore > 0 ? sandbox.validationScore + '/100' : '—';
+        const repScoreStr = sandbox?.reputationScore > 0 ? sandbox.reputationScore + '/100' : '—';
+        try {
+          const shareData = await fetch('/api/share/daily').then(r=>r.json()).catch(()=>null);
+          shareText = shareData?.post?.text || `🤖 Actura GACR Agent — ERC-8004 Trust-Governed Trading
+
+📊 PnL: $${totalPnlUsd} (${totalReturnStr}) | Capital: $${capitalStr}
+📈 Trades: ${totalTradesCount} | Win Rate: ${winRatePct}% | Open: ${openPos}
+🛡️ Trust: ${trustStr} | Validation: ${validScoreStr} | Reputation: ${repScoreStr}
+🔗 ${artCount} IPFS artifacts | 8-stage governance pipeline
+
+Fully governed. Every decision auditable.
+@Surgexyz_ @lablabai #SurgeHackathon #ERC8004 #DeFi`;
+        } catch (_) {
+          shareText = 'Actura GACR Agent — ERC-8004 Trust-Governed Trading';
+        }
+        document.getElementById('shareBox').textContent = shareText;
+        window.__shareText = shareText;
+
+        // Social share links
+        const encoded = encodeURIComponent(shareText);
+        const dashUrl = encodeURIComponent(window.location.origin);
+        document.getElementById('shareTwitter').href = 'https://twitter.com/intent/tweet?text=' + encoded;
+        document.getElementById('shareFarcaster').href = 'https://warpcast.com/~/compose?text=' + encoded;
+        document.getElementById('shareLinkedIn').href = 'https://www.linkedin.com/sharing/share-offsite/?url=' + dashUrl;
+
+      } catch (e) {
+        document.getElementById('loading').textContent = 'Error loading data: ' + e.message;
+      }
+    }
+
+    function copyShare() {
+      navigator.clipboard.writeText(window.__shareText || '').then(() => {
+        const el = document.getElementById('shareBox');
+        el.classList.add('copied');
+        el.setAttribute('data-after', 'copied!');
+        setTimeout(() => el.classList.remove('copied'), 1500);
+      });
+    }
+
+    load();
+  </script>
+</body>
+</html>
