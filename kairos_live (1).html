@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kairos — Arc Economic Proof</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --bg:      #050508;
+  --bg2:     #0a0a10;
+  --border:  rgba(255,255,255,0.06);
+  --purple:  #6C63FF;
+  --teal:    #00E5A0;
+  --teal2:   #1D9E75;
+  --blue:    #2775CA;
+  --amber:   #F0A500;
+  --red:     #FF4444;
+  --text:    #E8E6FF;
+  --text2:   #8884AA;
+  --text3:   #3D3B5A;
+  --mono:    'IBM Plex Mono', monospace;
+  --sans:    'IBM Plex Sans', sans-serif;
+}
+
+html, body { background:var(--bg); color:var(--text); font-family:var(--mono); font-size:13px; min-height:100vh; overflow-x:hidden; }
+
+.bg-grid {
+  position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image: linear-gradient(rgba(108,99,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(108,99,255,0.04) 1px, transparent 1px);
+  background-size:48px 48px; animation:gridDrift 40s linear infinite;
+}
+@keyframes gridDrift { 0%{background-position:0 0} 100%{background-position:48px 48px} }
+.bg-glow-1 { position:fixed; top:-200px; left:-200px; width:600px; height:600px; border-radius:50%; pointer-events:none; z-index:0; background:radial-gradient(circle, rgba(108,99,255,0.08) 0%, transparent 70%); animation:g1 8s ease-in-out infinite alternate; }
+.bg-glow-2 { position:fixed; bottom:-200px; right:-100px; width:500px; height:500px; border-radius:50%; pointer-events:none; z-index:0; background:radial-gradient(circle, rgba(0,229,160,0.06) 0%, transparent 70%); animation:g2 10s ease-in-out infinite alternate; }
+@keyframes g1 { from{opacity:.5} to{opacity:1} }
+@keyframes g2 { from{opacity:.4} to{opacity:.9} }
+
+.layout { position:relative; z-index:1; display:flex; flex-direction:column; min-height:100vh; }
+
+/* ── HEADER ── */
+.hdr { display:flex; align-items:center; padding:0 24px; height:52px; border-bottom:1px solid var(--border); background:rgba(5,5,8,0.95); backdrop-filter:blur(12px); position:sticky; top:0; z-index:100; }
+.hdr-logo { font-family:var(--sans); font-size:18px; font-weight:600; letter-spacing:.12em; }
+.hdr-logo span { color:var(--purple); }
+.hdr-tags { display:flex; gap:8px; margin-left:16px; }
+.tag { font-size:10px; letter-spacing:.1em; padding:3px 9px; border-radius:2px; font-weight:500; }
+.tag-p { background:rgba(108,99,255,.12); color:var(--purple); border:1px solid rgba(108,99,255,.25); }
+.tag-t { background:rgba(0,229,160,.1);   color:var(--teal);   border:1px solid rgba(0,229,160,.2); }
+.tag-b { background:rgba(39,117,202,.1);  color:var(--blue);   border:1px solid rgba(39,117,202,.2); }
+.hdr-right { margin-left:auto; display:flex; align-items:center; gap:16px; }
+.live-ind  { display:flex; align-items:center; gap:6px; }
+.live-dot  { width:7px; height:7px; border-radius:50%; background:var(--teal); animation:lp 1.4s ease-in-out infinite; }
+.live-dot.err  { background:var(--red); animation:none; }
+.live-dot.conn { background:var(--amber); }
+@keyframes lp { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,229,160,.4)} 50%{opacity:.6;box-shadow:0 0 0 4px rgba(0,229,160,0)} }
+.live-lbl { font-size:11px; color:var(--teal); letter-spacing:.1em; }
+.live-lbl.err  { color:var(--red); }
+.live-lbl.conn { color:var(--amber); }
+.poll-t { font-size:10px; color:var(--text3); }
+.back-lnk { font-size:11px; color:var(--text3); text-decoration:none; cursor:pointer; letter-spacing:.08em; }
+.back-lnk:hover { color:var(--text2); }
+
+/* ── MOMENT BAR ── */
+.mbar {
+  padding:0 24px; border-bottom:1px solid var(--border);
+  display:flex; align-items:stretch; overflow:hidden; position:relative;
+  background:linear-gradient(90deg, rgba(108,99,255,.04), rgba(0,229,160,.02));
+}
+.mbar::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--purple),var(--teal)); }
+.mi { display:flex; flex-direction:column; padding:14px 28px 14px 20px; border-right:1px solid var(--border); min-width:165px; }
+.mi:last-child { border-right:none; flex:1; }
+.mi-lbl { font-size:9px; letter-spacing:.16em; color:var(--text3); text-transform:uppercase; margin-bottom:4px; }
+.mi-val { font-size:22px; font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums; color:var(--text); }
+.mi-val.g { color:var(--teal); }
+.mi-val.p { color:var(--purple); }
+.mi-val.b { color:var(--blue); }
+.mi-sub { font-size:10px; color:var(--text3); margin-top:2px; }
+.tx-prog { margin-top:6px; }
+.tx-trk { height:3px; background:rgba(255,255,255,.06); border-radius:2px; width:180px; }
+.tx-fill { height:3px; background:linear-gradient(90deg,var(--purple),var(--teal)); border-radius:2px; transition:width .8s ease; }
+.tx-req { font-size:9px; color:var(--text3); margin-top:3px; }
+
+/* ── MAIN GRID ── */
+.main { flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--border); }
+
+/* ── TRACK ── */
+.track { background:var(--bg); display:flex; flex-direction:column; }
+.trk-hdr { padding:14px 16px 12px; border-bottom:1px solid var(--border); position:sticky; top:52px; z-index:10; background:var(--bg2); }
+.trk-num { font-size:9px; letter-spacing:.18em; color:var(--text3); margin-bottom:6px; }
+.trk-title { font-family:var(--sans); font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px; }
+.trk-sub { font-size:10px; color:var(--text2); line-height:1.5; }
+.trk-total-row { display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:8px; border-top:1px solid var(--border); }
+.trk-total-lbl { font-size:9px; color:var(--text3); letter-spacing:.1em; }
+.trk-total-val { font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; }
+.c1 { color:var(--purple); } .c2 { color:var(--blue); } .c3 { color:var(--amber); } .c4 { color:var(--teal); }
+.trk-body { flex:1; overflow-y:auto; padding:12px; scrollbar-width:none; min-height:400px; }
+.trk-body::-webkit-scrollbar { display:none; }
+
+/* ── EVENT ROW ── */
+.ev-row { display:flex; align-items:center; gap:6px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,.025); animation:rowIn .3s ease; }
+@keyframes rowIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
+.ev-tag  { font-size:9px; width:62px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ev-amt  { font-size:9px; font-weight:500; width:42px; flex-shrink:0; font-variant-numeric:tabular-nums; }
+.ev-hash { font-size:9px; color:var(--blue); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+.ev-hash:hover { color:#5599EE; }
+.ev-time { font-size:9px; color:var(--text3); flex-shrink:0; }
+.ev-badge { font-size:8px; padding:1px 5px; border-radius:2px; flex-shrink:0; }
+.ev-badge.x402 { background:rgba(108,99,255,.15); color:var(--purple); border:1px solid rgba(108,99,255,.3); }
+.ev-badge.nano { background:rgba(0,229,160,.1); color:var(--teal); border:1px solid rgba(0,229,160,.2); }
+.ev-badge.usdc { background:rgba(39,117,202,.1); color:var(--blue); border:1px solid rgba(39,117,202,.2); }
+.ev-badge.fb { background:rgba(240,165,0,.1); color:var(--amber); border:1px solid rgba(240,165,0,.2); font-size:7px; }
+
+/* ── T1 STAGES ── */
+.stage-item { display:flex; align-items:center; gap:7px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,.03); }
+.s-num  { font-size:9px; color:var(--text3); width:16px; flex-shrink:0; }
+.s-name { font-size:10px; flex:1; transition:color .3s; }
+.s-bar  { width:40px; height:2px; background:rgba(255,255,255,.06); border-radius:1px; flex-shrink:0; }
+.s-fill { height:100%; border-radius:1px; background:var(--purple); opacity:.8; transition:width .5s ease; }
+.s-amt  { font-size:10px; width:42px; text-align:right; flex-shrink:0; font-variant-numeric:tabular-nums; transition:color .3s; }
+.s-icon { font-size:10px; width:12px; text-align:center; flex-shrink:0; transition:color .3s; }
+.feed-div { font-size:9px; color:var(--text3); letter-spacing:.12em; padding:8px 0 4px; border-bottom:1px solid var(--border); margin-bottom:4px; }
+
+/* ── T2 API SOURCES ── */
+.api-src  { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.03); }
+.api-dot  { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.api-name { font-size:10px; color:var(--text2); flex:1; }
+.api-calls{ font-size:10px; color:var(--text3); width:44px; text-align:right; font-variant-numeric:tabular-nums; }
+.api-amt  { font-size:10px; color:var(--blue); font-weight:500; width:48px; text-align:right; font-variant-numeric:tabular-nums; }
+.api-mode { font-size:8px; width:40px; text-align:center; padding:1px 4px; border-radius:2px; flex-shrink:0; }
+.api-mode.live { background:rgba(0,229,160,.1); color:var(--teal); border:1px solid rgba(0,229,160,.2); }
+.api-mode.fb   { background:rgba(240,165,0,.1); color:var(--amber); border:1px solid rgba(240,165,0,.2); }
+
+/* ── T3 COMPUTE ── */
+.cmp-item { display:flex; align-items:flex-start; gap:8px; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.03); }
+.cmp-icon { font-size:9px; color:var(--amber); width:14px; flex-shrink:0; margin-top:1px; }
+.cmp-body { flex:1; min-width:0; }
+.cmp-name { font-size:10px; color:var(--text2); margin-bottom:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cmp-meta { font-size:9px; color:var(--text3); }
+.cmp-amt  { font-size:10px; color:var(--amber); font-weight:500; flex-shrink:0; font-variant-numeric:tabular-nums; }
+
+/* ── T4 TRADES ── */
+.trade-item { padding:10px 0; border-bottom:1px solid rgba(255,255,255,.03); }
+.tr-row1 { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+.tr-dir  { font-size:9px; font-weight:600; padding:2px 7px; border-radius:2px; letter-spacing:.08em; }
+.tr-dir.long  { background:rgba(0,229,160,.1); color:var(--teal); }
+.tr-dir.short { background:rgba(255,68,68,.1);  color:var(--red); }
+.tr-pair { font-size:11px; color:var(--text); font-weight:500; flex:1; }
+.tr-size { font-size:11px; color:var(--teal); font-weight:600; font-variant-numeric:tabular-nums; }
+.tr-row2 { display:flex; align-items:center; gap:8px; }
+.tr-hash { font-size:9px; color:var(--blue); cursor:pointer; }
+.tr-hash:hover { color:#5599EE; }
+.tr-time { font-size:9px; color:var(--text3); margin-left:auto; }
+.tr-arc  { font-size:8px; color:var(--teal2); letter-spacing:.08em; padding:1px 6px; border:1px solid rgba(29,158,117,.3); border-radius:2px; }
+
+/* ── EMPTY ── */
+.empty { padding:24px 12px; text-align:center; color:var(--text3); font-size:10px; line-height:1.8; }
+.empty-dot { width:4px; height:4px; border-radius:50%; background:var(--text3); margin:0 auto 8px; animation:lp 2s infinite; }
+
+/* ── PROOF BAR ── */
+.pbar { border-top:1px solid var(--border); display:grid; grid-template-columns:repeat(6,1fr); background:var(--bg2); }
+.pi { padding:14px 16px; border-right:1px solid var(--border); }
+.pi:last-child { border-right:none; }
+.pi-lbl { font-size:9px; letter-spacing:.16em; color:var(--text3); text-transform:uppercase; margin-bottom:6px; }
+.pi-val { font-size:19px; font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1; margin-bottom:3px; color:var(--text); }
+.pi-val.g { color:var(--teal); }
+.pi-val.p { color:var(--purple); }
+.pi-val.r { color:var(--red); }
+.pi-sub { font-size:10px; color:var(--text3); line-height:1.4; }
+.pi-bar  { height:2px; background:rgba(255,255,255,.06); border-radius:1px; margin-top:6px; }
+.pi-fill { height:2px; background:linear-gradient(90deg,var(--purple),var(--teal)); border-radius:1px; transition:width .8s ease; max-width:100%; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow-1"></div>
+<div class="bg-glow-2"></div>
+
+<div class="layout">
+
+  <!-- HEADER -->
+  <header class="hdr">
+    <div class="hdr-logo">K<span>AIROS</span></div>
+    <div class="hdr-tags">
+      <span class="tag tag-arc">Circle Wallets</span>
+      <span class="tag tag-b">Arc Testnet</span>
+      <span class="tag tag-t">Circle Platform</span>
+      <span class="tag tag-p">NOVTIA Governor</span>
+    </div>
+    <div class="hdr-right">
+      <div class="live-ind">
+        <div class="live-dot conn" id="conn-dot"></div>
+        <span class="live-lbl conn" id="conn-lbl">CONNECTING</span>
+      </div>
+      <span class="poll-t" id="poll-t">—</span>
+      <a class="back-lnk" href="/">← Dashboard</a>
+    </div>
+  </header>
+
+  <!-- MOMENT BAR -->
+  <div class="mbar">
+    <div class="mi">
+      <div class="mi-lbl">Governed moments</div>
+      <div class="mi-val p" id="mb-cycles">—</div>
+      <div class="mi-sub">trading cycles total</div>
+    </div>
+    <div class="mi">
+      <div class="mi-lbl">Arc transactions</div>
+      <div class="mi-val" id="mb-txns">0</div>
+      <div class="tx-prog">
+        <div class="tx-trk"><div class="tx-fill" id="mb-txbar" style="width:0%"></div></div>
+        <div class="tx-req" id="mb-txreq">0 / 50 required</div>
+      </div>
+    </div>
+    <div class="mi">
+      <div class="mi-lbl">Circle spend · session</div>
+      <div class="mi-val g" id="mb-spend">$0.000</div>
+      <div class="mi-sub">USDC · all 4 tracks</div>
+    </div>
+    <div class="mi">
+      <div class="mi-lbl">Cost per decision</div>
+      <div class="mi-val b" id="mb-cpd">$0.000</div>
+      <div class="mi-sub">USDC per governed moment</div>
+    </div>
+    <div class="mi">
+      <div class="mi-lbl">Trust tier</div>
+      <div class="mi-val" id="mb-trust">—</div>
+      <div class="mi-sub" id="mb-tsub">—</div>
+    </div>
+    <div class="mi" style="flex:2">
+      <div class="mi-lbl">Kairos · Circle platform stack</div>
+      <div class="mi-val" style="font-size:11px;color:var(--text2);margin-top:2px" id="mb-stack">Arc · USDC · Nanopayments · Circle Wallets · x402</div>
+      <div class="mi-sub">Powered by NOVTIA Runtime Governor · 890+ baseline cycles</div>
+    </div>
+  </div>
+
+  <!-- FOUR TRACKS -->
+  <div class="main">
+
+    <!-- T1: AGENT-TO-AGENT LOOP -->
+    <div class="track">
+      <div class="trk-hdr">
+        <div class="trk-num">TRACK 01 · PRIMARY</div>
+        <div class="trk-title">Agent-to-Agent Loop</div>
+        <div class="trk-sub">Trading agent pays NOVTIA Governor per governance stage · Circle Nanopayments · $0.001 USDC · instant confirmation · Arc batch settlement</div>
+        <div class="trk-total-row">
+          <span class="trk-total-lbl">Session spend</span>
+          <span class="trk-total-val c1" id="t1-total">$0.000 USDC</span>
+        </div>
+      </div>
+      <div class="trk-body">
+        <div id="t1-stages"></div>
+        <div id="t1-fhdr" style="display:none" class="feed-div">RECENT NANOPAYMENTS</div>
+        <div id="t1-feed"></div>
+      </div>
+    </div>
+
+    <!-- T2: PER-API MONETISATION -->
+    <div class="track">
+      <div class="trk-hdr">
+        <div class="trk-num">TRACK 02</div>
+        <div class="trk-title">Per-API Monetisation</div>
+        <div class="trk-sub">Agent pays AIsa x402 endpoints per query · Circle Gateway settlement · USDC on Arc · 79 endpoints across financial, Twitter, Perplexity</div>
+        <div class="trk-total-row">
+          <span class="trk-total-lbl">Session spend</span>
+          <span class="trk-total-val c2" id="t2-total">$0.000 USDC</span>
+        </div>
+      </div>
+      <div class="trk-body">
+        <div id="t2-sources"></div>
+        <div id="t2-fhdr" style="display:none" class="feed-div">RECENT x402 PAYMENTS</div>
+        <div id="t2-feed"></div>
+      </div>
+    </div>
+
+    <!-- T3: USAGE-BASED COMPUTE -->
+    <div class="track">
+      <div class="trk-hdr">
+        <div class="trk-num">TRACK 03</div>
+        <div class="trk-title">Usage-Based Compute</div>
+        <div class="trk-sub">Agent pays per LLM inference and SAGE reflection · Circle Nanopayments · Claude → Gemini → OpenAI · Gemini 2.5 Pro SAGE</div>
+        <div class="trk-total-row">
+          <span class="trk-total-lbl">Session spend</span>
+          <span class="trk-total-val c3" id="t3-total">$0.000 USDC</span>
+        </div>
+      </div>
+      <div class="trk-body" id="t3-body">
+        <div class="empty"><div class="empty-dot"></div>Awaiting LLM reasoning<br>fires after governance clears</div>
+      </div>
+    </div>
+
+    <!-- T4: REAL-TIME MICRO-COMMERCE -->
+    <div class="track">
+      <div class="trk-hdr">
+        <div class="trk-num">TRACK 04</div>
+        <div class="trk-title">Real-Time Micro-Commerce</div>
+        <div class="trk-sub">Approved trades settle in USDC on Arc · Circle Wallets · sub-second finality · per-interaction settlement · no human in the loop</div>
+        <div class="trk-total-row">
+          <span class="trk-total-lbl">Settled volume</span>
+          <span class="trk-total-val c4" id="t4-total">$0.00 USDC</span>
+        </div>
+      </div>
+      <div class="trk-body" id="t4-body">
+        <div class="empty"><div class="empty-dot"></div>Awaiting approved trades<br>All governance stages must clear</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PROOF BAR — 6 columns now including x402 vs Stripe comparison -->
+  <div class="pbar">
+    <div class="pi">
+      <div class="pi-lbl">Arc transactions</div>
+      <div class="pi-val p" id="p-txns">0</div>
+      <div class="pi-sub" id="p-tsub">0 / 50 required</div>
+      <div class="pi-bar"><div class="pi-fill" id="p-tbar" style="width:0%"></div></div>
+    </div>
+    <div class="pi">
+      <div class="pi-lbl">Total Circle spend</div>
+      <div class="pi-val g" id="p-spend">$0.000</div>
+      <div class="pi-sub">USDC · all 4 tracks</div>
+    </div>
+    <div class="pi">
+      <div class="pi-lbl">Cost per decision</div>
+      <div class="pi-val" id="p-cpd">$0.000</div>
+      <div class="pi-sub">12 Circle events per cycle</div>
+    </div>
+    <div class="pi">
+      <div class="pi-lbl">vs Ethereum gas</div>
+      <div class="pi-val r">$2–20</div>
+      <div class="pi-sub">per event · impossible on gas chains</div>
+    </div>
+    <div class="pi">
+      <div class="pi-lbl">vs Stripe subscriptions</div>
+      <div class="pi-val r">Fixed fee</div>
+      <div class="pi-sub">no per-action pricing · no agent autonomy</div>
+    </div>
+    <div class="pi">
+      <div class="pi-lbl">Arc margin</div>
+      <div class="pi-val g">100%</div>
+      <div class="pi-sub">gas-free · sub-cent · sub-second · Circle native</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const STAGE_NAMES = ["Mandate","Oracle","Simulator","Supervisory","Risk Router","LLM Reasoning","SAGE"];
+const API_SOURCES = [
+  { key:"coingecko",    name:"AIsa Fin. Prices", color:"#6C63FF", mode:"x402" },
+  { key:"kraken",       name:"AIsa Fin. Prices", color:"#2775CA", mode:"x402" },
+  { key:"feargreed",    name:"AIsa Twitter",   color:"#F0A500", mode:"x402" },
+  { key:"alphavantage", name:"AIsa Fin. News",  color:"#00E5A0", mode:"x402" },
+  { key:"prism",        name:"AIsa Perplexity", color:"#FF6B9D", mode:"x402" },
+];
+const POLL = 2000;
+
+const el = (id) => document.getElementById(id);
+const fU  = (n) => "$" + Number(n||0).toFixed(3);
+const fU2 = (n) => "$" + Number(n||0).toFixed(2);
+const fTs = (ts) => ts ? new Date(ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "—";
+
+function setConn(s) {
+  const d = el("conn-dot"), l = el("conn-lbl");
+  d.className = "live-dot" + (s==="live"?"":" "+(s==="error"?"err":"conn"));
+  l.className = "live-lbl" + (s==="live"?"":" "+(s==="error"?"err":"conn"));
+  l.textContent = s==="live"?"LIVE":s==="error"?"ERROR":"CONNECTING";
+}
+
+// ── T1 ──────────────────────────────────────────────────────────────────────
+function renderT1(data) {
+  const sc = el("t1-stages");
+  sc.innerHTML = "";
+  const counts = data.stageCounts || new Array(7).fill(0);
+  const spends = data.stageSpend  || new Array(7).fill(0);
+  STAGE_NAMES.forEach((name,i) => {
+    const fired = counts[i] > 0;
+    const row = document.createElement("div");
+    row.className = "stage-item";
+    row.innerHTML = `
+      <span class="s-num">0${i+1}</span>
+      <span class="s-name" style="color:${fired?"#8884AA":"#3D3B5A"}">${name}</span>
+      <div class="s-bar"><div class="s-fill" style="width:${fired?"100%":"0%"}"></div></div>
+      <span class="s-amt" style="color:${fired?"#8884AA":"#3D3B5A"}">${fired?fU(spends[i]):"—"}</span>
+      <span class="s-icon" style="color:${fired?"var(--teal)":"#3D3B5A"}">${fired?"✓":"–"}</span>
+    `;
+    sc.appendChild(row);
+  });
+
+  const events = data.t1Events || [];
+  el("t1-fhdr").style.display = events.length ? "block" : "none";
+  const fc = el("t1-feed"); fc.innerHTML = "";
+  events.slice(0,8).forEach(e => {
+    const row = document.createElement("div");
+    row.className = "ev-row";
+    row.innerHTML = `
+      <span class="ev-tag" style="color:var(--purple)">${e.source||e.eventName||"—"}</span>
+      <span class="ev-amt" style="color:var(--teal)">${fU(e.amount||e.amt)}</span>
+      <span class="ev-hash">${e.txHash||e.hash||"pending..."}</span>
+      <span class="ev-badge nano">NANO</span>
+      <span class="ev-time">${e.time||fTs(e.confirmedAt)}</span>
+    `;
+    fc.appendChild(row);
+  });
+  el("t1-total").textContent = fU(data.t1Spend) + " USDC";
+}
+
+// ── T2 ──────────────────────────────────────────────────────────────────────
+function renderT2(data) {
+  const breakdown = data.apiBreakdown || {};
+  const sc = el("t2-sources"); sc.innerHTML = "";
+  API_SOURCES.forEach(s => {
+    const info = breakdown[s.key] || { calls:0, spend:0 };
+    // Determine mode from billing store or default
+    const mode = info.mode || s.mode;
+    const row = document.createElement("div");
+    row.className = "api-src";
+    row.innerHTML = `
+      <div class="api-dot" style="background:${s.color}"></div>
+      <span class="api-name">${s.name}</span>
+      <span class="api-calls">${info.calls} calls</span>
+      <span class="api-amt">${fU(info.spend)}</span>
+      <span class="api-mode ${mode==="x402"?"live":"fb"}">${mode==="x402"?"x402":"API key"}</span>
+    `;
+    sc.appendChild(row);
+  });
+
+  // x402 mode explanation
+  const noteEl = document.createElement("div");
+  noteEl.style.cssText = "font-size:9px;color:#3D3B5A;padding:8px 0 4px;line-height:1.6;border-bottom:1px solid var(--border);margin-bottom:4px;";
+  noteEl.textContent = "x402: Circle facilitator handles payment. Fallback: API key used — billing event still recorded on Arc.";
+  sc.appendChild(noteEl);
+
+  const events = data.t2Events || [];
+  el("t2-fhdr").style.display = events.length ? "block" : "none";
+  const fc = el("t2-feed"); fc.innerHTML = "";
+  events.slice(0,6).forEach(e => {
+    const isX402 = e.mode === "x402" || e.source === "coingecko" || e.source === "kraken";
+    const row = document.createElement("div");
+    row.className = "ev-row";
+    row.innerHTML = `
+      <span class="ev-tag" style="color:var(--blue)">${e.source||e.eventName||"—"}</span>
+      <span class="ev-amt" style="color:var(--blue)">${fU(e.amount||e.amt)}</span>
+      <span class="ev-hash">${e.txHash||e.hash||"pending..."}</span>
+      <span class="ev-badge ${isX402?"x402":"fb"}">${isX402?"x402":"fallback"}</span>
+      <span class="ev-time">${e.time||fTs(e.confirmedAt)}</span>
+    `;
+    fc.appendChild(row);
+  });
+  el("t2-total").textContent = fU(data.t2Spend) + " USDC";
+}
+
+// ── T3 ──────────────────────────────────────────────────────────────────────
+function renderT3(data) {
+  const events = data.t3Events || [];
+  const body = el("t3-body");
+  if (!events.length) {
+    body.innerHTML = '<div class="empty"><div class="empty-dot"></div>Awaiting LLM reasoning<br>fires after governance clears</div>';
+    el("t3-total").textContent = "$0.000 USDC"; return;
+  }
+  body.innerHTML = "";
+  events.slice(0,10).forEach(e => {
+    const div = document.createElement("div");
+    div.className = "cmp-item";
+    div.innerHTML = `
+      <span class="cmp-icon">◆</span>
+      <div class="cmp-body">
+        <div class="cmp-name">${e.model||e.eventName||"—"}</div>
+        <div class="cmp-meta">${e.type||"inference"} · ${e.time||fTs(e.confirmedAt)} · <span style="color:var(--blue)">${e.txHash||e.hash||"pending..."}</span></div>
+      </div>
+      <span class="cmp-amt">${fU(e.amount||e.amt)}</span>
+    `;
+    body.appendChild(div);
+  });
+  el("t3-total").textContent = fU(data.t3Spend) + " USDC";
+}
+
+// ── T4 ──────────────────────────────────────────────────────────────────────
+function renderT4(checkpoints) {
+  const trades = (checkpoints||[]).filter(c => c.status==="CLOSED"||c.tradeId||c.direction);
+  const body = el("t4-body");
+  if (!trades.length) {
+    body.innerHTML = '<div class="empty"><div class="empty-dot"></div>Awaiting approved trades<br>All governance stages must clear</div>';
+    el("t4-total").textContent = "$0.00 USDC"; return;
+  }
+  body.innerHTML = "";
+  let vol = 0;
+  trades.slice(0,8).forEach(t => {
+    const dir  = (t.direction||t.signal||"LONG").toLowerCase();
+    const pair = t.pair||t.tradingPair||"WETH/USDC";
+    const size = parseFloat(t.positionSizeUsd||t.size||0);
+    const hash = t.txHash||t.onChainHash||"pending...";
+    const time = t.closedAt ? fTs(t.closedAt) : "—";
+    vol += size;
+    const isLong = dir==="long"||dir==="buy";
+    const div = document.createElement("div");
+    div.className = "trade-item";
+    div.innerHTML = `
+      <div class="tr-row1">
+        <span class="tr-dir ${isLong?"long":"short"}">${isLong?"LONG":"SHORT"}</span>
+        <span class="tr-pair">${pair}</span>
+        <span class="tr-size">${fU2(size)}</span>
+      </div>
+      <div class="tr-row2">
+        <span class="tr-hash">${hash}</span>
+        <span class="tr-arc">Arc ✓</span>
+        <span class="ev-badge usdc">USDC</span>
+        <span class="tr-time">${time}</span>
+      </div>
+    `;
+    body.appendChild(div);
+  });
+  el("t4-total").textContent = fU2(vol) + " USDC";
+}
+
+// ── MOMENT + PROOF BARS ──────────────────────────────────────────────────────
+function updateBars(billing, status) {
+  const txns   = billing.totalTxns  || 0;
+  const spend  = billing.totalSpend || 0;
+  const cycles = status.totalCycles || status.cycleCount || 890;
+  const trust  = status.trustScore  || status.trust?.score || "—";
+  const tier   = status.capitalTier || status.trust?.tier  || "—";
+  const agentId= status.agentId     || "22";
+  const cpd    = txns > 0 ? spend / txns : 0;
+  const pct    = Math.min(100, (txns / 50) * 100);
+
+  el("mb-cycles").textContent = cycles;
+  el("mb-txns").textContent   = txns;
+  el("mb-spend").textContent  = fU(spend);
+  el("mb-cpd").textContent    = fU(cpd);
+  el("mb-txbar").style.width  = pct + "%";
+  el("mb-txreq").textContent  = txns + " / 50 required";
+  el("mb-trust").textContent  = trust;
+  el("mb-tsub").textContent   = tier + " tier · Agent #" + agentId;
+
+  el("p-txns").textContent    = txns;
+  el("p-tsub").textContent    = txns + " / 50+ required";
+  el("p-spend").textContent   = fU(spend);
+  el("p-cpd").textContent     = fU(cpd);
+  el("p-tbar").style.width    = pct + "%";
+}
+
+// ── POLL ─────────────────────────────────────────────────────────────────────
+let polls = 0;
+
+async function poll() {
+  try {
+    const [billing, status, checkpoints] = await Promise.all([
+      fetch("/api/billing").then(r => { if(!r.ok) throw new Error(r.status); return r.json(); }),
+      fetch("/api/status").then(r  => { if(!r.ok) throw new Error(r.status); return r.json(); }),
+      fetch("/api/checkpoints").then(r => { if(!r.ok) throw new Error(r.status); return r.json(); }),
+    ]);
+
+    setConn("live");
+    el("poll-t").textContent = "Updated " + new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+
+    renderT1(billing);
+    renderT2(billing);
+    renderT3(billing);
+    renderT4(checkpoints.checkpoints || checkpoints);
+    updateBars(billing, status);
+    polls++;
+
+  } catch(err) {
+    setConn(polls === 0 ? "connecting" : "error");
+    console.warn("Poll failed:", err.message);
+  }
+}
+
+setConn("connecting");
+poll();
+setInterval(poll, POLL);
+</script>
+</body>
+</html>

@@ -1,0 +1,628 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// KAIROS BACKEND — v3 (final)
+// Four files + server edits + hook locations
+// Payment architecture:
+//   Track 1 & 3: Circle Wallets + Circle Nanopayments (governance + compute)
+//   Track 2:     x402_client.mjs + Circle Gateway (data API payments)
+//   Track 4:     Circle Wallets + Arc (trade settlement)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+
+// ───────────────────────────────────────────────────────────────────────────────
+// FILE 1: src/services/nanopayments.ts  (NEW)
+// ───────────────────────────────────────────────────────────────────────────────
+
+import { NanopaymentsClient } from '@circle-fin/nanopayments';
+
+const nanoClient = new NanopaymentsClient({
+  apiKey: process.env.CIRCLE_API_KEY!,
+});
+
+export const NANO_AMOUNT = parseFloat(
+  process.env.NANOPAYMENT_AMOUNT_USDC || '0.001'
+);
+
+export interface NanopaymentReceipt {
+  eventName:   string;
+  source?:     string;
+  model?:      string;
+  type?:       string;
+  txHash:      string;
+  amount:      number;
+  confirmedAt: number;
+}
+
+// billEvent — fires a $0.001 Circle Nanopayment for every governance/compute event
+// NEVER throws — billing failure returns a pending receipt so governance is never blocked
+export async function billEvent(
+  eventName: string,
+  meta: { source?: string; model?: string; type?: string } = {}
+): Promise<NanopaymentReceipt> {
+  try {
+    const payment = await nanoClient.createPayment({
+      from:     process.env.AGENT_WALLET_ADDRESS!,
+      to:       process.env.GOVERNANCE_BILLING_ADDRESS!,
+      amount:   NANO_AMOUNT.toString(),
+      currency: 'USDC',
+      metadata: {
+        eventName,
+        product:  'Kairos',
+        agentId:  process.env.AGENT_ID || 'kairos-1',
+        chain:    'Arc Testnet',
+        ...meta,
+      },
+    });
+
+    return {
+      eventName,
+      ...meta,
+      txHash:      payment.txHash,
+      amount:      NANO_AMOUNT,
+      confirmedAt: Date.now(),
+    };
+  } catch (err) {
+    // CRITICAL: never block governance on a billing failure
+    console.warn(`[Kairos] billEvent failed (${eventName}):`, err);
+    return {
+      eventName,
+      ...meta,
+      txHash:      'pending_' + Date.now(),
+      amount:      NANO_AMOUNT,
+      confirmedAt: Date.now(),
+    };
+  }
+}
+
+
+// ───────────────────────────────────────────────────────────────────────────────
+// FILE 2: src/services/billing-store.ts  (NEW)
+// ───────────────────────────────────────────────────────────────────────────────
+
+import { NanopaymentReceipt } from './nanopayments';
+
+const STAGE_NAMES = [
+  'Mandate', 'Oracle', 'Simulator',
+  'Supervisory', 'Risk Router', 'LLM Reasoning', 'SAGE',
+];
+
+class BillingStore {
+  // Track 1 — governance Nanopayments
+  t1Events:    NanopaymentReceipt[] = [];
+  stageCounts: number[]             = new Array(7).fill(0);
+  stageSpend:  number[]             = new Array(7).fill(0);
+  t1Spend = 0;
+
+  // Track 2 — x402 data API payments
+  t2Events:    NanopaymentReceipt[]                            = [];
+  apiBreakdown: Record<string, { calls: number; spend: number }> = {};
+  t2Spend = 0;
+
+  // Track 3 — compute Nanopayments
+  t3Events: NanopaymentReceipt[] = [];
+  t3Spend = 0;
+
+  // Totals
+  totalTxns  = 0;
+  totalSpend = 0;
+
+  addGovernanceEvent(r: NanopaymentReceipt, stageIndex: number) {
+    r.source = STAGE_NAMES[stageIndex];
+    r.type   = 'governance';
+    this.t1Events.unshift(r);
+    if (this.t1Events.length > 100) this.t1Events.pop();
+    this.stageCounts[stageIndex]++;
+    this.stageSpend[stageIndex]  += r.amount;
+    this.t1Spend    += r.amount;
+    this.totalSpend += r.amount;
+    this.totalTxns++;
+  }
+
+  addApiEvent(r: NanopaymentReceipt, sourceKey: string) {
+    r.type = 'data';
+    this.t2Events.unshift(r);
+    if (this.t2Events.length > 100) this.t2Events.pop();
+    if (!this.apiBreakdown[sourceKey])
+      this.apiBreakdown[sourceKey] = { calls: 0, spend: 0 };
+    this.apiBreakdown[sourceKey].calls++;
+    this.apiBreakdown[sourceKey].spend += r.amount;
+    this.t2Spend    += r.amount;
+    this.totalSpend += r.amount;
+    this.totalTxns++;
+  }
+
+  addComputeEvent(r: NanopaymentReceipt) {
+    r.type = r.type || 'compute';
+    this.t3Events.unshift(r);
+    if (this.t3Events.length > 100) this.t3Events.pop();
+    this.t3Spend    += r.amount;
+    this.totalSpend += r.amount;
+    this.totalTxns++;
+  }
+
+  toJSON() {
+    return {
+      // Track 1
+      t1Events:    this.t1Events.slice(0, 20),
+      stageCounts: this.stageCounts,
+      stageSpend:  this.stageSpend,
+      t1Spend:     this.t1Spend,
+      // Track 2
+      t2Events:    this.t2Events.slice(0, 20),
+      apiBreakdown: this.apiBreakdown,
+      t2Spend:     this.t2Spend,
+      // Track 3
+      t3Events:    this.t3Events.slice(0, 20),
+      t3Spend:     this.t3Spend,
+      // Totals
+      totalTxns:   this.totalTxns,
+      totalSpend:  this.totalSpend,
+      // Meta
+      chain:       'Arc Testnet',
+      chainId:     5042002,
+      product:     'Kairos',
+    };
+  }
+}
+
+export const billingStore = new BillingStore();
+
+
+// ───────────────────────────────────────────────────────────────────────────────
+// FILE 3: src/services/circle-wallet.ts  (NEW)
+// ───────────────────────────────────────────────────────────────────────────────
+// npm install @circle-fin/developer-controlled-wallets
+
+import { initiateDeveloperControlledWalletsClient } from '@circle-fin/developer-controlled-wallets';
+import { ethers } from 'ethers';
+
+export const circleClient = initiateDeveloperControlledWalletsClient({
+  apiKey:       process.env.CIRCLE_API_KEY!,
+  entitySecret: process.env.CIRCLE_ENTITY_SECRET!,
+});
+
+// Run ONCE on first deploy — creates Kairos agent wallet on Arc testnet
+// Store output address in .env.arc as AGENT_WALLET_ADDRESS
+export async function createAgentWallet() {
+  const response = await circleClient.createWallets({
+    blockchains: ['ARC-TESTNET'],
+    count:       1,
+    walletSetId: process.env.CIRCLE_WALLET_SET_ID!,
+  });
+  const wallet = response.data?.wallets?.[0];
+  if (!wallet) throw new Error('[Kairos] Failed to create Circle Wallet');
+  console.log('✓ Kairos agent wallet created');
+  console.log('Add to .env.arc → AGENT_WALLET_ADDRESS=' + wallet.address);
+  console.log('Add to .env.arc → AGENT_WALLET_ID='      + wallet.id);
+  return wallet;
+}
+
+// Returns an ethers signer backed by Circle Wallets
+// EIP-1271 compatible — works with existing src/chain/eip1271.ts
+export function getCircleSigner(provider: ethers.Provider): ethers.AbstractSigner {
+  return new CircleWalletSigner(
+    process.env.AGENT_WALLET_ADDRESS!,
+    process.env.AGENT_WALLET_ID!,
+    provider
+  );
+}
+
+class CircleWalletSigner extends ethers.AbstractSigner {
+  constructor(
+    private readonly addr:     string,
+    private readonly walletId: string,
+    provider: ethers.Provider
+  ) {
+    super(provider);
+  }
+
+  async getAddress()               { return this.addr; }
+  connect(p: ethers.Provider)      { return new CircleWalletSigner(this.addr, this.walletId, p); }
+
+  async signMessage(msg: string | Uint8Array): Promise<string> {
+    const r = await circleClient.signMessage({
+      walletId: this.walletId,
+      message:  typeof msg === 'string' ? msg : Buffer.from(msg).toString('hex'),
+    });
+    return r.data?.signature ?? '';
+  }
+
+  async signTransaction(tx: ethers.TransactionRequest): Promise<string> {
+    const r = await circleClient.createTransaction({
+      walletId:            this.walletId,
+      contractAddress:     tx.to as string,
+      abiFunctionSignature:'',
+      abiParameters:       [],
+      feeLevel:            'MEDIUM',
+    });
+    return r.data?.transaction?.txHash ?? '';
+  }
+
+  async signTypedData(
+    domain: ethers.TypedDataDomain,
+    types:  Record<string, ethers.TypedDataField[]>,
+    value:  Record<string, unknown>
+  ): Promise<string> {
+    const r = await circleClient.signTypedData({
+      walletId:    this.walletId,
+      domain,
+      types,
+      primaryType: Object.keys(types).find(k => k !== 'EIP712Domain') || '',
+      message:     value,
+    });
+    return r.data?.signature ?? '';
+  }
+}
+
+
+// ───────────────────────────────────────────────────────────────────────────────
+// FILE 4: src/services/setup-gateway.mjs  (NEW — run ONCE)
+// ───────────────────────────────────────────────────────────────────────────────
+// Approves and deposits USDC into Circle Gateway for x402 data payments.
+// Run before first use:  node src/services/setup-gateway.mjs
+//
+// import { createWalletClient, http, parseUnits } from 'viem';
+// import { mnemonicToAccount }                    from 'viem/accounts';
+//
+// const MNEMONIC        = process.env.OWS_MNEMONIC;
+// const RPC_URL         = 'https://rpc.testnet.arc.network';
+// const USDC_ADDRESS    = '0x3600000000000000000000000000000000000000';
+// const GATEWAY_ADDRESS = '0x0077777d7eba4688bdef3e311b846f25870a19b9';
+// const CHAIN_ID        = 5042002;
+//
+// const arcTestnet = {
+//   id: CHAIN_ID, name: 'Arc Testnet',
+//   nativeCurrency: { name:'USDC', symbol:'USDC', decimals:18 },
+//   rpcUrls: { default: { http: [RPC_URL] } },
+// };
+//
+// const account      = mnemonicToAccount(MNEMONIC);
+// const walletClient = createWalletClient({ account, chain: arcTestnet, transport: http(RPC_URL) });
+// console.log('x402 wallet address:', account.address);
+//
+// // Step 1: Approve Gateway to spend USDC (ERC-20, 6 decimals)
+// const approveTx = await walletClient.writeContract({
+//   address: USDC_ADDRESS,
+//   abi: [{
+//     name:'approve', type:'function',
+//     inputs: [{name:'spender',type:'address'},{name:'amount',type:'uint256'}],
+//     outputs:[{name:'',type:'bool'}]
+//   }],
+//   functionName: 'approve',
+//   args: [GATEWAY_ADDRESS, parseUnits('100', 6)],
+// });
+// console.log('Approve tx:', approveTx);
+//
+// // Step 2: Deposit 5 USDC into Gateway (use 6 decimals for ERC-20)
+// const depositTx = await walletClient.writeContract({
+//   address: GATEWAY_ADDRESS,
+//   abi: [{
+//     name:'deposit', type:'function',
+//     inputs:[{name:'asset',type:'address'},{name:'amount',type:'uint256'}],
+//     outputs:[]
+//   }],
+//   functionName: 'deposit',
+//   args: [USDC_ADDRESS, parseUnits('5', 6)],
+// });
+// console.log('Deposit tx:', depositTx);
+// console.log('Gateway funded — Kairos x402 data payments are ready.');
+
+
+// ───────────────────────────────────────────────────────────────────────────────
+// FILE 5: src/dashboard/server.ts  (EDIT — add these lines)
+// ───────────────────────────────────────────────────────────────────────────────
+//
+// Add to imports at top:
+//   import { billingStore } from '../services/billing-store';
+//   import path from 'path';
+//
+// Add alongside existing /api/* routes:
+//
+//   // Track 1/2/3 billing data — feeds /kairos dashboard
+//   app.get('/api/billing', (req, res) => {
+//     res.json(billingStore.toJSON());
+//   });
+//
+//   // Kairos judge view — dedicated Arc hackathon dashboard
+//   app.get('/kairos', (req, res) => {
+//     res.sendFile(path.join(__dirname, 'public', 'kairos.html'));
+//   });
+
+
+// ───────────────────────────────────────────────────────────────────────────────
+// HOOK LOCATIONS — 13 billing events across 9 files
+// ───────────────────────────────────────────────────────────────────────────────
+//
+// Add these imports at the top of every file listed below:
+//   import { billEvent }    from '../services/nanopayments';
+//   import { billingStore } from '../services/billing-store';
+//
+// For data feed files ALSO add:
+//   import { createPayingFetch } from '../services/x402-client.mjs';
+//   const { fetch: payingFetch } = createPayingFetch(process.env.OWS_MNEMONIC!);
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// TRACK 2 — DATA FEEDS (x402 via Circle Gateway)
+// Pattern: replace bare fetch URL with AIsa endpoint + createPayingFetch
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── src/data/live-price-feed.ts ──────────────────────────────────────────────
+// REPLACE the CoinGecko fetch URL with AIsa financial prices endpoint:
+//
+//   BEFORE:
+//     const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?...`);
+//
+//   AFTER:
+//     const res = await payingFetch(
+//       `https://api.aisa.one/apis/v2/financial/prices/snapshot?ticker=ETH`,
+//       { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+//     );
+//     // x402 payment fires automatically — $0.024 per call
+//
+//   Then record billing event AFTER successful response:
+//     try {
+//       billingStore.addApiEvent(
+//         await billEvent('data-coingecko', { source:'aisa-financial-prices', type:'data' }),
+//         'coingecko'
+//       );
+//     } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+
+// ── src/data/kraken-feed.ts ───────────────────────────────────────────────────
+// REPLACE Kraken market data URL:
+//
+//   AFTER:
+//     const res = await payingFetch(
+//       `https://api.aisa.one/apis/v2/financial/prices/snapshot?ticker=ETH`,
+//       { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+//     );
+//     // $0.024 per call
+//
+//   try {
+//     billingStore.addApiEvent(
+//       await billEvent('data-kraken', { source:'aisa-financial-prices', type:'data' }),
+//       'kraken'
+//     );
+//   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+//
+// NOTE: kraken-bridge.ts (trade EXECUTION) is unchanged — only market data changes
+
+// ── src/data/sentiment-feed.ts ────────────────────────────────────────────────
+// REPLACE Fear & Greed URL:
+//
+//   AFTER (Fear & Greed → Twitter crypto sentiment):
+//     const res = await payingFetch(
+//       `https://api.aisa.one/apis/v2/twitter/tweet/advanced_search?query=bitcoin+crypto&count=10`,
+//       { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+//     );
+//     // $0.0022 per call
+//
+//   try {
+//     billingStore.addApiEvent(
+//       await billEvent('data-feargreed', { source:'aisa-twitter-sentiment', type:'data' }),
+//       'feargreed'
+//     );
+//   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+//
+// REPLACE Alpha Vantage URL:
+//
+//   AFTER (Alpha Vantage → AIsa financial news):
+//     const newsRes = await payingFetch(
+//       `https://api.aisa.one/apis/v2/financial/news?ticker=BTC`,
+//       { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+//     );
+//     // $0.048 per call
+//
+//   try {
+//     billingStore.addApiEvent(
+//       await billEvent('data-alphavantage', { source:'aisa-financial-news', type:'data' }),
+//       'alphavantage'
+//     );
+//   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+
+// ── src/data/prism-feed.ts ────────────────────────────────────────────────────
+// REPLACE PRISM API call with Perplexity Sonar via AIsa:
+//
+//   AFTER:
+//     const res = await payingFetch(
+//       `https://api.aisa.one/apis/v2/perplexity/sonar`,
+//       {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({
+//           model: 'sonar',
+//           messages: [{
+//             role: 'user',
+//             content: `Technical analysis for ETH/USD: trend (bullish/bearish/neutral), RSI, momentum, support/resistance. Be concise.`
+//           }]
+//         })
+//       }
+//     );
+//     // $0.012 per call
+//
+//   try {
+//     billingStore.addApiEvent(
+//       await billEvent('data-prism', { source:'aisa-perplexity-sonar', type:'data' }),
+//       'prism'
+//     );
+//   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRACK 1 — GOVERNANCE STAGES (Circle Nanopayments)
+// Pattern: add billEvent() at END of each function, before return
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── src/chain/agent-mandate.ts ────────────────────────────────────────────────
+// Add at END of checkMandate() — after result determined, before return:
+//   try {
+//     billingStore.addGovernanceEvent(
+//       await billEvent('governance-mandate', { type:'governance' }), 0
+//     );
+//   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+//   return result;
+
+// ── src/security/oracle-integrity.ts ─────────────────────────────────────────
+// Add at END of checkOracleIntegrity() — before return:
+//   try {
+//     billingStore.addGovernanceEvent(
+//       await billEvent('governance-oracle', { type:'governance' }), 1
+//     );
+//   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+//   return result;
+
+// ── src/chain/execution-simulator.ts ─────────────────────────────────────────
+// Add at END of simulate() — before return:
+//   try {
+//     billingStore.addGovernanceEvent(
+//       await billEvent('governance-simulation', { type:'governance' }), 2
+//     );
+//   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+//   return result;
+
+// ── src/agent/supervisory-meta-agent.ts ───────────────────────────────────────
+// Add at END of evaluate() — before return:
+//   try {
+//     billingStore.addGovernanceEvent(
+//       await billEvent('governance-supervisory', { type:'governance' }), 3
+//     );
+//   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+//   return decision;
+
+// ── src/chain/risk-router.ts ──────────────────────────────────────────────────
+// Add after submitTradeIntent() confirms — before return:
+//   try {
+//     billingStore.addGovernanceEvent(
+//       await billEvent('governance-risk-router', { type:'governance' }), 4
+//     );
+//   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+//   return result;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRACK 3 — COMPUTE BILLING (Circle Nanopayments)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── src/strategy/ai-reasoning.ts ─────────────────────────────────────────────
+// Add after each successful LLM call — use actual model name:
+//
+//   // After Claude primary call:
+//   try {
+//     billingStore.addComputeEvent(
+//       await billEvent('compute-llm', { model:'Claude (Primary)', type:'inference' })
+//     );
+//   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+//
+//   // After Gemini fallback:
+//   try {
+//     billingStore.addComputeEvent(
+//       await billEvent('compute-llm', { model:'Gemini 2.5 Pro', type:'inference' })
+//     );
+//   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+//
+//   // After OpenAI fallback:
+//   try {
+//     billingStore.addComputeEvent(
+//       await billEvent('compute-llm', { model:'OpenAI (Fallback)', type:'inference' })
+//     );
+//   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+
+// ── src/strategy/ace-engine.ts (SAGE) ────────────────────────────────────────
+// Add at END of reflect() — after reflection cycle completes:
+//   try {
+//     billingStore.addComputeEvent(
+//       await billEvent('compute-sage', { model:'SAGE (Gemini 2.5 Pro)', type:'reflection' })
+//     );
+//   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRACK 4 — TRADE SETTLEMENT (Circle Wallets + Arc)
+// No new billing hooks needed — executor.ts already logs trades to checkpoints
+// /api/checkpoints already exists — /kairos dashboard reads from it directly
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── src/trust/artifact-emitter.ts ────────────────────────────────────────────
+// Add kairosArcBilling field to the artifact payload inside buildArtifact():
+//
+//   import { billingStore } from '../services/billing-store';
+//
+//   // Add to artifact object before IPFS upload:
+//   kairosArcBilling: {
+//     totalUsdc:     billingStore.totalSpend,
+//     totalEvents:   billingStore.totalTxns,
+//     t1Governance:  billingStore.t1Spend,
+//     t2DataApis:    billingStore.t2Spend,
+//     t3Compute:     billingStore.t3Spend,
+//     arcTxHashes:   [
+//       ...billingStore.t1Events,
+//       ...billingStore.t2Events,
+//       ...billingStore.t3Events,
+//     ].map(e => e.txHash).filter(h => !h.startsWith('pending_')),
+//     circleProducts: ['Arc','USDC','Nanopayments','CircleWallets','x402','CircleGateway'],
+//     chain:          'Arc Testnet',
+//     chainId:        5042002,
+//   },
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// .env.arc — COMPLETE VARIABLE LIST
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// # ── IDENTITY ────────────────────────────────────────────────────────────────
+// AGENT_NAME=Kairos
+// AGENT_ID=kairos-1
+//
+// # ── ARC CHAIN (confirmed values) ────────────────────────────────────────────
+// CHAIN_ID=5042002
+// RPC_URL=https://rpc.testnet.arc.network
+// ARC_EXPLORER=https://testnet.arcscan.app
+// ARC_USDC_TOKEN=0x3600000000000000000000000000000000000000
+// CIRCLE_GATEWAY=0x0077777d7eba4688bdef3e311b846f25870a19b9
+//
+// # ── CIRCLE PLATFORM ─────────────────────────────────────────────────────────
+// CIRCLE_API_KEY=<from Circle Developer Console>
+// CIRCLE_ENTITY_SECRET=<from Circle Developer Console>
+// CIRCLE_WALLET_SET_ID=<created on first run>
+// AGENT_WALLET_ADDRESS=<from createAgentWallet() output>
+// AGENT_WALLET_ID=<from createAgentWallet() output>
+// GOVERNANCE_BILLING_ADDRESS=<your NOVTIA billing wallet on Arc>
+// NANOPAYMENT_AMOUNT_USDC=0.001
+//
+// # ── x402 DATA PAYMENT WALLET (separate from Circle Wallets) ─────────────────
+// OWS_MNEMONIC=<fresh 12-word BIP-39 mnemonic — fund from faucet.circle.com>
+// OWS_RPC_URL=https://rpc.testnet.arc.network
+// OWS_CHAIN_ID=5042002
+//
+// # ── AIsa API (x402-paid, no API key needed) ──────────────────────────────────
+// AISA_BASE_URL=https://api.aisa.one/apis/v2
+//
+// # ── CONTRACTS (redeploy ActuraRiskPolicy.sol on Arc) ────────────────────────
+// RISK_ROUTER_ADDRESS=<deploy ActuraRiskPolicy.sol on Arc testnet>
+//
+// # ── UNCHANGED FROM ACTURA ───────────────────────────────────────────────────
+// PINATA_JWT=<unchanged>
+// TRADING_PAIR=WETH/USDC
+// MAX_POSITION_PCT=<unchanged>
+// MAX_DAILY_LOSS_PCT=<unchanged>
+// MODE=paper
+// # ... all other Actura vars unchanged
+//
+// ═══════════════════════════════════════════════════════════════════════════════
+// TWO-WALLET ARCHITECTURE
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// Wallet A — Circle Wallets (governance)
+//   Used for: Circle Nanopayments (governance stages + compute billing)
+//             Trade settlement on Arc (Track 4)
+//   Identity: AGENT_WALLET_ADDRESS / AGENT_WALLET_ID
+//   Funded:   Via Circle Developer Console
+//
+// Wallet B — BIP-39 mnemonic wallet (data payments)
+//   Used for: x402 data API payments via Circle Gateway (Track 2)
+//             Signs EIP-712 TransferWithAuthorization per data call
+//   Identity: OWS_MNEMONIC derived address
+//   Funded:   From faucet.circle.com (select Arc Testnet) → approve → deposit
+//   Setup:    node src/services/setup-gateway.mjs (run once)
+//
+// Why two wallets:
+//   Circle Wallets handles MPC-based programmatic signing for governance events.
+//   The x402 client (x402_client.mjs) needs a BIP-39 mnemonic to derive the
+//   EIP-712 signing key for TransferWithAuthorization. These are architecturally
+//   incompatible — Circle Wallets cannot be used as the x402 mnemonic signer.
+// ═══════════════════════════════════════════════════════════════════════════════
