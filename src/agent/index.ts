@@ -973,8 +973,9 @@ async function runCycle(): Promise<void> {
   const VAL_POST_INTERVAL_MS = 60 * 1000;
   if (agentId && (Date.now() - lastValidationPostAt) >= VAL_POST_INTERVAL_MS) {
     lastValidationPostAt = Date.now();
-    const valHash = "0x" + (await import("node:crypto")).createHash("sha256").update(checkpoint.timestamp + "-" + (checkpoint.direction || "NEUTRAL")).digest("hex");
-    postCheckpoint(agentId, valHash, 100, 'Cycle ' + cycleCount + ' ' + (checkpoint.direction || 'NEUTRAL'))
+    const cpDir = checkpoint.strategyOutput?.signal?.direction || "NEUTRAL";
+    const valHash = "0x" + (await import("node:crypto")).createHash("sha256").update(checkpoint.timestamp + "-" + cpDir).digest("hex");
+    postCheckpoint(agentId, valHash, 100, 'Cycle ' + cycleCount + ' ' + cpDir)
       .catch(function(e) { log.warn('Validation posting failed (non-critical)', { error: String(e).slice(0, 120) }); });
   }
 

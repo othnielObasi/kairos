@@ -1,12 +1,12 @@
 /**
- * Sentiment Feed — 6-source composite: Fear & Greed, Alpha Vantage News,
- * PRISM Funding/Social/OI, Price Momentum.
+ * Sentiment Feed — AIsa x402 primary (Arc) + legacy 6-source fallback
+ *
+ * When AISA_BASE_URL is set, sentiment is sourced via AIsa x402 endpoints
+ * (real USDC payments on Arc via Circle Gateway — Track 2).
+ * Falls back to Fear & Greed, Alpha Vantage, PRISM, etc.
  *
  * Each source normalized to [-1, +1]:
  *   -1 = extreme bearish/fear    0 = neutral    +1 = extreme bullish/greed
- *
- * The composite score is a weighted average of available sources.
- * News values are disk-cached to survive PM2 restarts.
  */
 
 import { createLogger } from '../agent/logger.js';
@@ -14,6 +14,30 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
 const log = createLogger('SENTIMENT');
+
+// AIsa x402 integration — Track 2 Per-API Monetization
+const USE_AISA = !!process.env.AISA_BASE_URL;
+let fetchSentimentAisa: (() => Promise<any>) | null = null;
+if (USE_AISA) {
+  import('../services/normalisation.js').then(m => {
+    fetchSentimentAisa = async () => {
+      const data = await m.fetchSentimentData('BTC');
+      // Map normalisation layer output (0–100 scores) to SentimentResult shape (-1 to +1)
+      return {
+        composite: (data.sentimentScore - 50) / 50,
+        fearGreed: (data.fearGreedIndex - 50) / 50,
+        newsSentiment: (data.newsScore * 2) - 1,
+        fundingRate: data.fundingRate > 0 ? 0.3 : data.fundingRate < 0 ? -0.3 : 0,
+        socialSentiment: null,
+        openInterest: null,
+        priceMomentum: null,
+        sources: ['aisa-twitter-x402', 'aisa-financial-news-x402'],
+        fetchedAt: new Date().toISOString(),
+      };
+    };
+    log.info('AIsa x402 sentiment feed enabled (Track 2 — Per-API Monetization on Arc)');
+  }).catch(e => log.warn('AIsa normalisation layer unavailable — using legacy feeds', { error: String(e) }));
+}
 
 // ──── Disk cache for rate-limited sources ────
 const CACHE_DIR = join(process.cwd(), '.kairos');
@@ -713,6 +737,16 @@ async function fetchOpenInterest(): Promise<number | null> {
  * Gracefully degrades: if a source fails, remaining sources are re-weighted.
  */
 export async function fetchSentiment(): Promise<SentimentResult> {
+  // AIsa x402 primary — real USDC payments on Arc (Track 2)
+  if (fetchSentimentAisa) {
+    try {
+      const result = await fetchSentimentAisa();
+      if (result) return result;
+    } catch (e: any) {
+      log.debug('AIsa x402 sentiment failed — falling back to legacy sources', { error: e.message?.slice(0, 80) });
+    }
+  }
+
   const [fg, news, funding, social, oi, priceMom] = await Promise.all([
     fetchFearGreed(),
     fetchNewsSentiment(),

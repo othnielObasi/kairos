@@ -1,20 +1,51 @@
 /**
- * PRISM Feed — AI-Powered Market Intelligence from Strykr
+ * PRISM Feed — AIsa x402 primary (Arc) + Strykr PRISM fallback
+ *
+ * When AISA_BASE_URL is set, technical analysis is sourced via AIsa Perplexity Sonar
+ * (real USDC payments on Arc via Circle Gateway — Track 2).
+ * Falls back to Strykr PRISM API if AIsa is unavailable.
  *
  * Provides two independent data streams:
  *   1. AI Signals: direction, strength, RSI, MACD, Bollinger signals
  *   2. Risk Metrics: external volatility, Sharpe, Sortino, drawdown
- *
- * Used as a signal booster/confirmation for the primary SMA strategy.
- * NOT a replacement — PRISM signals are one input into the confidence model.
- *
- * API: https://api.prismapi.ai
- * Rate: Free tier + $10 credits (~15K calls via LABLAB code)
  */
 
 import { createLogger } from '../agent/logger.js';
 
 const log = createLogger('PRISM');
+
+// AIsa x402 integration — Track 2 Per-API Monetization
+const USE_AISA = !!process.env.AISA_BASE_URL;
+let fetchPrismAisa: ((symbol: string, price: number) => Promise<PrismSignal | null>) | null = null;
+if (USE_AISA) {
+  import('../services/normalisation.js').then(m => {
+    fetchPrismAisa = async (symbol: string, price: number) => {
+      const data = await m.fetchPrismData(symbol, price);
+      // Map normalisation output to PrismSignal shape
+      return {
+        direction: data.directionalBias === 'BULLISH' ? 'bullish' as const
+                 : data.directionalBias === 'BEARISH' ? 'bearish' as const
+                 : 'neutral' as const,
+        strength: data.confidenceBoost > 0.06 ? 'strong' as const
+                : data.confidenceBoost > 0.03 ? 'moderate' as const
+                : 'weak' as const,
+        bullishScore: data.directionalBias === 'BULLISH' ? data.rsi : 100 - data.rsi,
+        bearishScore: data.directionalBias === 'BEARISH' ? data.rsi : 100 - data.rsi,
+        netScore: data.macdHistogram > 0 ? Math.abs(data.macdHistogram) * 100 : -Math.abs(data.macdHistogram) * 100,
+        currentPrice: data.bollingerMiddle,
+        rsi: data.rsi,
+        macd: data.macd,
+        macdHistogram: data.macdHistogram,
+        bollingerUpper: data.bollingerUpper,
+        bollingerLower: data.bollingerLower,
+        activeSignals: [],
+        signalCount: 0,
+        timestamp: new Date().toISOString(),
+      };
+    };
+    log.info('AIsa x402 PRISM feed enabled (Track 2 — Per-API Monetization on Arc)');
+  }).catch(e => log.warn('AIsa normalisation layer unavailable — using Strykr PRISM', { error: String(e) }));
+}
 
 const PRISM_BASE_URL = 'https://api.prismapi.ai';
 const FETCH_TIMEOUT_MS = 5000;
@@ -195,6 +226,19 @@ async function fetchPrismRisk(symbol: string = 'ETH'): Promise<PrismRisk | null>
  * Both calls are independent and cached separately.
  */
 export async function fetchPrismData(symbol: string = 'ETH'): Promise<PrismData> {
+  // AIsa x402 primary — real USDC payments on Arc (Track 2)
+  if (fetchPrismAisa) {
+    try {
+      const aisaSignal = await fetchPrismAisa(symbol, signalCache?.value?.currentPrice ?? 0);
+      if (aisaSignal) {
+        signalCache = { value: aisaSignal, fetchedAt: Date.now() };
+        return { signal: aisaSignal, risk: riskCache?.value ?? null, sources: ['aisa-perplexity-sonar-x402'] };
+      }
+    } catch (e: any) {
+      log.debug('AIsa x402 PRISM failed — falling back to Strykr', { error: e.message?.slice(0, 80) });
+    }
+  }
+
   const [signal, risk] = await Promise.all([
     fetchPrismSignal(symbol),
     fetchPrismRisk(symbol),

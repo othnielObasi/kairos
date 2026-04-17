@@ -1,12 +1,9 @@
 /**
- * Live Price Feed — Kraken primary + CoinGecko/DeFiLlama fallback
+ * Live Price Feed — AIsa x402 primary (Arc) + Kraken + CoinGecko/DeFiLlama fallback
  *
- * Fetches real WETH/USDC prices from Kraken's REST API (primary).
- * Falls back to CoinGecko, then DeFiLlama if Kraken is down.
- *
- * Kraken: direct exchange data with bid/ask, spread, volume — no key needed.
- * CoinGecko free tier: ~30 calls/min (no key needed).
- * DeFiLlama: unlimited, no key needed.
+ * When AISA_BASE_URL is set, fetches prices via AIsa x402 endpoints
+ * (real USDC payments on Arc via Circle Gateway — Track 2).
+ * Falls back to Kraken, CoinGecko, then DeFiLlama if AIsa is unavailable.
  */
 
 import type { MarketData } from '../strategy/momentum.js';
@@ -14,6 +11,19 @@ import { createLogger } from '../agent/logger.js';
 import { fetchKrakenPrice, fetchKrakenOHLC } from './kraken-feed.js';
 
 const log = createLogger('LIVE-FEED');
+
+// AIsa x402 integration — Track 2 Per-API Monetization
+const USE_AISA = !!process.env.AISA_BASE_URL;
+let fetchPriceDataAisa: ((ticker?: string) => Promise<{ price: number; source: string }>) | null = null;
+if (USE_AISA) {
+  import('../services/normalisation.js').then(m => {
+    fetchPriceDataAisa = async (ticker = 'ETH') => {
+      const data = await m.fetchPriceData(ticker);
+      return { price: data.price, source: data.source };
+    };
+    log.info('AIsa x402 price feed enabled (Track 2 — Per-API Monetization on Arc)');
+  }).catch(e => log.warn('AIsa normalisation layer unavailable — using legacy feeds', { error: String(e) }));
+}
 
 // ──── Configuration ────
 
@@ -38,7 +48,23 @@ const MAX_CONSECUTIVE_FAILURES = 5;
  * Returns null only if all sources fail.
  */
 export async function fetchLivePrice(): Promise<{ price: number; source: string } | null> {
-  // Try Kraken (primary — direct exchange data)
+  // Try AIsa x402 (primary on Arc — real USDC payment per call)
+  if (fetchPriceDataAisa) {
+    try {
+      const result = await fetchPriceDataAisa('ETH');
+      if (result && result.price > 0) {
+        lastFetchedPrice = result.price;
+        lastFetchTime = Date.now();
+        consecutiveFailures = 0;
+        return result;
+      }
+      log.debug('AIsa x402 price returned null — trying Kraken');
+    } catch (e) {
+      log.debug('AIsa x402 price failed — trying Kraken', { error: String(e) });
+    }
+  }
+
+  // Try Kraken (fallback 1 — direct exchange data)
   try {
     const krakenResult = await fetchKrakenPrice();
     if (krakenResult) {
