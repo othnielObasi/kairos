@@ -10,7 +10,7 @@ export async function run() {
   process.env.PRIVATE_KEY = process.env.PRIVATE_KEY || '0x59c6995e998f97a5a0044966f0945384cb4d7f7e7f6a8d89f5cb9184160a95c5';
   initChain();
 
-  const reg = buildRegistrationJson({ agentId: 7, dashboardUrl: 'https://actura.app' });
+  const reg = buildRegistrationJson({ agentId: 7, dashboardUrl: 'https://kairos.app' });
   const validated = validateRegistrationJson(reg);
   assert.equal(validated.valid, true);
   assert.ok(reg.registrations[0].agentRegistry.includes(makeAgentRegistryString()));

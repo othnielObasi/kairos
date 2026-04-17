@@ -3,9 +3,9 @@ import { buildRegistrationJson, createRegistrationDataUri, validateRegistrationJ
 
 const registration = buildRegistrationJson({
   agentId: 7,
-  dashboardUrl: 'https://actura.example',
-  mcpEndpoint: 'https://actura.example/mcp',
-  a2aEndpoint: 'https://actura.example/.well-known/agent-card.json',
+  dashboardUrl: 'https://kairos.example',
+  mcpEndpoint: 'https://kairos.example/mcp',
+  a2aEndpoint: 'https://kairos.example/.well-known/agent-card.json',
 });
 
 const validation = validateRegistrationJson(registration);

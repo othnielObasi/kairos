@@ -1,6 +1,8 @@
 import { config } from '../agent/config.js';
 import type { StrategyOutput } from '../strategy/momentum.js';
 import type { RiskDecision, RiskCheck } from '../risk/engine.js';
+import { billEvent } from '../services/nanopayments.js';
+import { billingStore } from '../services/billing-store.js';
 
 export interface AgentMandate {
   agentName: string;
@@ -72,7 +74,7 @@ export function buildMandateRiskChecks(decision: MandateDecision): RiskCheck[] {
   }));
 }
 
-export function evaluateMandate(params: {
+export async function evaluateMandate(params: {
   mandate?: AgentMandate;
   strategyOutput: StrategyOutput;
   capitalUsd: number;
@@ -80,7 +82,7 @@ export function evaluateMandate(params: {
   protocol?: string;
   asset?: string;
   dailyPnlPct?: number;
-}): MandateDecision {
+}): Promise<MandateDecision> {
   const mandate = params.mandate ?? getDefaultMandate(Math.max(params.capitalUsd, 10000));
   const normalizedAsset = normalizeAsset(params.asset ?? config.tradingPair);
   const normalizedProtocol = normalizeProtocol(params.protocol ?? defaultProtocol());
@@ -132,6 +134,9 @@ export function evaluateMandate(params: {
   });
 
   const reasons = checks.filter((c) => !c.passed).map((c) => `${c.name}: ${c.detail}`);
+
+  // Kairos: Track 1 — governance Nanopayment
+  try { billingStore.addGovernanceEvent(await billEvent('governance-mandate', { type: 'governance' }), 0); } catch (_) {}
 
   return {
     approved: checks.every((c) => c.passed || c.name === 'human_approval_threshold'),

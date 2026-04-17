@@ -9,6 +9,8 @@
  *   - Max trades/hour: 10
  *   - Max drawdown: 5%
  */
+import { billEvent } from '../services/nanopayments.js';
+import { billingStore } from '../services/billing-store.js';
 
 import { ethers } from 'ethers';
 import { config } from '../agent/config.js';
@@ -128,6 +130,9 @@ export async function submitTradeIntent(
     intentHash = receipt.hash;
     log.warn('No TradeApproved/TradeRejected event found — using tx hash');
   }
+
+  // Kairos: Track 1 — governance Nanopayment
+  try { billingStore.addGovernanceEvent(await billEvent('governance-risk-router', { type: 'governance' }), 4); } catch (_) {}
 
   return { intentHash, txHash: receipt.hash, approved, rejectReason };
 }

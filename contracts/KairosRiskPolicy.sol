@@ -2,13 +2,12 @@
 pragma solidity ^0.8.20;
 
 /**
- * @title ActuraRiskPolicy
- * @notice On-chain enforcement of Actura's risk management rules.
+ * @title KairosRiskPolicy
+ * @notice On-chain enforcement of Kairos risk management rules.
  *         The Risk Router can call checkTrade() before execution.
  *         All parameters are immutable after deployment — trustless and auditable.
  * 
- * @dev Targets "Best Compliance & Risk Guardrails" prize.
- *      This contract proves Actura's risk limits are not just local checks
+ * @dev This contract proves risk limits are not just local checks
  *      but are enforced at the smart contract level — trustless, verifiable,
  *      and visible to any on-chain observer.
  *
@@ -22,7 +21,7 @@ pragma solidity ^0.8.20;
  * 7. Whitelisted assets only
  */
 
-contract ActuraRiskPolicy {
+contract KairosRiskPolicy {
     // ─── Immutable Risk Parameters ───
     address public immutable owner;
     address public immutable agentWallet;

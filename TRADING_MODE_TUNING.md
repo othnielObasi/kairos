@@ -1,4 +1,4 @@
-# Actura — Trading Mode Tuning Guide
+# Kairos — Trading Mode Tuning Guide
 
 > This document defines the correct parameter settings for **sandbox (paper trading)**
 > vs **live trading** environments. The governance architecture (9-gate pipeline, trust
@@ -46,7 +46,7 @@ These governance and risk controls remain identical regardless of trading mode:
 ### Trust & Accountability
 - Trust scorecard dimensions and tier boundaries
 - IPFS artifact structure and upload
-- On-chain risk policy (ActuraRiskPolicy contract)
+- On-chain risk policy (KairosRiskPolicy contract)
 - ERC-8004 identity/reputation/validation registries
 - Adaptive learning with immutable cage bounds
 

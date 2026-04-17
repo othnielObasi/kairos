@@ -16,7 +16,7 @@ import { join } from 'path';
 const log = createLogger('SENTIMENT');
 
 // ──── Disk cache for rate-limited sources ────
-const CACHE_DIR = join(process.cwd(), '.actura');
+const CACHE_DIR = join(process.cwd(), '.kairos');
 const NEWS_CACHE_FILE = join(CACHE_DIR, 'news-cache.json');
 
 function loadDiskCache(file: string): CachedValue<number> | null {

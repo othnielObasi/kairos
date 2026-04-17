@@ -19,7 +19,7 @@ function assert(condition: boolean, name: string): void {
 
 console.log('\n🧪 SUPERVISORY META-AGENT TESTS\n');
 
-const trusted = evaluateSupervisoryDecision({
+const trusted = await evaluateSupervisoryDecision({
   trustScore: 93,
   drawdownPct: 0.012,
   structureRegime: 'TRENDING',
@@ -33,7 +33,7 @@ assert(trusted.canTrade === true, 'Trusted trending state allows trading');
 assert(['allowed', 'throttled'].includes(trusted.status), `Status valid: ${trusted.status}`);
 assert(trusted.capitalLimitPct >= 0.08, `Capital ladder grants healthy cap: ${trusted.capitalLimitPct}`);
 
-const stressed = evaluateSupervisoryDecision({
+const stressed = await evaluateSupervisoryDecision({
   trustScore: 74,
   drawdownPct: 0.031,
   structureRegime: 'STRESSED',
@@ -46,7 +46,7 @@ const stressed = evaluateSupervisoryDecision({
 assert(stressed.canTrade === false, 'Stress + lower trust pauses trading');
 assert(stressed.status === 'paused', `Stress status paused: ${stressed.status}`);
 
-const noEdge = evaluateSupervisoryDecision({
+const noEdge = await evaluateSupervisoryDecision({
   trustScore: 95,
   drawdownPct: 0.0,
   structureRegime: 'TRENDING',

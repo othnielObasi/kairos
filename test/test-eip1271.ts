@@ -27,7 +27,7 @@ console.log('\n── EOA Signature Flow (offline) ──');
 const wallet = new ethers.Wallet('0x' + 'ab'.repeat(32));
 
 // Sign a message and recover it — same flow verifySignature() uses for EOAs
-const message = 'Actura agent verification';
+const message = 'Kairos agent verification';
 const messageHash = ethers.hashMessage(message);
 const sig = await wallet.signMessage(message);
 

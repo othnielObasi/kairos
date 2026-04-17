@@ -1,5 +1,5 @@
 /**
- * Deploy ActuraRiskPolicy.sol to Base Sepolia
+ * Deploy KairosRiskPolicy.sol to Arc testnet
  * Usage: npx tsx scripts/deploy-risk-policy.ts
  */
 import 'dotenv/config';
@@ -15,12 +15,12 @@ const provider = new ethers.JsonRpcProvider(RPC);
 const wallet = new ethers.Wallet(PK, provider);
 
 // Read compiled artifacts
-const abiPath = resolve(import.meta.dirname!, '../build/contracts_ActuraRiskPolicy_sol_ActuraRiskPolicy.abi');
-const binPath = resolve(import.meta.dirname!, '../build/contracts_ActuraRiskPolicy_sol_ActuraRiskPolicy.bin');
+const abiPath = resolve(import.meta.dirname!, '../build/contracts_KairosRiskPolicy_sol_KairosRiskPolicy.abi');
+const binPath = resolve(import.meta.dirname!, '../build/contracts_KairosRiskPolicy_sol_KairosRiskPolicy.bin');
 const abi = JSON.parse(readFileSync(abiPath, 'utf-8'));
 const bytecode = '0x' + readFileSync(binPath, 'utf-8').trim();
 
-// Constructor params matching Actura's config
+// Constructor params matching Kairos's config
 const AGENT_WALLET = wallet.address; // Same wallet is the agent
 const INITIAL_CAPITAL = ethers.parseUnits('10000', 6); // $10,000 in 6-decimal USD
 const MAX_POSITION_PCT = 1000n;       // 10% in basis points
@@ -34,7 +34,7 @@ const MIN_TRADE_COOLDOWN = 60n;       // 60 seconds
 const WETH_BASE_SEPOLIA = '0x4200000000000000000000000000000000000006';
 
 async function main() {
-  console.log('Deploying ActuraRiskPolicy to Base Sepolia...');
+  console.log('Deploying KairosRiskPolicy to Arc testnet...');
   console.log(`  Deployer: ${wallet.address}`);
   const balance = await provider.getBalance(wallet.address);
   console.log(`  Balance:  ${ethers.formatEther(balance)} ETH`);
@@ -56,7 +56,7 @@ async function main() {
   console.log('  Waiting for confirmation...');
   await contract.waitForDeployment();
   const address = await contract.getAddress();
-  console.log(`\n✅ ActuraRiskPolicy deployed at: ${address}`);
+  console.log(`\n✅ KairosRiskPolicy deployed at: ${address}`);
   console.log(`   Block explorer: https://sepolia.basescan.org/address/${address}`);
 
   // Verify by calling getRiskState

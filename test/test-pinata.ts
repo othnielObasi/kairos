@@ -36,7 +36,7 @@ async function main() {
   }
 
   const testArtifact = {
-    version: '1.0', agentName: 'Actura', agentId: 338,
+    version: '1.0', agentName: 'Kairos', agentId: 338,
     timestamp: new Date().toISOString(), type: 'trade_checkpoint' as const,
     trade: null,
     strategy: { name: 'test', signal: 'TEST', signalConfidence: 0, signalReason: 'Pinata deploy test', smaFast: null, smaSlow: null },

@@ -1,6 +1,6 @@
 
 /**
- * Actura MCP Server
+ * Kairos MCP Server
  * Lightweight MCP-compatible HTTP + JSON-RPC server for discovery, tools,
  * resources, and prompts. Designed for hackathon demos and local integration.
  */
@@ -48,7 +48,7 @@ export function startMcpServer(port: number = MCP_PORT): void {
 
   app.use((_req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, X-Actura-Role');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, X-Kairos-Role');
     res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
     next();
   });
@@ -56,7 +56,7 @@ export function startMcpServer(port: number = MCP_PORT): void {
   app.get('/health', (_req, res) => {
     res.json({
       status: 'ok',
-      service: 'actura-mcp',
+      service: 'kairos-mcp',
       endpoint: config.mcpEndpoint,
       tools: ALL_TOOLS.length,
       resources: ALL_RESOURCES.length,
@@ -67,7 +67,7 @@ export function startMcpServer(port: number = MCP_PORT): void {
 
   app.get('/mcp/info', (_req, res) => {
     res.json({
-      name: 'Actura MCP',
+      name: 'Kairos MCP',
       description: 'Governed MCP interface for trust, governance, performance, and operator workflows',
       endpoint: config.mcpEndpoint,
       supports: ['tools', 'resources', 'prompts', 'json-rpc'],
@@ -128,7 +128,7 @@ export function startMcpServer(port: number = MCP_PORT): void {
   });
 
   app.get('/mcp/resources/:resourceUri', async (req, res) => {
-    const uri = `actura://${req.params.resourceUri}`;
+    const uri = `kairos://${req.params.resourceUri}`;
     const resource = ALL_RESOURCES.find(r => r.uri === uri);
     if (!resource) {
       res.status(404).json({ error: `Resource not found: ${uri}` });
@@ -161,7 +161,7 @@ export function startMcpServer(port: number = MCP_PORT): void {
   // GET /mcp — browser-friendly landing page for the JSON-RPC endpoint
   app.get('/mcp', (_req, res) => {
     res.json({
-      name: 'Actura MCP',
+      name: 'Kairos MCP',
       description: 'Governed MCP interface — JSON-RPC endpoint (use POST)',
       version: '2.0.0',
       endpoint: config.mcpEndpoint,
@@ -298,7 +298,7 @@ export function startMcpServer(port: number = MCP_PORT): void {
   
   const tryListen = (retries = 3) => {
     mcpHttpServer = app.listen(port, () => {
-      console.log(`[MCP] Actura MCP server listening on http://localhost:${port}`);
+      console.log(`[MCP] Kairos MCP server listening on http://localhost:${port}`);
       console.log(`[MCP] JSON-RPC endpoint: http://localhost:${port}/mcp`);
       console.log(`[MCP] ${ALL_TOOLS.length} tools, ${ALL_RESOURCES.length} resources, ${ALL_PROMPTS.length} prompts`);
     });

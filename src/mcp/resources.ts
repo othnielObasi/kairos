@@ -30,7 +30,7 @@ function state() {
 }
 
 const trustResource: McpResource = {
-  uri: 'actura://state/trust',
+  uri: 'kairos://state/trust',
   name: 'Trust State',
   description: 'Current trust score, trust timeline, and capital-rights state',
   visibility: 'public',
@@ -48,7 +48,7 @@ const trustResource: McpResource = {
 };
 
 const marketResource: McpResource = {
-  uri: 'actura://state/market',
+  uri: 'kairos://state/market',
   name: 'Market State',
   description: 'Current market indicators and pricing state',
   visibility: 'public',
@@ -64,7 +64,7 @@ const marketResource: McpResource = {
 };
 
 const mandateResource: McpResource = {
-  uri: 'actura://state/mandate',
+  uri: 'kairos://state/mandate',
   name: 'Mandate State',
   description: 'Current capital mandate, allowlists, and governance limits',
   visibility: 'public',
@@ -78,7 +78,7 @@ const mandateResource: McpResource = {
 };
 
 const positionsResource: McpResource = {
-  uri: 'actura://state/positions',
+  uri: 'kairos://state/positions',
   name: 'Open Positions',
   description: 'Open positions and exposure snapshot',
   visibility: 'public',
@@ -95,7 +95,7 @@ const positionsResource: McpResource = {
 };
 
 const operatorResource: McpResource = {
-  uri: 'actura://state/operator',
+  uri: 'kairos://state/operator',
   name: 'Operator State',
   description: 'Current operator mode and recent operator receipts',
   visibility: 'operator',
@@ -107,7 +107,7 @@ const operatorResource: McpResource = {
 };
 
 const performanceResource: McpResource = {
-  uri: 'actura://state/performance',
+  uri: 'kairos://state/performance',
   name: 'Performance Metrics',
   description: 'Current runtime-derived risk-adjusted metrics',
   visibility: 'public',
@@ -133,7 +133,7 @@ const performanceResource: McpResource = {
 };
 
 const erc8004Resource: McpResource = {
-  uri: 'actura://state/erc8004',
+  uri: 'kairos://state/erc8004',
   name: 'ERC-8004 Integration State',
   description: 'Current registry addresses and readiness for trustless agent integration',
   visibility: 'public',
@@ -158,7 +158,7 @@ const erc8004Resource: McpResource = {
 };
 
 const artifactsResource: McpResource = {
-  uri: 'actura://state/artifacts',
+  uri: 'kairos://state/artifacts',
   name: 'Recent Artifacts',
   description: 'Recent validation artifacts and receipts',
   visibility: 'public',
@@ -179,7 +179,7 @@ const artifactsResource: McpResource = {
 };
 
 const tradeHistoryResource: McpResource = {
-  uri: 'actura://state/trade-history',
+  uri: 'kairos://state/trade-history',
   name: 'Trade History',
   description: 'Persistent closed trade log with per-trade PnL and aggregate stats',
   visibility: 'public',
@@ -192,7 +192,7 @@ const tradeHistoryResource: McpResource = {
 };
 
 const feedsResource: McpResource = {
-  uri: 'actura://state/feeds',
+  uri: 'kairos://state/feeds',
   name: 'Data Feeds',
   description: 'Health status of all external data feeds (Kraken, CoinGecko, DeFiLlama)',
   visibility: 'public',
@@ -205,7 +205,7 @@ const feedsResource: McpResource = {
 };
 
 const eventsResource: McpResource = {
-  uri: 'actura://state/events',
+  uri: 'kairos://state/events',
   name: 'On-Chain Events',
   description: 'Indexed ERC-8004 registry events (reputation feedback, validation requests/responses)',
   visibility: 'public',

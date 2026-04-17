@@ -2,7 +2,7 @@
  * Validation Artifact Emitter
  * Generates structured JSON artifacts for every trade decision
  * 
- * THIS IS ACTURA'S KEY DIFFERENTIATOR.
+ * THIS IS KAIROS'S KEY DIFFERENTIATOR.
  * Every trade produces a full audit trail: what the strategy saw,
  * what the risk engine checked, and why the decision was made.
  */
@@ -17,6 +17,7 @@ import type { ExecutionSimulationResult } from '../chain/execution-simulator.js'
 import type { OperatorActionReceipt } from '../agent/operator-control.js';
 import type { RoutingDecision } from '../chain/dex-router.js';
 import { generateAttestationSummary } from '../security/tee-attestation.js';
+import { billingStore } from '../services/billing-store.js';
 
 export interface ValidationArtifact {
   version: string;
@@ -526,6 +527,9 @@ export function enrichArtifact(
   if (aiReasoning) {
     artifact.aiReasoning = aiReasoning;
   }
+
+  // Kairos Arc billing snapshot — appended to every artifact for hackathon judges
+  (artifact as any).kairosArcBilling = billingStore.toJSON();
 
   return artifact;
 }

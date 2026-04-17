@@ -60,10 +60,10 @@ export async function uploadArtifact(artifact: ValidationArtifact): Promise<Ipfs
 
   const formData = new FormData();
   const blob = new Blob([body], { type: 'application/json' });
-  formData.append('file', blob, `actura-artifact-${Date.now()}.json`);
+  formData.append('file', blob, `kairos-artifact-${Date.now()}.json`);
 
   const metadata = JSON.stringify({
-    name: `actura-${artifact.type}-${artifact.timestamp}`,
+    name: `kairos-${artifact.type}-${artifact.timestamp}`,
     keyvalues: {
       agentName: artifact.agentName,
       type: artifact.type,

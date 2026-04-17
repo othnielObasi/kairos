@@ -1,5 +1,5 @@
 /**
- * Technical Indicators for Actura Trading Strategy
+ * Technical Indicators for Kairos Trading Strategy
  * Pure math — no external dependencies needed
  */
 

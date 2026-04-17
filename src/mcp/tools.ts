@@ -1,6 +1,6 @@
 
 /**
- * Rich MCP Tool Surface for Actura
+ * Rich MCP Tool Surface for Kairos
  * Public tools expose read-only risk, trust, validation, performance, and explainability.
  * Restricted tools generate governed trade proposals.
  * Operator tools allow supervised runtime intervention.

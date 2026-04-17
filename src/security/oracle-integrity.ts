@@ -1,3 +1,6 @@
+import { billEvent } from '../services/nanopayments.js';
+import { billingStore } from '../services/billing-store.js';
+
 export interface OracleIntegrityInput {
   prices: number[];
   highs: number[];
@@ -26,7 +29,7 @@ export interface OracleIntegrityResult {
   blockers: string[];
 }
 
-export function evaluateOracleIntegrity(input: OracleIntegrityInput): OracleIntegrityResult {
+export async function evaluateOracleIntegrity(input: OracleIntegrityInput): Promise<OracleIntegrityResult> {
   const currentPrice = input.prices[input.prices.length - 1] ?? 0;
   const last9 = input.prices.slice(-9);
   const medianReferencePrice = median(last9.length ? last9 : input.prices);
@@ -85,6 +88,9 @@ export function evaluateOracleIntegrity(input: OracleIntegrityInput): OracleInte
   let status: OracleIntegrityResult['status'] = 'healthy';
   if (blockers.length > 0) status = 'blocked';
   else if (reasons.length > 0) status = 'watch';
+
+  // Kairos: Track 1 — governance Nanopayment
+  try { billingStore.addGovernanceEvent(await billEvent('governance-oracle', { type: 'governance' }), 1); } catch (_) {}
 
   return {
     passed: blockers.length === 0,

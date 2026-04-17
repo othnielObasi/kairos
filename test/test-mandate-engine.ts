@@ -17,7 +17,7 @@ const strategyOutput = runStrategy(data, 10000);
 const riskDecision = new RiskEngine(10000).evaluate(strategyOutput);
 
 const mandate = getDefaultMandate(100000);
-const decision = evaluateMandate({
+const decision = await evaluateMandate({
   mandate,
   strategyOutput,
   capitalUsd: 10000,
@@ -29,7 +29,7 @@ assert(decision.approved === true, 'Default mandate approves normal WETH/USDC tr
 assert(decision.requiresHumanApproval === false, 'Default mandate does not require human approval for small trade');
 assert(decision.checks.length >= 5, 'Mandate emits full check set');
 
-const blocked = evaluateMandate({
+const blocked = await evaluateMandate({
   mandate: { ...mandate, allowedAssets: ['WBTC/USDC'] },
   strategyOutput,
   capitalUsd: 10000,

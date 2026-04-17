@@ -1,6 +1,8 @@
 import type { StrategyOutput } from '../strategy/momentum.js';
 import type { RiskDecision } from '../risk/engine.js';
 import type { DexId } from './dex-router.js';
+import { billEvent } from '../services/nanopayments.js';
+import { billingStore } from '../services/billing-store.js';
 
 export interface ExecutionSimulationInput {
   strategyOutput: StrategyOutput;
@@ -28,7 +30,7 @@ export interface ExecutionSimulationResult {
   dexId: DexId | null;
 }
 
-export function simulateExecution(input: ExecutionSimulationInput): ExecutionSimulationResult {
+export async function simulateExecution(input: ExecutionSimulationInput): Promise<ExecutionSimulationResult> {
   const { strategyOutput, riskDecision } = input;
   const price = strategyOutput.currentPrice;
   const sizeUnits = riskDecision.finalPositionSize;
@@ -78,6 +80,9 @@ export function simulateExecution(input: ExecutionSimulationInput): ExecutionSim
     allowed = false;
     reason = 'extreme_volatility_simulation_block';
   }
+
+  // Kairos: Track 1 — governance Nanopayment
+  try { billingStore.addGovernanceEvent(await billEvent('governance-simulation', { type: 'governance' }), 2); } catch (_) {}
 
   return {
     allowed,

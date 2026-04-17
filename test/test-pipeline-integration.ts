@@ -131,7 +131,7 @@ assert(
 );
 
 // Gate 4: Supervisory meta-agent
-const supervisory = evaluateSupervisoryDecision({
+const supervisory = await evaluateSupervisoryDecision({
   trustScore: 80,
   drawdownPct: 0,
   structureRegime: 'TRENDING',
@@ -167,7 +167,7 @@ assert(
 );
 
 // Gate 6: Execution simulator
-const simResult = simulateExecution({
+const simResult = await simulateExecution({
   strategyOutput: modifiedOutput,
   riskDecision,
   dexFeeBps: 5,  // testnet

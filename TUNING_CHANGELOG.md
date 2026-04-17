@@ -1,4 +1,4 @@
-# Actura — Tuning Changelog & Post-Hackathon Roadmap
+# Kairos — Tuning Changelog & Post-Hackathon Roadmap
 
 ## Current Changes (April 1, 2026)
 
@@ -40,7 +40,7 @@
 If these changes perform worse, revert with env vars on VPS (no code change needed):
 
 ```bash
-# On VPS: /opt/actura/.env
+# On VPS: /opt/kairos/.env
 TRADING_INTERVAL_MS=300000   # Back to 5 min
 MAX_HOLD_HOURS=6             # Back to 6 hours
 ```
@@ -63,7 +63,7 @@ Deployed a self-improving adaptive learning layer that uses LLM reflection to au
 | Engine | `src/strategy/ace-engine.ts` (750+ lines) |
 | LLM | Gemini 2.5 Pro for trade batch reflection |
 | Kill Switch | `ACE_ENABLED=false` env var |
-| Persistence | `.actura/ace-weights.json`, `.actura/playbook.jsonl`, `.actura/ace-reflections.jsonl` |
+| Persistence | `.kairos/ace-weights.json`, `.kairos/playbook.jsonl`, `.kairos/ace-reflections.jsonl` |
 
 #### What ACE Does
 
@@ -102,19 +102,19 @@ Max change per reflection cycle: 30% of current value.
 | `src/strategy/ai-reasoning.ts` | `getACEContextPrefix()` injected into reasoning prompt |
 | `src/dashboard/server.ts` | `/api/ace/status` and `/api/ace/playbook` endpoints |
 | `judge.html` | Section 7: ACE dashboard with weights, reflections, rules |
-| `ActuraDashboard.final.jsx` | ACE panel with live status, weights diff, wisdom display |
+| `KairosDashboard.final.jsx` | ACE panel with live status, weights diff, wisdom display |
 
 #### Rollback
 
 ```bash
 # Disable ACE without code change:
-ACE_ENABLED=false pm2 restart actura-agent
+ACE_ENABLED=false pm2 restart kairos-agent
 
 # Full code rollback to pre-ACE:
 git checkout 7fcaa55 -- src/strategy/signals.ts src/agent/index.ts src/strategy/ai-reasoning.ts src/dashboard/server.ts
-git checkout 7fcaa55 -- src/dashboard/public/judge.html src/dashboard/ActuraDashboard.final.jsx
+git checkout 7fcaa55 -- src/dashboard/public/judge.html src/dashboard/KairosDashboard.final.jsx
 rm src/strategy/ace-engine.ts
-npm run build && pm2 restart actura-agent
+npm run build && pm2 restart kairos-agent
 ```
 
 ---

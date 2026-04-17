@@ -9,12 +9,14 @@
  * The AI doesn't MAKE the trade decision — the risk engine does.
  * The AI EXPLAINS and ENRICHES the decision with context.
  *
- * This is Actura's differentiator: "Not the smartest trader.
+ * This is Kairos's differentiator: "Not the smartest trader.
  * The most accountable." — and the AI makes accountability *readable*.
  */
 
 import { createLogger } from '../agent/logger.js';
 import { retry } from '../agent/retry.js';
+import { billEvent } from '../services/nanopayments.js';
+import { billingStore } from '../services/billing-store.js';
 import type { StrategyOutput } from '../strategy/momentum.js';
 import type { RiskDecision } from '../risk/engine.js';
 import type { SentimentResult } from '../data/sentiment-feed.js';
@@ -71,6 +73,7 @@ export async function generateReasoning(
         () => callClaudeAPI(anthropicKey, strategyOutput, riskDecision, recentPrices, capitalUsd, openPositionCount, sentiment),
         { maxRetries: 1, baseDelayMs: 500, label: 'Claude reasoning' }
       );
+      try { billingStore.addComputeEvent(await billEvent('compute-llm', { model: 'claude-sonnet-4', type: 'inference' })); } catch (_) {}
       return result;
     } catch (error) {
       log.warn('Claude API failed — trying Gemini', { error: String(error) });
@@ -84,6 +87,7 @@ export async function generateReasoning(
         () => callGeminiAPI(geminiKey, strategyOutput, riskDecision, recentPrices, capitalUsd, openPositionCount, sentiment),
         { maxRetries: 1, baseDelayMs: 500, label: 'Gemini reasoning' }
       );
+      try { billingStore.addComputeEvent(await billEvent('compute-llm', { model: 'gemini-2.5-pro', type: 'inference' })); } catch (_) {}
       return result;
     } catch (error) {
       log.warn('Gemini API failed — trying OpenAI', { error: String(error) });
@@ -97,6 +101,7 @@ export async function generateReasoning(
         () => callOpenAIAPI(openaiKey, strategyOutput, riskDecision, recentPrices, capitalUsd, openPositionCount, sentiment),
         { maxRetries: 1, baseDelayMs: 500, label: 'OpenAI reasoning' }
       );
+      try { billingStore.addComputeEvent(await billEvent('compute-llm', { model: 'gpt-4o-mini', type: 'inference' })); } catch (_) {}
       return result;
     } catch (error) {
       log.warn('OpenAI API failed — using deterministic fallback', { error: String(error) });
@@ -195,7 +200,7 @@ function buildReasoningPrompt(
     }
   }
 
-  return `You are the reasoning engine for Actura, an accountable autonomous trading agent. Analyze this trade decision and provide structured reasoning.
+  return `You are the reasoning engine for Kairos, an accountable autonomous trading agent. Analyze this trade decision and provide structured reasoning.
 
 MARKET SNAPSHOT:
 - Current price: $${strategy.currentPrice.toFixed(2)}

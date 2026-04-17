@@ -1,6 +1,6 @@
 /**
  * Dashboard Server
- * Serves the Actura web dashboard + API endpoints
+ * Serves the Kairos web dashboard + API endpoints
  */
 
 import express from 'express';
@@ -21,6 +21,7 @@ import { generateTradePost, generateDailySummaryPost, buildTwitterIntentUrl } fr
 import { getSAGEStatus, getActivePlaybookRules } from '../strategy/sage-engine.js';
 import { getKrakenFeedStatus, fetchKrakenTicker, fetchKrakenBalance, fetchKrakenOpenOrders, fetchKrakenTradeHistory } from '../data/kraken-feed.js';
 import { fetchPrismData } from '../data/prism-feed.js';
+import { billingStore } from '../services/billing-store.js';
 import { getCliStatus, checkCliHealth } from '../data/kraken-cli.js';
 import { getKrakenAccountSnapshot, krakenPreflight } from '../data/kraken-bridge.js';
 import { getIndexedEvents, getIndexerStatus } from '../chain/event-indexer.js';
@@ -103,12 +104,6 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     res.sendFile(path.join(__dirname, 'public', 'judge.html'));
   });
 
-  // Serve the final dashboard JSX
-  app.get('/dashboard-app.jsx', (_req, res) => {
-    res.type('application/javascript');
-    res.sendFile(path.join(__dirname, 'ActuraDashboard.final.jsx'));
-  });
-
   // Serve static files
   app.use(express.static(path.join(__dirname, 'public')));
   app.use('/versions', express.static(path.join(__dirname, 'versions')));
@@ -118,7 +113,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     const origin = _req.headers.origin;
     const allowed = origin && (
       /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
-      /^https:\/\/(app|api)\.actura\.nov-tia\.com$/.test(origin)
+      /^https:\/\/(app|api)\.kairos\.nov-tia\.com$/.test(origin)
     );
     if (allowed) {
       res.header('Access-Control-Allow-Origin', origin);
@@ -390,7 +385,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     ].join(','));
     const csv = [header, ...rows].join('\n');
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="actura-trades.csv"');
+    res.setHeader('Content-Disposition', 'attachment; filename="kairos-trades.csv"');
     res.send(csv);
   });
 
@@ -630,6 +625,43 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
       });
     } catch (e) {
       res.status(500).json({ error: 'Failed to get SAGE playbook' });
+    }
+  });
+
+  // ─── Kairos x402 / billing routes ─────────────────────────────────────────
+
+  /** Kairos dashboard */
+  app.get('/kairos', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'kairos.html'));
+  });
+
+  /** Billing summary (all 4 tracks) */
+  app.get('/api/billing', (_req, res) => {
+    try {
+      res.json(billingStore.toJSON());
+    } catch (e) {
+      res.status(500).json({ error: 'Failed to get billing data' });
+    }
+  });
+
+  /** Gateway balance — reads Circle Gateway USDC deposit */
+  app.get('/api/gateway-balance', async (_req, res) => {
+    try {
+      const rpc = process.env.ARC_RPC_URL || 'https://rpc.testnet.arc.network';
+      const gateway = process.env.GATEWAY_CONTRACT || '0x0077777d7eba4688bdef3e311b846f25870a19b9';
+      const mnemonic = process.env.OWS_MNEMONIC;
+      if (!mnemonic) {
+        res.json({ balance: '0', formatted: '0.00', warning: 'OWS_MNEMONIC not set' });
+        return;
+      }
+      const wallet = ethers.Wallet.fromPhrase(mnemonic).connect(new ethers.JsonRpcProvider(rpc));
+      const erc20Abi = ['function balanceOf(address) view returns (uint256)'];
+      const usdc = process.env.USDC_ADDRESS || '0x3600000000000000000000000000000000000000';
+      const token = new ethers.Contract(usdc, erc20Abi, wallet);
+      const bal = await token.balanceOf(gateway);
+      res.json({ balance: bal.toString(), formatted: ethers.formatUnits(bal, 6) });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message?.slice(0, 200) || 'Gateway balance check failed' });
     }
   });
 

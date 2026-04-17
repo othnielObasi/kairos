@@ -41,7 +41,7 @@ const ATTESTATION_TYPES = {
 
 function getAttestationDomain(): ethers.TypedDataDomain {
   return {
-    name: 'ActuraTEEAttestation',
+    name: 'KairosTEEAttestation',
     version: '1',
     chainId: 11155111, // Ethereum Sepolia
   };

@@ -3,7 +3,7 @@
  * Captures the full strategy state at a point in time
  * Used for validation artifacts and replay/audit
  *
- * Every checkpoint is persisted to `.actura/checkpoints.jsonl`
+ * Every checkpoint is persisted to `.kairos/checkpoints.jsonl`
  * (append-only JSONL) so the audit trail survives restarts.
  */
 
@@ -14,7 +14,7 @@ import type { RiskDecision } from '../risk/engine.js';
 import type { ValidationArtifact } from './artifact-emitter.js';
 import type { IpfsUploadResult } from './ipfs.js';
 
-const STATE_DIR = join(process.cwd(), '.actura');
+const STATE_DIR = join(process.cwd(), '.kairos');
 const CHECKPOINT_LOG_FILE = join(STATE_DIR, 'checkpoints.jsonl');
 
 export interface Checkpoint {

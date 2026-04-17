@@ -103,7 +103,7 @@ Trade Outcomes ─────────────────────�
                                           ┌────────────────────┼────────────────────┐
                                           ▼                    ▼                    ▼
                                      Playbook Rules      Weight Adjustments    Context Prefix
-                                     (.actura/            (bounded by           (injected into
+                                     (.kairos/            (bounded by           (injected into
                                       playbook.jsonl)      WEIGHT_CAGE)          ai-reasoning
                                           │                    │                  prompt)
                                           ▼                    ▼                    
@@ -199,7 +199,7 @@ The LLM responds with structured JSON:
 
 #### Playbook Persistence
 
-- Stored in `.actura/playbook.jsonl` (append-only, one JSON per line)
+- Stored in `.kairos/playbook.jsonl` (append-only, one JSON per line)
 - Loaded on startup, survives restarts
 - Rules have `expiresAfter` trade count — stale rules auto-expire
 - Max 20 active rules at any time
@@ -248,7 +248,7 @@ The LLM responds with structured JSON:
 | Scenario | Action |
 |----------|--------|
 | ACE makes performance worse | Set `ACE_ENABLED=false` env var → falls back to hardcoded weights |
-| Bad playbook rule | Delete `.actura/playbook.jsonl` → fresh start |
+| Bad playbook rule | Delete `.kairos/playbook.jsonl` → fresh start |
 | Need full rollback | `git reset --hard 7fcaa55` → pre-ACE code |
 | Partial rollback | Individual files revertable — ACE is additive, doesn't delete existing logic |
 

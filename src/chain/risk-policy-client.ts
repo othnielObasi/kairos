@@ -1,7 +1,7 @@
 /**
- * Risk Policy Client — On-Chain Risk Enforcement via ActuraRiskPolicy
+ * Risk Policy Client — On-Chain Risk Enforcement via KairosRiskPolicy
  *
- * Calls the deployed ActuraRiskPolicy contract to:
+ * Calls the deployed KairosRiskPolicy contract to:
  * - checkTrade() before execution (view call, no gas)
  * - recordTrade() after execution (state-changing, needs gas)
  * - recordClose() when positions close

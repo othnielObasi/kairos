@@ -77,7 +77,7 @@ export function buildAgentServices(): AgentServiceEndpoint[] {
   if (config.dashboardUrl) services.push({ name: 'web', endpoint: config.dashboardUrl });
   if (config.a2aEndpoint) services.push({ name: 'A2A', endpoint: config.a2aEndpoint, version: '0.3.0' });
   if (config.mcpEndpoint) services.push({ name: 'MCP', endpoint: config.mcpEndpoint, version: '2025-06-18' });
-  services.push({ name: 'email', endpoint: 'ops@actura.local' });
+  services.push({ name: 'email', endpoint: 'ops@kairos.local' });
   return services;
 }
 
@@ -234,7 +234,7 @@ export async function registerOnHackathonRegistry(params: {
   const wallet = getWallet();
   const registry = new ethers.Contract(config.agentRegistryAddress, HACKATHON_REGISTRY_ABI, wallet);
 
-  const name = params.name || config.agentName || 'Actura';
+  const name = params.name || config.agentName || 'Kairos';
   const description = params.description || config.agentDescription || 'Accountable autonomous trading agent';
   const capabilities = params.capabilities || [
     'trading',

@@ -27,7 +27,7 @@ export const config = {
   pinataGateway: process.env.PINATA_GATEWAY || 'https://ipfs.io/ipfs',
   
   // Agent
-  agentName: process.env.AGENT_NAME || 'Actura',
+  agentName: process.env.AGENT_NAME || 'Kairos',
   agentDescription: process.env.AGENT_DESCRIPTION || 'Accountable autonomous trading agent',
   agentId: process.env.AGENT_ID ? parseInt(process.env.AGENT_ID) : null,
 

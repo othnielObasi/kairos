@@ -2,13 +2,13 @@
 /**
  * Re-pin all mock-CID artifacts to Pinata and update trades.jsonl.
  * For trades with no artifact file, generate a minimal one from trade data.
- * Run on server: cd /opt/actura && node scripts/repin-mock-artifacts.mjs
+ * Run on server: cd /opt/kairos && node scripts/repin-mock-artifacts.mjs
  */
 import { readFileSync, writeFileSync, readdirSync, renameSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
 const ARTIFACT_DIR = join(process.cwd(), 'artifacts');
-const TRADES_FILE = join(process.cwd(), '.actura', 'trades.jsonl');
+const TRADES_FILE = join(process.cwd(), '.kairos', 'trades.jsonl');
 
 function readEnvJwt() {
   const envFile = readFileSync(join(process.cwd(), '.env'), 'utf-8');
@@ -49,7 +49,7 @@ async function pinToIPFS(jsonContent, name) {
 function buildArtifactFromTrade(trade) {
   return {
     version: '1.0',
-    agentName: 'Actura',
+    agentName: 'Kairos',
     agentId: 18,
     timestamp: trade.openedAt,
     type: 'trade_checkpoint',
@@ -138,7 +138,7 @@ async function main() {
     }
 
     try {
-      const realCid = await pinToIPFS(content, `actura-trade-${trade.openedAt.replace(/[:.]/g, '-')}`);
+      const realCid = await pinToIPFS(content, `kairos-trade-${trade.openedAt.replace(/[:.]/g, '-')}`);
       trades[tradeIdx].ipfsCid = realCid;
       pinned++;
 
@@ -173,7 +173,7 @@ async function main() {
       const mockCid = f.match(/(QmMock[a-f0-9]+)/)?.[1];
       if (!mockCid) continue;
       try {
-        const realCid = await pinToIPFS(content, `actura-orphan-${mockCid.slice(0, 12)}`);
+        const realCid = await pinToIPFS(content, `kairos-orphan-${mockCid.slice(0, 12)}`);
         renameSync(join(ARTIFACT_DIR, f), join(ARTIFACT_DIR, f.replace(mockCid, realCid)));
         pinned++;
         console.log(`  ✓ orphan ${mockCid.slice(0,20)}… → ${realCid}`);

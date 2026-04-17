@@ -1,5 +1,5 @@
 /**
- * Signal Generation for Actura (Multi-Factor Scorecard)
+ * Signal Generation for Kairos (Multi-Factor Scorecard)
  * ----------------------------------------------------
  * Converts indicators into actionable signals using an auditable scorecard:
  *   - Trend: MA separation + crossover direction
@@ -8,7 +8,7 @@
  *   - Regime gating: volatility ratio + structure regime (ADX/CHOP/autocorr)
  *   - Edge filter: skip trades where expected move < costs (Sharpe improvement)
  *
- * Output stays compatible with the rest of Actura: direction + confidence + reason.
+ * Output stays compatible with the rest of Kairos: direction + confidence + reason.
  */
 
 import { classifyStructureRegime, type StructureRegime } from './structure-regime.js';

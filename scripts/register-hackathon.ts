@@ -11,7 +11,7 @@ async function main() {
   console.log('=== Hackathon Agent Registration ===\n');
 
   const agentId = await registerOnHackathonRegistry({
-    name: 'Actura',
+    name: 'Kairos',
     description: 'Accountable autonomous trading agent — neuro-symbolic policy, SAGE self-adaptation, pre-trade simulation, EIP-712 trust receipts',
     capabilities: [
       'trading',
@@ -21,7 +21,7 @@ async function main() {
       'sentiment-analysis',
       'self-adapting',
     ],
-    agentURI: 'https://api.actura.nov-tia.com/agent.json',
+    agentURI: 'https://api.kairos.nov-tia.com/agent.json',
   });
 
   console.log(`\n✅ Agent registered with agentId = ${agentId}`);

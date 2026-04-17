@@ -1,10 +1,10 @@
 module.exports = {
   apps: [
     {
-      name: 'actura-agent',
+      name: 'kairos-agent',
       script: 'npx',
       args: 'tsx src/agent/index.ts',
-      cwd: '/opt/actura',
+      cwd: '/opt/kairos',
       env: {
         NODE_ENV: 'production',
         MODE: 'live',
@@ -18,8 +18,8 @@ module.exports = {
 
       // Logging
       log_date_format: 'YYYY-MM-DD HH:mm:ss',
-      error_file: '/opt/actura/logs/error.log',
-      out_file: '/opt/actura/logs/out.log',
+      error_file: '/opt/kairos/logs/error.log',
+      out_file: '/opt/kairos/logs/out.log',
       merge_logs: true,
       max_size: '50M',
 

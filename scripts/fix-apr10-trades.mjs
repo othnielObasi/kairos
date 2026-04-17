@@ -16,7 +16,7 @@ const ROUTER_ADDR = '0xd6A6952545FF6E6E6681c2d15C59f9EB8F40FdBC';
 const CHAIN_ID = 11155111;
 const AGENT_ID = 18;
 const PAIR = 'WETH/USDC';
-const TRADES_FILE = '.actura/trades.jsonl';
+const TRADES_FILE = '.kairos/trades.jsonl';
 const ARTIFACTS_DIR = 'artifacts';
 
 const PINATA_JWT = process.env.PINATA_JWT;
@@ -89,7 +89,7 @@ async function generateTeeAttestation(timestamp) {
   const nonce = BigInt(Math.floor(Math.random() * 100000));
   const ts = BigInt(Math.floor(new Date(timestamp).getTime() / 1000));
 
-  const domain = { name: 'ActuraTEEAttestation', version: '1', chainId: CHAIN_ID };
+  const domain = { name: 'KairosTEEAttestation', version: '1', chainId: CHAIN_ID };
   const value = { agentAddress: wallet.address, measurementHash, nonce, timestamp: ts };
   const signature = await wallet.signTypedData(domain, ATTEST_TYPES, value);
 
@@ -245,7 +245,7 @@ async function main() {
       console.log(`  Artifact keys: ${keyCount}`);
 
       // 4. Pin to Pinata
-      const pinName = `actura-trade-${trade.id}-${trade.openedAt.replace(/[:.]/g, '-')}`;
+      const pinName = `kairos-trade-${trade.id}-${trade.openedAt.replace(/[:.]/g, '-')}`;
       const newCid = await pinToIPFS(artifact, pinName);
       console.log(`  Pinned: ${newCid}`);
 

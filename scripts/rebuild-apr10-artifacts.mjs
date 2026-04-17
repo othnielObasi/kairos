@@ -3,13 +3,13 @@
  * Rebuild the 10 incomplete Apr 10 trade artifacts using the full template
  * from a real same-day artifact, then re-pin to Pinata and update trades.jsonl.
  * 
- * Run on server: cd /opt/actura && node scripts/rebuild-apr10-artifacts.mjs
+ * Run on server: cd /opt/kairos && node scripts/rebuild-apr10-artifacts.mjs
  */
 import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'fs';
 import { join } from 'path';
 
 const ARTIFACT_DIR = join(process.cwd(), 'artifacts');
-const TRADES_FILE = join(process.cwd(), '.actura', 'trades.jsonl');
+const TRADES_FILE = join(process.cwd(), '.kairos', 'trades.jsonl');
 
 function readEnvJwt() {
   const envFile = readFileSync(join(process.cwd(), '.env'), 'utf-8');
@@ -61,7 +61,7 @@ function buildFullArtifact(trade, template) {
 
   return {
     version: '1.0',
-    agentName: 'Actura',
+    agentName: 'Kairos',
     agentId: 18,
     timestamp: trade.openedAt,
     type: 'trade_checkpoint',
@@ -318,7 +318,7 @@ async function main() {
 
     try {
       // Pin new full artifact
-      const newCid = await pinToIPFS(content, `actura-checkpoint-${trade.openedAt.replace(/[:.]/g, '-')}`);
+      const newCid = await pinToIPFS(content, `kairos-checkpoint-${trade.openedAt.replace(/[:.]/g, '-')}`);
       
       // Update trade in memory
       const oldCid = trades[idx].ipfsCid;

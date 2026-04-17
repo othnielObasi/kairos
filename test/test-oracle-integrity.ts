@@ -11,7 +11,7 @@ function assert(condition: boolean, name: string): void {
 console.log('\n🧪 ORACLE INTEGRITY TESTS\n');
 
 const normal = generateTrendingData('up', 100);
-const ok = evaluateOracleIntegrity({
+const ok = await evaluateOracleIntegrity({
   prices: normal.prices,
   highs: normal.highs,
   lows: normal.lows,
@@ -27,7 +27,7 @@ const broken = {
   lows: [...normal.lows.slice(0, -1), normal.prices[normal.prices.length - 1] * 0.96],
   timestamps: normal.timestamps,
 };
-const fail = evaluateOracleIntegrity(broken);
+const fail = await evaluateOracleIntegrity(broken);
 assert(fail.passed === false, 'Manipulated last price is blocked');
 assert(fail.blockers.length > 0, 'Oracle guard reports blockers');
 

@@ -8,7 +8,7 @@ import { join } from 'path';
 import { createLogger } from './logger.js';
 
 const log = createLogger('STATE');
-const STATE_DIR = join(process.cwd(), '.actura');
+const STATE_DIR = join(process.cwd(), '.kairos');
 const STATE_FILE = join(STATE_DIR, 'state.json');
 const PRICE_HISTORY_FILE = join(STATE_DIR, 'price-history.json');
 

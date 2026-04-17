@@ -9,7 +9,7 @@ import { join } from 'path';
 import { createLogger } from './logger.js';
 
 const log = createLogger('TRADE-LOG');
-const STATE_DIR = join(process.cwd(), '.actura');
+const STATE_DIR = join(process.cwd(), '.kairos');
 const TRADE_LOG_FILE = join(STATE_DIR, 'trades.jsonl');
 
 export interface ClosedTrade {

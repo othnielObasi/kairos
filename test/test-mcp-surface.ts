@@ -33,7 +33,7 @@ async function run() {
   const prompt = await ALL_PROMPTS.find(p => p.name === 'summarize_risk_state')!.handler({});
   assert.ok(prompt.text.length > 0);
 
-  const resource = await ALL_RESOURCES.find(r => r.uri === 'actura://state/erc8004')!.handler({});
+  const resource = await ALL_RESOURCES.find(r => r.uri === 'kairos://state/erc8004')!.handler({});
   assert.ok(typeof resource === 'object');
 
   console.log('MCP surface tests passed.');

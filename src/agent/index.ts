@@ -1,5 +1,5 @@
 /**
- * ACTURA — Accountable Autonomous Trading Agent
+ * KAIROS — Accountable Autonomous Trading Agent
  * Production-Grade Main Agent Loop
  *
  * "Not the smartest trader. The most accountable."
@@ -93,7 +93,7 @@ let lastSentiment: SentimentResult | null = null;
 async function initAgent(): Promise<void> {
   console.log('');
   console.log('═══════════════════════════════════════════');
-  console.log('  ACTURA — Accountable Autonomous Trading Agent');
+  console.log('  KAIROS — Accountable Autonomous Trading Agent');
   console.log('  Sovereign AI Lab × ERC-8004');
   console.log('═══════════════════════════════════════════');
   console.log('');
@@ -476,7 +476,7 @@ async function runCycle(): Promise<void> {
   }
 
   // Step 2a: Oracle integrity guard — block suspicious or stale market states
-  const oracleIntegrity = evaluateOracleIntegrity({
+  const oracleIntegrity = await evaluateOracleIntegrity({
     prices: marketData.prices,
     highs: marketData.highs,
     lows: marketData.lows,
@@ -568,7 +568,7 @@ async function runCycle(): Promise<void> {
   const lastTrustScore = getLastTrustScore(agentId);
   const structureRegime = (strategyOutput.signal.structureRegime ?? 'UNKNOWN') as 'TRENDING' | 'RANGING' | 'STRESSED' | 'UNCERTAIN' | 'UNKNOWN';
   const edgeAllowed = strategyOutput.signal.edge?.allowed ?? true;
-  const supervisory = evaluateSupervisoryDecision({
+  const supervisory = await evaluateSupervisoryDecision({
     trustScore: lastTrustScore,
     drawdownPct: cbState.drawdownPct,
     structureRegime,
@@ -612,7 +612,7 @@ async function runCycle(): Promise<void> {
 
   // Step 2d: Agent mandate enforcement — asset/protocol/capital permissions
   const mandate = getDefaultMandate(Math.max(capital, 10000));
-  const mandateDecision = evaluateMandate({
+  const mandateDecision = await evaluateMandate({
     mandate,
     strategyOutput,
     capitalUsd: capital,
@@ -698,7 +698,7 @@ async function runCycle(): Promise<void> {
   // Step 4b: Execution simulation — required pre-trade safety stage (uses DEX-specific fees)
   // On testnet (Sepolia or Base Sepolia), use minimal fee assumptions — no real DEX fees or gas costs.
   const isTestnet = config.chainId === 11155111 || config.chainId === 84532;
-  const executionSimulation = simulateExecution({
+  const executionSimulation = await simulateExecution({
     strategyOutput,
     riskDecision,
     // Testnet gas is free (Sepolia faucet ETH) — don't let fictional gas
@@ -714,7 +714,7 @@ async function runCycle(): Promise<void> {
     log.warn('Execution simulation blocked trade', executionSimulation);
   }
 
-  // Step 4c: On-chain risk policy check (ActuraRiskPolicy contract)
+  // Step 4c: On-chain risk policy check (KairosRiskPolicy contract)
   let onChainRiskCheck: Awaited<ReturnType<typeof checkTradeOnChain>> | null = null;
   if (shouldExecute) {
     onChainRiskCheck = await checkTradeOnChain(
@@ -893,7 +893,7 @@ async function runCycle(): Promise<void> {
       }
     }
 
-    // Step 8c: Record trade on-chain in ActuraRiskPolicy
+    // Step 8c: Record trade on-chain in KairosRiskPolicy
     if (shouldExecute) {
       recordTradeOnChain(
         strategyOutput.signal.direction as 'LONG' | 'SHORT',
@@ -1000,7 +1000,7 @@ async function runCycle(): Promise<void> {
     lastTradeClosedAt = Date.now(); // trigger post-close cooldown
     persistState();
 
-    // Record closes on-chain in ActuraRiskPolicy
+    // Record closes on-chain in KairosRiskPolicy
     for (const closed of closedPositions) {
       recordCloseOnChain(closed.pnl, closed.size * closed.entryPrice)
         .catch(e => log.warn('recordCloseOnChain failed (non-critical)', { error: String(e) }));

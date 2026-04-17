@@ -54,7 +54,7 @@ const summarizeRiskState: McpPrompt = {
     const trustScore = getLastTrustScore(state?.agentId ?? null);
     return {
       text: [
-        `Actura is currently ${state?.running ? 'running' : 'not running'}.`,
+        `Kairos is currently ${state?.running ? 'running' : 'not running'}.`,
         `Operator mode is ${operator.mode}.`,
         `Current trust score is ${trustScore ?? 'not available'}.`,
         `Open positions: ${state?.risk?.openPositions?.length ?? 0}.`,
@@ -74,7 +74,7 @@ const prepareOperatorIncidentReport: McpPrompt = {
     const state = getAgentState();
     return {
       text: [
-        '# Actura Incident Report',
+        '# Kairos Incident Report',
         '',
         `Operator mode: ${getOperatorControlState().mode}`,
         `Latest action: ${latest?.action ?? 'none'}`,

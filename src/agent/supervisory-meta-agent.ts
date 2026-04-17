@@ -1,7 +1,7 @@
 /**
  * Supervisory Meta-Agent
  *
- * Lightweight capital steward that decides whether Actura
+ * Lightweight capital steward that decides whether Kairos
  * is allowed to deploy capital on a given cycle.
  *
  * Principles:
@@ -13,6 +13,8 @@
 
 import type { StructureRegime } from '../strategy/structure-regime.js';
 import { getCapitalLimitPct, getCapitalMultiplier, getRecoveryState, resolveTrustTier } from '../trust/reputation-evolution.js';
+import { billEvent } from '../services/nanopayments.js';
+import { billingStore } from '../services/billing-store.js';
 
 export type SupervisoryStatus = 'allowed' | 'throttled' | 'paused' | 'blocked';
 export type TrustTierName = 'probation' | 'limited' | 'standard' | 'elevated' | 'elite';
@@ -54,7 +56,7 @@ function downgradeTier(name: TrustTierName) {
 /**
  * Evaluate whether the trading agent is allowed to deploy capital this cycle.
  */
-export function evaluateSupervisoryDecision(input: SupervisoryInput): SupervisoryDecision {
+export async function evaluateSupervisoryDecision(input: SupervisoryInput): Promise<SupervisoryDecision> {
   const reason: string[] = [];
   const restrictions: string[] = [];
 
@@ -156,6 +158,9 @@ export function evaluateSupervisoryDecision(input: SupervisoryInput): Supervisor
     restrictions.push('validation_shortfall');
     reason.push(`validation completeness ${input.validationScore} below supervisory threshold`);
   }
+
+  // Kairos: Track 1 — governance Nanopayment
+  try { billingStore.addGovernanceEvent(await billEvent('governance-supervisory', { type: 'governance' }), 3); } catch (_) {}
 
   return {
     timestamp: new Date().toISOString(),

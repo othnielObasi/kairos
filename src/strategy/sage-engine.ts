@@ -22,6 +22,8 @@
 import { writeFileSync, readFileSync, existsSync, mkdirSync, appendFileSync } from 'fs';
 import { join } from 'path';
 import { createLogger } from '../agent/logger.js';
+import { billEvent } from '../services/nanopayments.js';
+import { billingStore } from '../services/billing-store.js';
 
 const log = createLogger('SAGE');
 
@@ -121,7 +123,7 @@ export interface SAGEReflection {
 
 // ── State ──
 
-const STATE_DIR = join(process.cwd(), '.actura');
+const STATE_DIR = join(process.cwd(), '.kairos');
 const PLAYBOOK_FILE = join(STATE_DIR, 'playbook.jsonl');
 const WEIGHTS_FILE = join(STATE_DIR, 'sage-weights.json');
 const REFLECTIONS_FILE = join(STATE_DIR, 'sage-reflections.jsonl');
@@ -277,6 +279,7 @@ export async function runSAGEReflection(cycleNumber: number): Promise<SAGEReflec
     cyclesSinceReflection = 0;
 
     log.info(`SAGE reflection complete: ${reflection.insights.length} insights, ${reflection.newRules.length} new rules, ${reflection.weightChanges.length} weight changes`);
+    try { billingStore.addComputeEvent(await billEvent('compute-sage', { model: 'SAGE (Gemini 2.5 Pro)', type: 'reflection' })); } catch (_) {}
     return reflection;
   } catch (error) {
     log.error('SAGE reflection failed — no changes applied', { error: String(error) });
@@ -351,7 +354,7 @@ export function loadSAGEState(): void {
       weightsLoaded = true;
       const fromSeed = weightsSource === SEED_WEIGHTS_FILE;
       log.info(`Loaded SAGE weights from ${fromSeed ? 'seed file' : 'disk'}`, { weights: currentWeights });
-      // If loaded from seed, persist to .actura/ so future loads use the runtime file
+      // If loaded from seed, persist to .kairos/ so future loads use the runtime file
       if (fromSeed) {
         persistWeights();
         log.info('Persisted seed weights to runtime state directory');
@@ -550,7 +553,7 @@ function buildReflectionPrompt(outcomes: SAGEOutcome[]): string {
       return `  ${k}: ${v.toFixed(3)} (range: ${cage.min}–${cage.max})`;
     }).join('\n');
 
-  return `You are the SAGE (Self-Adapting Generative Engine) reflection engine for Actura, an autonomous crypto trading agent.
+  return `You are the SAGE (Self-Adapting Generative Engine) reflection engine for Kairos, an autonomous crypto trading agent.
 
 Analyze these recent trade outcomes and provide structured learning.
 
@@ -707,7 +710,7 @@ function persistWeights(): void {
           _meta: {
             learnedAt: new Date().toISOString(),
             totalOutcomes: totalOutcomesRecorded,
-            note: 'Auto-updated by SAGE after reflection. Copy to .actura/sage-weights.json on fresh deploys.',
+            note: 'Auto-updated by SAGE after reflection. Copy to .kairos/sage-weights.json on fresh deploys.',
           },
         };
         writeFileSync(SEED_WEIGHTS_FILE, JSON.stringify(seed, null, 2) + '\n', 'utf-8');

@@ -46,7 +46,7 @@ function nextReceipt(action: OperatorActionType, reason: string, actor: string):
     action,
     reason,
     actor,
-    affectedAgent: 'Actura',
+    affectedAgent: 'Kairos',
     modeAfter: state.mode,
   };
   receipts.push(receipt);
@@ -122,7 +122,7 @@ export async function verifiedOperatorAction(
         action,
         reason: `Signature verification failed: ${verification.reason}`,
         actor: operatorAddress,
-        affectedAgent: 'Actura',
+        affectedAgent: 'Kairos',
         modeAfter: state.mode,
         signatureVerification: verification,
       };

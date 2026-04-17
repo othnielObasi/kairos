@@ -15,7 +15,7 @@ resetStrategy();
 const trend = generateTrendingData('up', 100);
 const strat = runStrategy(trend, 10000);
 const risk = new RiskEngine(10000).evaluate(strat);
-const sim = simulateExecution({ strategyOutput: strat, riskDecision: risk, gasUsd: 0.2, liquidityBudgetUsd: 50000 });
+const sim = await simulateExecution({ strategyOutput: strat, riskDecision: risk, gasUsd: 0.2, liquidityBudgetUsd: 50000 });
 assert(typeof sim.allowed === 'boolean', 'Simulation returns boolean allow flag');
 assert(sim.estimatedSlippageBps > 0, 'Simulation computes slippage');
 assert(sim.estimatedTotalCostUsd >= sim.estimatedGasUsd, 'Simulation computes total cost');
@@ -24,7 +24,7 @@ resetStrategy();
 const choppy = generateChoppyData(100);
 const strat2 = runStrategy(choppy, 10000);
 const risk2 = new RiskEngine(10000).evaluate(strat2);
-const sim2 = simulateExecution({ strategyOutput: strat2, riskDecision: risk2, gasUsd: 10, liquidityBudgetUsd: 500 });
+const sim2 = await simulateExecution({ strategyOutput: strat2, riskDecision: risk2, gasUsd: 10, liquidityBudgetUsd: 500 });
 assert(['slippage_too_high', 'net_edge_too_low', 'no_executable_trade', 'extreme_volatility_simulation_block', 'simulation_pass'].includes(sim2.reason), 'Simulation emits known reason');
 
 console.log(`\n📊 Results: ${passed} passed, ${failed} failed\n`);

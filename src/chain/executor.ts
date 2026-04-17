@@ -73,7 +73,7 @@ export async function executeTrade(
     // ── Step 0: Local pre-trade simulation ──
     // On testnet, gas is free — don't let fictional gas costs block profitable trades.
     const isTestnet = config.chainId === 11155111 || config.chainId === 84532;
-    const localSim = simulateExecution({
+    const localSim = await simulateExecution({
       strategyOutput,
       riskDecision,
       gasUsd: isTestnet ? 0 : 0.35,

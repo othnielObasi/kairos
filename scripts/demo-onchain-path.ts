@@ -24,7 +24,7 @@ import { runStrategy, resetStrategy } from '../src/strategy/momentum.js';
 import { RiskEngine } from '../src/risk/engine.js';
 
 async function main() {
-  console.log('\n=== Actura On-Chain Demo Path ===\n');
+  console.log('\n=== Kairos On-Chain Demo Path ===\n');
   const flight = await preflight();
   console.log('Preflight:', flight);
   if (!flight.ready) {
