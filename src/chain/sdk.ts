@@ -4,6 +4,8 @@
  * When Circle Wallets are configured (CIRCLE_API_KEY), uses MPC-based
  * signing via Circle Developer-Controlled Wallets. Falls back to raw
  * ethers.Wallet when PRIVATE_KEY is set without Circle credentials.
+ *
+ * Settlement target: Arc Testnet (chainId 5042002) — Circle's L1 for USDC.
  */
 
 import { ethers } from 'ethers';
@@ -12,6 +14,7 @@ import { config } from '../agent/config.js';
 let provider: ethers.JsonRpcProvider | null = null;
 let wallet: ethers.Wallet | null = null;
 let circleSigner: ethers.Signer | null = null;
+let circleInitPromise: Promise<void> | null = null;
 
 // Circle Wallets integration — recommended for hackathon
 const USE_CIRCLE_WALLETS = !!(process.env.CIRCLE_API_KEY && process.env.CIRCLE_WALLET_ID);
@@ -28,18 +31,18 @@ export function initChain(): { provider: ethers.JsonRpcProvider; wallet: ethers.
     batchMaxCount: 1,       // disable batching — free-tier RPCs reject batch requests
   });
 
-  // Try Circle Wallets first (recommended by hackathon)
+  // Try Circle Wallets first (recommended by hackathon) — properly awaited
   if (USE_CIRCLE_WALLETS) {
-    import('../services/circle-wallet.js').then(async (m) => {
+    circleInitPromise = (async () => {
       try {
+        const m = await import('../services/circle-wallet.js');
         circleSigner = await m.getCircleSigner(provider!);
         console.log(`[CHAIN] Circle Wallets signer active (${process.env.AGENT_WALLET_ADDRESS})`);
       } catch (e) {
         console.warn('[CHAIN] Circle Wallets init failed — using EOA fallback', e);
+        circleSigner = null;
       }
-    }).catch(e => {
-      console.warn('[CHAIN] Circle Wallets module unavailable', e);
-    });
+    })();
   }
 
   // EOA fallback — always initialize for compatibility
@@ -52,10 +55,21 @@ export function initChain(): { provider: ethers.JsonRpcProvider; wallet: ethers.
     provider
   );
 
-  console.log(`[CHAIN] Connected to ${config.rpcUrl} (chainId: ${config.chainId}, batchMaxCount=1)`);
-  console.log(`[CHAIN] Wallet: ${wallet.address}${USE_CIRCLE_WALLETS ? ' (Circle Wallets pending)' : ''}`);
+  console.log(`[CHAIN] Connected to ${config.rpcUrl} (chainId: ${config.chainId})`);
+  console.log(`[CHAIN] Wallet: ${wallet.address}${USE_CIRCLE_WALLETS ? ' (Circle Wallets initializing)' : ''}`);
 
   return { provider, wallet };
+}
+
+/**
+ * Wait for Circle Wallets initialization to complete.
+ * Call this before the first trade to avoid race conditions.
+ */
+export async function waitForCircleWallets(): Promise<void> {
+  if (circleInitPromise) {
+    await circleInitPromise;
+    circleInitPromise = null;
+  }
 }
 
 /**

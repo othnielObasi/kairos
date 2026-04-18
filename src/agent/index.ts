@@ -275,8 +275,9 @@ async function initAgent(): Promise<void> {
   // Start on-chain event indexer (non-blocking, polls every 30s)
   if (config.privateKey && agentId) {
     try {
-      const { initChain } = await import('../chain/sdk.js');
+      const { initChain, waitForCircleWallets } = await import('../chain/sdk.js');
       initChain();
+      await waitForCircleWallets(); // ensure Circle Wallets signer is ready before first trade
       startIndexer(agentId);
 
       // Reconcile on-chain position count with local state.

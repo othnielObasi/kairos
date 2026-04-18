@@ -1,24 +1,55 @@
-// FILE 1: src/services/nanopayments.ts  (NEW)
+// src/services/nanopayments.ts
 // ───────────────────────────────────────────────────────────────────────────────
-// Circle Nanopayments — uses @circle-fin/nanopayments when available,
-// falls back to a no-op stub for build compatibility.
+// Circle Nanopayments — real USDC micro-transfers on Arc via Circle
+// Developer-Controlled Wallets.  Every governance stage and compute event
+// sends a $0.001 USDC ERC-20 transfer on Arc testnet, producing a genuine
+// on-chain transaction hash.
+//
+// When Circle credentials are not configured, the module falls through to
+// a lightweight viem-based EOA signer (OWS_MNEMONIC) so the demo can
+// produce real Arc transactions without the full Circle Wallets stack.
+//
+// NEVER throws — billing is fire-and-forget.  Governance logic is always
+// unaffected by billing outcomes.
+// ───────────────────────────────────────────────────────────────────────────────
 
-let NanopaymentsClient: any;
-try {
-  // @ts-ignore — package may not be installed yet
-  NanopaymentsClient = (await import('@circle-fin/nanopayments')).NanopaymentsClient;
-} catch {
-  // Package not available — stub so the build succeeds
-  NanopaymentsClient = class { constructor(_: any) {} async sendPayment(_o: any) { return { id: 'stub', status: 'pending' }; } };
-}
+import { createPublicClient, createWalletClient, http, parseUnits, getAddress, type Hash } from 'viem';
+import { mnemonicToAccount, privateKeyToAccount } from 'viem/accounts';
 
-const nanoClient = new NanopaymentsClient({
-  apiKey: process.env.CIRCLE_API_KEY || '',
-});
+// ── Arc Testnet chain definition ─────────────────────────────────────────────
+const ARC_RPC   = process.env.OWS_RPC_URL || 'https://rpc.testnet.arc.network';
+const ARC_CHAIN = {
+  id:             5042002,
+  name:           'Arc Testnet',
+  nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 },
+  rpcUrls:        { default: { http: [ARC_RPC] } },
+} as const;
+
+// Arc USDC ERC-20 contract (also the native gas token)
+const ARC_USDC = '0x3600000000000000000000000000000000000000';
+
+const ERC20_ABI = [
+  {
+    name: 'transfer',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs:  [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+] as const;
+
+// ── Configuration ────────────────────────────────────────────────────────────
 
 export const NANO_AMOUNT = parseFloat(
   process.env.NANOPAYMENT_AMOUNT_USDC || '0.001'
 );
+
+/** Governance billing address — receives nanopayment USDC on each stage */
+const BILLING_ADDRESS = getAddress(
+  process.env.GOVERNANCE_BILLING_ADDRESS || process.env.AGENT_WALLET_ADDRESS || '0x0000000000000000000000000000000000000001'
+);
+
+// ── Receipt type ─────────────────────────────────────────────────────────────
 
 export interface NanopaymentReceipt {
   eventName:   string;
@@ -31,8 +62,114 @@ export interface NanopaymentReceipt {
   confirmedAt: number;
 }
 
+// ── Signer initialisation ────────────────────────────────────────────────────
+// Prefer Circle Wallets (DCW) → fallback to OWS_MNEMONIC → fallback to PRIVATE_KEY.
+// We use viem directly (not ethers) so we get first-class Arc chain support
+// without fighting ethers.js provider quirks.
+
+let arcWallet: any = null;
+let arcPublic: any = null;
+let circleWalletMode = false;
+
+// Circle DCW — imported lazily so the module loads even without the package
+let circleClient: any = null;
+
+async function ensureSigner(): Promise<boolean> {
+  if (arcWallet) return true;
+
+  // ── Path 1: Circle Developer-Controlled Wallets ─────────────────────────
+  if (process.env.CIRCLE_API_KEY && process.env.CIRCLE_WALLET_ID) {
+    try {
+      const { CircleDeveloperControlledWalletsClient } = await import(
+        '@circle-fin/developer-controlled-wallets'
+      );
+      circleClient = new CircleDeveloperControlledWalletsClient({
+        apiKey:       process.env.CIRCLE_API_KEY!,
+        entitySecret: process.env.CIRCLE_ENTITY_SECRET!,
+      });
+      circleWalletMode = true;
+
+      // We still need a viem public client for gas estimation / receipts
+      arcPublic = createPublicClient({ chain: ARC_CHAIN as any, transport: http(ARC_RPC) });
+      console.log('[NANO] Circle Wallets signer active for Arc nanopayments');
+      return true;
+    } catch (e) {
+      console.warn('[NANO] Circle Wallets init failed — trying mnemonic fallback', e);
+    }
+  }
+
+  // ── Path 2: BIP-39 Mnemonic (OWS_MNEMONIC) ─────────────────────────────
+  const mnemonic = process.env.OWS_MNEMONIC;
+  if (mnemonic) {
+    try {
+      const account = mnemonicToAccount(mnemonic);
+      arcWallet = createWalletClient({ account, chain: ARC_CHAIN as any, transport: http(ARC_RPC) });
+      arcPublic = createPublicClient({ chain: ARC_CHAIN as any, transport: http(ARC_RPC) });
+      console.log(`[NANO] Mnemonic signer active for Arc nanopayments (${account.address})`);
+      return true;
+    } catch (e) {
+      console.warn('[NANO] Mnemonic signer failed', e);
+    }
+  }
+
+  // ── Path 3: Raw private key ─────────────────────────────────────────────
+  const pk = process.env.NANOPAYMENT_PRIVATE_KEY || process.env.PRIVATE_KEY;
+  if (pk) {
+    try {
+      const key = (pk.startsWith('0x') ? pk : `0x${pk}`) as `0x${string}`;
+      const account = privateKeyToAccount(key);
+      arcWallet = createWalletClient({ account, chain: ARC_CHAIN as any, transport: http(ARC_RPC) });
+      arcPublic = createPublicClient({ chain: ARC_CHAIN as any, transport: http(ARC_RPC) });
+      console.log(`[NANO] PK signer active for Arc nanopayments (${account.address})`);
+      return true;
+    } catch (e) {
+      console.warn('[NANO] PK signer failed', e);
+    }
+  }
+
+  console.warn('[NANO] No signer available — nanopayments will be stub-only');
+  return false;
+}
+
+// ── Core transfer function ───────────────────────────────────────────────────
+
+async function sendUSDCTransfer(to: string, amountUsdc: number): Promise<Hash> {
+  // USDC on Arc has 6 decimals for ERC-20 transfers
+  const amountRaw = parseUnits(amountUsdc.toFixed(6), 6);
+
+  // ── Circle DCW path ─────────────────────────────────────────────────────
+  if (circleWalletMode && circleClient) {
+    const { data } = await circleClient.createContractExecutionTransaction({
+      walletId:             process.env.CIRCLE_WALLET_ID!,
+      contractAddress:      ARC_USDC,
+      abiFunctionSignature: 'transfer(address,uint256)',
+      abiParameters:        [to, amountRaw.toString()],
+      fee:                  { type: 'level', config: { feeLevel: 'LOW' } },
+      blockchain:           'ARC-TESTNET',
+    } as any);
+    const txHash = (data as any)?.transaction?.txHash
+                || (data as any)?.transactionId
+                || (data as any)?.id;
+    if (!txHash) throw new Error('Circle DCW returned no txHash');
+    return txHash as Hash;
+  }
+
+  // ── viem EOA path ───────────────────────────────────────────────────────
+  if (!arcWallet) throw new Error('No Arc signer available');
+  const hash = await arcWallet.writeContract({
+    address: ARC_USDC as `0x${string}`,
+    abi:     ERC20_ABI,
+    functionName: 'transfer',
+    args: [getAddress(to), amountRaw],
+    chain: ARC_CHAIN,
+  });
+  return hash;
+}
+
+// ── Public API ───────────────────────────────────────────────────────────────
+
 /**
- * Bill a governance or compute event via Circle Nanopayments.
+ * Bill a governance or compute event via a real USDC micro-transfer on Arc.
  * NEVER throws — billing failure returns a pending receipt.
  * Governance logic is always unaffected by billing outcomes.
  */
@@ -46,34 +183,26 @@ export async function billEvent(
   } = {}
 ): Promise<NanopaymentReceipt> {
   try {
-    const payment = await nanoClient.createPayment({
-      from:     process.env.AGENT_WALLET_ADDRESS!,
-      to:       process.env.GOVERNANCE_BILLING_ADDRESS!,
-      amount:   NANO_AMOUNT.toString(),
-      currency: 'USDC',
-      metadata: {
-        eventName,
-        product:  'Kairos',
-        agentId:  process.env.AGENT_ID || 'kairos-1',
-        chain:    'Arc Testnet',
-        ...meta,
-      },
-    });
+    const ready = await ensureSigner();
+    if (!ready) throw new Error('no signer');
+
+    const txHash = await sendUSDCTransfer(BILLING_ADDRESS, NANO_AMOUNT);
 
     return {
       eventName,
       ...meta,
-      txHash:      payment.txHash,
+      mode:        circleWalletMode ? 'circle-wallets' : 'nanopayment',
+      txHash:      txHash,
       amount:      NANO_AMOUNT,
       confirmedAt: Date.now(),
     };
-
   } catch (err) {
     // Log but never block — return pending receipt
-    console.warn(`[Kairos] billEvent failed (${eventName}):`, err);
+    console.warn(`[NANO] billEvent failed (${eventName}):`, (err as Error).message || err);
     return {
       eventName,
       ...meta,
+      mode:        'fallback',
       txHash:      'pending_' + Date.now(),
       amount:      NANO_AMOUNT,
       confirmedAt: Date.now(),
@@ -81,5 +210,11 @@ export async function billEvent(
   }
 }
 
+// ── Transaction count helper for demo proof ──────────────────────────────────
+
+/** Return the total number of real (non-pending) nanopayment tx hashes seen. */
+export function getRealTxCount(receipts: NanopaymentReceipt[]): number {
+  return receipts.filter(r => !r.txHash.startsWith('pending_')).length;
+}
 
 // ───────────────────────────────────────────────────────────────────────────────

@@ -20,6 +20,7 @@
     "test:oracle": "tsx test/test-oracle-integrity.ts",
     "dashboard": "tsx src/dashboard/server.ts",
     "demo:onchain": "tsx scripts/demo-onchain-path.ts",
+    "demo:nanopayments": "tsx scripts/demo-nanopayments.ts",
     "mcp": "tsx src/mcp/server.ts",
     "test:mcp": "tsx test/test-mcp-surface.ts",
     "prod": "NODE_ENV=production tsx src/agent/index.ts",

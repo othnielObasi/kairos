@@ -4,9 +4,9 @@ export const config = {
   // Wallet
   privateKey: process.env.PRIVATE_KEY || '',
   
-  // Network
-  rpcUrl: process.env.RPC_URL || 'https://1rpc.io/sepolia',
-  chainId: parseInt(process.env.CHAIN_ID || '11155111'),
+  // Network — defaults to Arc Testnet (Circle's EVM-compatible L1 for USDC settlement)
+  rpcUrl: process.env.RPC_URL || 'https://rpc.testnet.arc.network',
+  chainId: parseInt(process.env.CHAIN_ID || '5042002'),
   
   // Hackathon Shared Contracts (Sepolia)
   agentRegistryAddress: process.env.AGENT_REGISTRY_ADDRESS || '0x97b07dDc405B0c28B17559aFFE63BdB3632d0ca3',

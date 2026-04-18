@@ -8,3 +8,4 @@ artifacts/
 
 # Runtime state — never overwrite production data on deploy
 .actura/
+.circle-recovery-file
