@@ -8,6 +8,7 @@
     "dev": "tsx src/agent/index.ts",
     "build": "tsc",
     "start": "node dist/agent/index.js",
+    "start:arc": "tsx src/agent/index.ts",
     "register": "tsx scripts/register-agent.ts",
     "generate:registration": "tsx scripts/generate-registration.ts",
     "bootstrap:erc8004": "tsx scripts/bootstrap-erc8004.ts",

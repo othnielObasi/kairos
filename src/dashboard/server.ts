@@ -13,7 +13,7 @@ import { getAgentState, getHealthCheck, getLogs, getErrors } from '../agent/inde
 import { getRecentTrades, getTradeStats, loadClosedTrades } from '../agent/trade-log.js';
 import { computeRiskAdjustedMetrics, type EquityPoint } from '../analytics/performance-metrics.js';
 import { getCheckpoints, getTradeCheckpoints } from '../trust/checkpoint.js';
-import { config } from '../agent/config.js';
+import { ARC_TESTNET_CHAIN_ID, config, getChainLabel } from '../agent/config.js';
 import { getReputationTimeline, getLastTrustScore } from '../trust/trust-policy-scorecard.js';
 import { getOperatorControlState, getOperatorActionReceipts, pauseTrading, resumeTrading, emergencyStop } from '../agent/operator-control.js';
 import { buildRegistrationJson } from '../chain/identity.js';
@@ -101,7 +101,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
 
   // Judge walkthrough — single-page hackathon summary
   app.get('/judge', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'judge.html'));
+    res.redirect('/kairos');
   });
 
   // Serve static files
@@ -188,7 +188,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
   app.get('/api/sandbox', async (_req, res) => {
     try {
       const aId = config.agentId;
-      const chain = config.chainId || 11155111;
+      const chain = config.chainId || ARC_TESTNET_CHAIN_ID;
       const riskRouter = config.riskRouterAddress || '';
       const vaultAddr = config.hackathonVaultAddress || '';
       const registryAddr = config.agentRegistryAddress || '';
@@ -221,7 +221,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
       res.json({
         connected: !!riskRouter,
         chainId: chain,
-        network: chain === 11155111 ? 'Sepolia' : chain === 84532 ? 'Base Sepolia' : `Chain ${chain}`,
+        network: getChainLabel(chain),
         agentId: aId || null,
         walletBalance,
         vaultBalance,

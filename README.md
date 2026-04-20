@@ -351,7 +351,7 @@ kairos/
 │           └── kairos.html            # Arc hackathon judge view
 ├── contracts/
 │   └── KairosRiskPolicy.sol           # Deployed on Arc testnet
-├── test/                              # Comprehensive test suite (24 test files)
+├── test/                              # Core test suite + optional integrations
 └── README.md
 ```
 
@@ -461,7 +461,7 @@ npm install
 
 ### 2. Configure environment
 
-Copy `.env.example` to `.env.arc` and update:
+Copy `.env.example` to `.env.arc` and update. Kairos now auto-loads `.env.arc` first and falls back to `.env`:
 
 ```bash
 # Identity
@@ -494,14 +494,15 @@ OWS_WALLET_ADDRESS=<derived from OWS_MNEMONIC>
 AISA_BASE_URL=https://api.aisa.one/apis/v2
 
 # Contract
-RISK_ROUTER_ADDRESS=<deploy KairosRiskPolicy.sol on Arc>
+RISK_POLICY_ADDRESS=<deploy KairosRiskPolicy.sol on Arc>
+RISK_ROUTER_ADDRESS=<shared Arc risk router, if assigned>
 ```
 
 ### 3. Deploy KairosRiskPolicy.sol on Arc
 
 ```bash
 npx hardhat run scripts/deploy-risk-policy.ts --network arc_testnet
-# → Add output address to .env.arc as RISK_ROUTER_ADDRESS
+# → Add output address to .env.arc as RISK_POLICY_ADDRESS
 ```
 
 ### 4. Create Kairos agent wallet (Wallet A — Circle Wallets)
@@ -678,7 +679,8 @@ The Express server serves both the REST API and frontend dashboard on port 3000.
 | `PINATA_JWT` | Pinata API JWT for IPFS | — |
 | `AGENT_NAME` | Agent display name | `Kairos` |
 | `AGENT_ID` | Registered agent ID | — |
-| `RISK_ROUTER_ADDRESS` | Risk Router contract | — |
+| `RISK_ROUTER_ADDRESS` | Shared Risk Router contract | — |
+| `RISK_POLICY_ADDRESS` | KairosRiskPolicy contract | — |
 | `TRADING_PAIR` | Trading pair | `WETH/USDC` |
 | `MAX_POSITION_PCT` | Max position size (%) | `10` |
 | `MAX_DAILY_LOSS_PCT` | Daily loss circuit breaker (%) | `2` |
@@ -699,7 +701,7 @@ The Express server serves both the REST API and frontend dashboard on port 3000.
 | Reputation rank | 4/48 |
 | IPFS-pinned artifacts | 50+ |
 | Validation / Reputation scores | 99/99 |
-| Test suites | 24 · all passing |
+| Test suites | 20 core suites in default runner |
 
 ---
 

@@ -1,5 +1,4 @@
-
-import 'dotenv/config';
+import '../src/env/load.js';
 import { writeFileSync } from 'node:fs';
 import { config } from '../src/agent/config.js';
 import { initChain } from '../src/chain/sdk.js';
@@ -51,6 +50,7 @@ async function main() {
 
   console.log('\nNext plug-in points when hackathon values are released:');
   console.log('- RISK_ROUTER_ADDRESS');
+  console.log('- RISK_POLICY_ADDRESS');
   console.log('- CAPITAL_VAULT_ADDRESS');
   console.log('- VALIDATOR_ADDRESS or VALIDATOR_PRIVATE_KEY');
   console.log('- Any final Risk Router ABI field changes');

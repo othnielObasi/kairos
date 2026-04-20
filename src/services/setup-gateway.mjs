@@ -9,16 +9,17 @@ import path from 'path';
 import { createWalletClient, createPublicClient, http, parseUnits, formatUnits } from 'viem';
 import { mnemonicToAccount } from 'viem/accounts';
 
-// Load .env
-const envPath = path.resolve(process.cwd(), '.env');
-if (fs.existsSync(envPath)) {
-  const envText = fs.readFileSync(envPath, 'utf8');
-  for (const line of envText.split(/\r?\n/)) {
-    if (!line || line.trim().startsWith('#') || !line.includes('=')) continue;
-    const idx = line.indexOf('=');
-    const key = line.slice(0, idx).trim();
-    const value = line.slice(idx + 1).trim();
-    if (!(key in process.env)) process.env[key] = value;
+for (const file of ['.env.arc', '.env']) {
+  const envPath = path.resolve(process.cwd(), file);
+  if (fs.existsSync(envPath)) {
+    const envText = fs.readFileSync(envPath, 'utf8');
+    for (const line of envText.split(/\r?\n/)) {
+      if (!line || line.trim().startsWith('#') || !line.includes('=')) continue;
+      const idx = line.indexOf('=');
+      const key = line.slice(0, idx).trim();
+      const value = line.slice(idx + 1).trim();
+      if (!(key in process.env)) process.env[key] = value;
+    }
   }
 }
 
@@ -29,7 +30,7 @@ const GATEWAY_ADDRESS = '0x0077777d7eba4688bdef3e311b846f25870a19b9';
 const CHAIN_ID        = 5042002;
 
 if (!MNEMONIC) {
-  console.error('Error: OWS_MNEMONIC not set in environment or .env file');
+  console.error('Error: OWS_MNEMONIC not set in environment, .env.arc, or .env file');
   process.exit(1);
 }
 

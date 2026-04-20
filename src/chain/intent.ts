@@ -1,6 +1,6 @@
 /**
  * Hackathon EIP-712 TradeIntent builder/signing.
- * Matches the shared RiskRouter contract on Sepolia (chain 11155111).
+ * Uses the configured RiskRouter domain for the active settlement chain.
  *
  * TradeIntent fields per SHARED_CONTRACTS.md:
  *   agentId, agentWallet, pair, action, amountUsdScaled, maxSlippageBps, nonce, deadline

@@ -1,5 +1,5 @@
 /**
- * Risk Router — Hackathon Shared Contract (Sepolia)
+ * Risk Router — Hackathon Shared Contract Client
  *
  * Submits signed TradeIntents to the shared RiskRouter.
  * ABI from SHARED_CONTRACTS.md (Path B).

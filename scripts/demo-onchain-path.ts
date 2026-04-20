@@ -14,8 +14,7 @@
  *   RUN_ONCHAIN_DEMO=true -> actually submit the trade intent
  */
 
-import { config as dotenvConfig } from 'dotenv';
-dotenvConfig();
+import '../src/env/load.js';
 
 import { preflight, claimSandboxCapital, executeTrade } from '../src/chain/executor.js';
 import { buildTradeArtifact } from '../src/trust/artifact-emitter.js';

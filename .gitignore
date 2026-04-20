@@ -1,11 +1,14 @@
 node_modules/
 dist/
 .env
+.env.arc
 *.log
+*.swp
 .DS_Store
 coverage/
 artifacts/
 
 # Runtime state — never overwrite production data on deploy
 .actura/
+.kairos/
 .circle-recovery-file

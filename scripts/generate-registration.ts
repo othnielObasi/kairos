@@ -1,5 +1,4 @@
-
-import 'dotenv/config';
+import '../src/env/load.js';
 import { writeFileSync } from 'node:fs';
 import { config } from '../src/agent/config.js';
 import { buildRegistrationJson, createRegistrationDataUri, validateRegistrationJson } from '../src/chain/identity.js';

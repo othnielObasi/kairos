@@ -26,6 +26,7 @@ import { execSync } from 'child_process';
 import os from 'os';
 import { getWallet } from '../chain/sdk.js';
 import { createLogger } from '../agent/logger.js';
+import { config } from '../agent/config.js';
 
 const log = createLogger('TEE');
 
@@ -43,7 +44,7 @@ function getAttestationDomain(): ethers.TypedDataDomain {
   return {
     name: 'KairosTEEAttestation',
     version: '1',
-    chainId: 11155111, // Ethereum Sepolia
+    chainId: config.chainId,
   };
 }
 

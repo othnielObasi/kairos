@@ -1,8 +1,8 @@
 /**
- * One-off script: Register agent on the hackathon AgentRegistry (Sepolia).
+ * One-off script: Register agent on the hackathon AgentRegistry.
  * Usage: npx tsx scripts/register-hackathon.ts
  */
-import 'dotenv/config';
+import '../src/env/load.js';
 import { initChain } from '../src/chain/sdk.js';
 import { registerOnHackathonRegistry } from '../src/chain/identity.js';
 
@@ -12,7 +12,7 @@ async function main() {
 
   const agentId = await registerOnHackathonRegistry({
     name: 'Kairos',
-    description: 'Accountable autonomous trading agent — neuro-symbolic policy, SAGE self-adaptation, pre-trade simulation, EIP-712 trust receipts',
+    description: 'Accountable autonomous trading agent - neuro-symbolic policy, SAGE self-adaptation, pre-trade simulation, EIP-712 trust receipts',
     capabilities: [
       'trading',
       'eip712-signing',
@@ -24,9 +24,9 @@ async function main() {
     agentURI: 'https://api.kairos.nov-tia.com/agent.json',
   });
 
-  console.log(`\n✅ Agent registered with agentId = ${agentId}`);
-  console.log(`\nNext steps:`);
-  console.log(`  1. Set AGENT_ID=${agentId} in .env`);
+  console.log(`\nAgent registered with agentId = ${agentId}`);
+  console.log('\nNext steps:');
+  console.log(`  1. Set AGENT_ID=${agentId} in .env.arc or .env`);
   console.log(`  2. Claim sandbox capital: claimAllocation(${agentId})`);
 }
 

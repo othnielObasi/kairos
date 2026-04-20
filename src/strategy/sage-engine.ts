@@ -36,6 +36,7 @@ const SAGE_REFLECTION_COOLDOWN = parseInt(process.env.SAGE_REFLECTION_COOLDOWN |
 const SAGE_RULE_TTL_MS = parseInt(process.env.SAGE_RULE_TTL_MS || String(48 * 60 * 60 * 1000)); // 48h time-based expiry
 const SAGE_MAX_PENALTY_STACK = -0.3; // floor for cumulative REDUCE_CONFIDENCE
 const SAGE_MIN_BLOCK_EVIDENCE = 3; // minimum trades to justify a BLOCK rule
+const SAGE_PERSIST_SEED = process.env.SAGE_PERSIST_SEED === 'true';
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent';
 
@@ -701,21 +702,22 @@ function persistWeights(): void {
   try {
     if (!existsSync(STATE_DIR)) mkdirSync(STATE_DIR, { recursive: true });
     writeFileSync(WEIGHTS_FILE, JSON.stringify(currentWeights, null, 2), 'utf-8');
-    // Also update repo seed file as backup (survives rsync --delete)
-    try {
-      const seedDir = join(process.cwd(), 'data');
-      if (existsSync(seedDir)) {
-        const seed = {
-          ...currentWeights,
-          _meta: {
-            learnedAt: new Date().toISOString(),
-            totalOutcomes: totalOutcomesRecorded,
-            note: 'Auto-updated by SAGE after reflection. Copy to .kairos/sage-weights.json on fresh deploys.',
-          },
-        };
-        writeFileSync(SEED_WEIGHTS_FILE, JSON.stringify(seed, null, 2) + '\n', 'utf-8');
-      }
-    } catch { /* seed backup is best-effort */ }
+    if (SAGE_PERSIST_SEED) {
+      try {
+        const seedDir = join(process.cwd(), 'data');
+        if (existsSync(seedDir)) {
+          const seed = {
+            ...currentWeights,
+            _meta: {
+              learnedAt: new Date().toISOString(),
+              totalOutcomes: totalOutcomesRecorded,
+              note: 'Opt-in seed export. Runtime weights live in .kairos/sage-weights.json.',
+            },
+          };
+          writeFileSync(SEED_WEIGHTS_FILE, JSON.stringify(seed, null, 2) + '\n', 'utf-8');
+        }
+      } catch { /* seed export is best-effort */ }
+    }
   } catch (error) {
     log.error('Failed to persist SAGE weights', { error: String(error) });
   }

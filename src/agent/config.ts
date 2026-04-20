@@ -1,4 +1,24 @@
-import 'dotenv/config';
+import '../env/load.js';
+
+export const ARC_TESTNET_CHAIN_ID = 5042002;
+const SANDBOX_TESTNET_CHAIN_IDS = new Set<number>([ARC_TESTNET_CHAIN_ID, 11155111, 84532]);
+
+export function isSandboxTestnet(chainId: number): boolean {
+  return SANDBOX_TESTNET_CHAIN_IDS.has(chainId);
+}
+
+export function getChainLabel(chainId: number): string {
+  switch (chainId) {
+    case ARC_TESTNET_CHAIN_ID:
+      return 'Arc Testnet';
+    case 11155111:
+      return 'Sepolia';
+    case 84532:
+      return 'Base Sepolia';
+    default:
+      return `Chain ${chainId}`;
+  }
+}
 
 export const config = {
   // Wallet
@@ -6,21 +26,19 @@ export const config = {
   
   // Network — defaults to Arc Testnet (Circle's EVM-compatible L1 for USDC settlement)
   rpcUrl: process.env.RPC_URL || 'https://rpc.testnet.arc.network',
-  chainId: parseInt(process.env.CHAIN_ID || '5042002'),
+  chainId: parseInt(process.env.CHAIN_ID || String(ARC_TESTNET_CHAIN_ID)),
   
-  // Hackathon Shared Contracts (Sepolia)
-  agentRegistryAddress: process.env.AGENT_REGISTRY_ADDRESS || '0x97b07dDc405B0c28B17559aFFE63BdB3632d0ca3',
-  hackathonVaultAddress: process.env.HACKATHON_VAULT_ADDRESS || '0x0E7CD8ef9743FEcf94f9103033a044caBD45fC90',
-  riskRouterAddress: process.env.RISK_ROUTER_ADDRESS || '0xd6A6952545FF6E6E6681c2d15C59f9EB8F40FdBC',
-  reputationRegistry: process.env.REPUTATION_REGISTRY || '0x423a9904e39537a9997fbaF0f220d79D7d545763',
-  validationRegistry: process.env.VALIDATION_REGISTRY || '0x92bF63E5C7Ac6980f237a7164Ab413BE226187F1',
+  // Hackathon / Circle contracts on Arc
+  agentRegistryAddress: process.env.AGENT_REGISTRY_ADDRESS || '',
+  hackathonVaultAddress: process.env.HACKATHON_VAULT_ADDRESS || '',
+  riskRouterAddress: process.env.RISK_ROUTER_ADDRESS || '',
+  reputationRegistry: process.env.REPUTATION_REGISTRY || '0x8004B663056A597Dffe9eCcC1965A193B7388713',
+  validationRegistry: process.env.VALIDATION_REGISTRY || '0x8004Cb1BF31DAf7788923b405b754f57acEB4272',
 
-  // ERC-8004 Identity Registry (Base Sepolia — cross-chain reference)
-  // Deployed on Base Sepolia (84532) per ERC-8004 reference implementation.
-  // Hackathon shared contracts (AgentRegistry, RiskRouter, etc.) are on Sepolia.
-  identityRegistry: process.env.IDENTITY_REGISTRY || '0x7177a6867296406881E20d6647232314736Dd09A',
-  identityRegistryChainId: parseInt(process.env.IDENTITY_REGISTRY_CHAIN_ID || '84532'),
-  identityRegistryRpcUrl: process.env.IDENTITY_REGISTRY_RPC_URL || 'https://sepolia.base.org',
+  // ERC-8004 registries default to Arc testnet
+  identityRegistry: process.env.IDENTITY_REGISTRY || '0x8004A818BFB912233c491871b3d84c89A494BD9e',
+  identityRegistryChainId: parseInt(process.env.IDENTITY_REGISTRY_CHAIN_ID || String(ARC_TESTNET_CHAIN_ID)),
+  identityRegistryRpcUrl: process.env.IDENTITY_REGISTRY_RPC_URL || 'https://rpc.testnet.arc.network',
   
   // IPFS
   pinataJwt: process.env.PINATA_JWT || '',
