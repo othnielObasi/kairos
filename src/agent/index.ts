@@ -15,7 +15,7 @@
  * - Health check endpoint
  */
 
-import { config } from './config.js';
+import { config, isSandboxTestnet } from './config.js';
 import { createLogger, getRecentLogs, getErrorLogs } from './logger.js';
 import { validateConfig } from './validator.js';
 import { Scheduler } from './scheduler.js';
@@ -687,7 +687,7 @@ async function runCycle(): Promise<void> {
     side: strategyOutput.signal.direction as 'LONG' | 'SHORT',
     notionalUsd: riskDecision.finalPositionSize * strategyOutput.currentPrice,
     volatility: strategyOutput.indicators.volatility ?? 0.02,
-    isTestnet: config.chainId === 11155111 || config.chainId === 84532,
+    isTestnet: isSandboxTestnet(config.chainId),
     enabledDexes: config.allowedProtocols.filter(
       (p): p is DexId => p === 'aerodrome' || p === 'uniswap'
     ),
@@ -697,13 +697,13 @@ async function runCycle(): Promise<void> {
     : { selectedDex: 'uniswap' as DexId, quotes: [], savingsBps: 0, rationale: ['no trade'], timestamp: new Date().toISOString(), routingVersion: '1.0' };
 
   // Step 4b: Execution simulation — required pre-trade safety stage (uses DEX-specific fees)
-  // On testnet (Sepolia or Base Sepolia), use minimal fee assumptions — no real DEX fees or gas costs.
-  const isTestnet = config.chainId === 11155111 || config.chainId === 84532;
+  // On supported hackathon testnets, use minimal fee assumptions.
+  const isTestnet = isSandboxTestnet(config.chainId);
   const executionSimulation = await simulateExecution({
     strategyOutput,
     riskDecision,
-    // Testnet gas is free (Sepolia faucet ETH) — don't let fictional gas
-    // eat into net edge and block trades that would be profitable.
+    // Arc testnet settles in USDC and keeps fee overhead predictable.
+    // Avoid fictional gas costs blocking valid demo trades.
     // Only charge gas on mainnet with real on-chain execution.
     gasUsd: isTestnet ? 0 : (config.riskRouterAddress ? 0.35 : 0),
     dexId: dexRouting.selectedDex,

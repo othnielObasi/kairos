@@ -54,7 +54,7 @@ export interface AgentRegistrationFile {
 function getContract(): ethers.Contract {
   if (!contract) {
     if (!config.identityRegistry) throw new Error('IDENTITY_REGISTRY address not set');
-    // Identity registry may be on a different chain (Base Sepolia) than the main agent (Sepolia).
+    // Identity registry may be on a different chain than the main agent runtime.
     // Use a dedicated provider if chain differs.
     if (config.identityRegistryChainId !== config.chainId && config.identityRegistryRpcUrl) {
       const idProvider = new ethers.JsonRpcProvider(config.identityRegistryRpcUrl);
@@ -113,7 +113,7 @@ export function buildRegistrationJson(options: {
       ...(options.mcpEndpoint ? [{ name: 'MCP', endpoint: options.mcpEndpoint, version: '2025-06-18' }] : []),
       ...services.filter(s => !['web', 'A2A', 'MCP'].includes(s.name)),
     ],
-    x402Support: false,
+    x402Support: true,
     active: options.active ?? true,
     registrations,
     supportedTrust: options.supportedTrust || ['reputation', 'crypto-economic', 'tee-attestation'],
@@ -207,7 +207,7 @@ export async function getAgentCount(): Promise<number> {
   return Number(await registry.balanceOf(wallet.address));
 }
 
-// ──── Hackathon AgentRegistry (Sepolia) ────
+// ──── Hackathon AgentRegistry ────
 
 const HACKATHON_REGISTRY_ABI = [
   'function register(address agentWallet, string name, string description, string[] capabilities, string agentURI) external returns (uint256 agentId)',

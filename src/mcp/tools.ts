@@ -15,7 +15,7 @@ import { computeRiskAdjustedMetrics, type EquityPoint, type TradeOutcome } from 
 import { getAdaptiveParams, getAdaptationSummary, getContextStats } from '../strategy/adaptive-learning.js';
 import { emergencyStop, getLatestOperatorAction, getOperatorActionReceipts, getOperatorControlState, pauseTrading, resumeTrading } from '../agent/operator-control.js';
 import { getRecentTrades, getTradeStats } from '../agent/trade-log.js';
-import { config } from '../agent/config.js';
+import { config, getChainLabel, isSandboxTestnet } from '../agent/config.js';
 import { buildTradeIntent, hashTradeIntent, signTradeIntent } from '../chain/intent.js';
 import { initChain } from '../chain/sdk.js';
 import { routeTrade, getAvailableDexes, getDexProfile, type DexId } from '../chain/dex-router.js';
@@ -496,7 +496,7 @@ const getDexRoutingInfo: McpTool = {
     const market = state?.market;
     const notionalUsd = typeof args.notional_usd === 'number' ? args.notional_usd : 300;
     const side = args.side === 'SHORT' ? 'SHORT' : 'LONG';
-    const isTestnet = config.chainId === 84532;
+    const isTestnet = isSandboxTestnet(config.chainId);
     const enabledDexes = config.allowedProtocols.filter(
       (p): p is DexId => p === 'aerodrome' || p === 'uniswap'
     );
@@ -511,7 +511,7 @@ const getDexRoutingInfo: McpTool = {
     });
 
     return {
-      network: isTestnet ? 'Base Sepolia (testnet)' : 'Base',
+      network: getChainLabel(config.chainId),
       enabledProtocols: config.allowedProtocols,
       availableDexes: getAvailableDexes(isTestnet),
       selectedDex: routing.selectedDex,

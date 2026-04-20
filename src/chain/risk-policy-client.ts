@@ -34,8 +34,8 @@ const RISK_POLICY_ABI = [
   'function maxDrawdownPct() external view returns (uint256)',
 ];
 
-const WETH_ADDRESS = process.env.WETH_ADDRESS || '0x4200000000000000000000000000000000000006';
-const USDC_ADDRESS = process.env.USDC_ADDRESS || '0x036CbD53842c5426634e7929541eC2318f3dCF7e';
+const USDC_ADDRESS = process.env.USDC_ADDRESS || '0x3600000000000000000000000000000000000000';
+const WETH_ADDRESS = process.env.WETH_ADDRESS || USDC_ADDRESS;
 
 let contract: ethers.Contract | null = null;
 let readContract: ethers.Contract | null = null;

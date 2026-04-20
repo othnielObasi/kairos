@@ -26,15 +26,17 @@ import { mnemonicToAccount } from "viem/accounts";
 // Config
 // ---------------------------------------------------------------------------
 
-const envPath = path.resolve(process.cwd(), ".env");
-if (fs.existsSync(envPath)) {
-  const envText = fs.readFileSync(envPath, "utf8");
-  for (const line of envText.split(/\r?\n/)) {
-    if (!line || line.trim().startsWith("#") || !line.includes("=")) continue;
-    const idx = line.indexOf("=");
-    const key = line.slice(0, idx).trim();
-    const value = line.slice(idx + 1);
-    if (!(key in process.env)) process.env[key] = value;
+for (const file of [".env.arc", ".env"]) {
+  const envPath = path.resolve(process.cwd(), file);
+  if (fs.existsSync(envPath)) {
+    const envText = fs.readFileSync(envPath, "utf8");
+    for (const line of envText.split(/\r?\n/)) {
+      if (!line || line.trim().startsWith("#") || !line.includes("=")) continue;
+      const idx = line.indexOf("=");
+      const key = line.slice(0, idx).trim();
+      const value = line.slice(idx + 1);
+      if (!(key in process.env)) process.env[key] = value;
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 /**
- * Trade Executor — Hackathon Shared Contract Flow (Sepolia)
+ * Trade Executor — Hackathon Shared Contract Flow
  *
  * Full pipeline:
  * 1. Build TradeIntent from strategy output
@@ -14,7 +14,7 @@
 import { ethers } from 'ethers';
 import { createLogger } from '../agent/logger.js';
 import { retry } from '../agent/retry.js';
-import { config } from '../agent/config.js';
+import { config, isSandboxTestnet } from '../agent/config.js';
 import { getWallet, getWalletAddress, getBalance, initChain } from './sdk.js';
 import { buildTradeIntent, signTradeIntent, TRADE_INTENT_TYPES, getTradeIntentDomain, hashTradeIntent, type TradeIntentData } from './intent.js';
 import { verifyTypedDataSignature } from './eip1271.js';
@@ -72,7 +72,7 @@ export async function executeTrade(
   try {
     // ── Step 0: Local pre-trade simulation ──
     // On testnet, gas is free — don't let fictional gas costs block profitable trades.
-    const isTestnet = config.chainId === 11155111 || config.chainId === 84532;
+    const isTestnet = isSandboxTestnet(config.chainId);
     const localSim = await simulateExecution({
       strategyOutput,
       riskDecision,

@@ -2,12 +2,13 @@
  * Deploy KairosRiskPolicy.sol to Arc testnet
  * Usage: npx tsx scripts/deploy-risk-policy.ts
  */
-import 'dotenv/config';
+import '../src/env/load.js';
 import { ethers } from 'ethers';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const RPC = process.env.RPC_URL || 'https://sepolia.base.org';
+const ARC_USDC_ADDRESS = process.env.USDC_ADDRESS || '0x3600000000000000000000000000000000000000';
+const RPC = process.env.RPC_URL || 'https://rpc.testnet.arc.network';
 const PK = process.env.PRIVATE_KEY;
 if (!PK) { console.error('PRIVATE_KEY not set'); process.exit(1); }
 
@@ -30,14 +31,17 @@ const MAX_DAILY_LOSS_PCT = 200n;      // 2%
 const MAX_DRAWDOWN_PCT = 800n;        // 8%
 const MIN_TRADE_COOLDOWN = 60n;       // 60 seconds
 
-// WETH on Base Sepolia
-const WETH_BASE_SEPOLIA = '0x4200000000000000000000000000000000000006';
+const WHITELISTED_ASSETS = [...new Set([
+  process.env.WETH_ADDRESS,
+  ARC_USDC_ADDRESS,
+].filter((value): value is string => Boolean(value)))];
 
 async function main() {
   console.log('Deploying KairosRiskPolicy to Arc testnet...');
   console.log(`  Deployer: ${wallet.address}`);
   const balance = await provider.getBalance(wallet.address);
-  console.log(`  Balance:  ${ethers.formatEther(balance)} ETH`);
+  console.log(`  Balance:  ${ethers.formatEther(balance)} USDC`);
+  console.log(`  Assets:   ${WHITELISTED_ASSETS.join(', ')}`);
 
   const factory = new ethers.ContractFactory(abi, bytecode, wallet);
   const contract = await factory.deploy(
@@ -49,15 +53,15 @@ async function main() {
     MAX_DAILY_LOSS_PCT,
     MAX_DRAWDOWN_PCT,
     MIN_TRADE_COOLDOWN,
-    [WETH_BASE_SEPOLIA],
+    WHITELISTED_ASSETS,
   );
 
   console.log(`  Tx hash:  ${contract.deploymentTransaction()?.hash}`);
   console.log('  Waiting for confirmation...');
   await contract.waitForDeployment();
   const address = await contract.getAddress();
-  console.log(`\n✅ KairosRiskPolicy deployed at: ${address}`);
-  console.log(`   Block explorer: https://sepolia.basescan.org/address/${address}`);
+  console.log(`\nKairosRiskPolicy deployed at: ${address}`);
+  console.log(`   Block explorer: https://testnet.arcscan.app/address/${address}`);
 
   // Verify by calling getRiskState
   const riskPolicy = new ethers.Contract(address, abi, provider);

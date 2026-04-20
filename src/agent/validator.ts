@@ -4,6 +4,7 @@
  */
 
 import { config } from './config.js';
+import { ARC_TESTNET_CHAIN_ID, getChainLabel } from './config.js';
 import { createLogger } from './logger.js';
 
 const log = createLogger('CONFIG');
@@ -29,8 +30,8 @@ export function validateConfig(): ValidationResult {
   if (!config.rpcUrl) {
     errors.push('RPC_URL is required');
   }
-  if (config.chainId !== 84532) {
-    warnings.push(`CHAIN_ID is ${config.chainId}, expected 84532 (Base Sepolia)`);
+  if (config.chainId !== ARC_TESTNET_CHAIN_ID) {
+    warnings.push(`CHAIN_ID is ${config.chainId} (${getChainLabel(config.chainId)}), expected ${ARC_TESTNET_CHAIN_ID} (Arc Testnet) for the hackathon path`);
   }
 
   // Trading params sanity checks
