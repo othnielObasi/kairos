@@ -32,7 +32,7 @@ On Ethereum mainnet, each $0.001 governance payment would cost $2–20 in ETH ga
 
 **Production track record.**
 
-Kairos is built on Actura — a governed trading agent with 890+ executed cycles, elite trust tier, rank 4/48 on the ERC-8004 reputation registry, and 50+ IPFS-pinned governance artifacts before the hackathon started. This is not a prototype. It is a production system migrated to Arc with the Circle developer platform wired end-to-end.
+Kairos has already logged 890+ executed cycles, reached elite trust tier, ranked 4/48 on the ERC-8004 reputation registry, and produced 50+ IPFS-pinned governance artifacts before the hackathon started. This is not a prototype. It is a production system migrated to Arc with the Circle developer platform wired end-to-end.
 
 **Circle products used:** Arc · USDC · Circle Nanopayments · Circle Wallets · Circle Gateway · x402
 

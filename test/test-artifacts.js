@@ -29,7 +29,7 @@ const stratOutput = runStrategy(data, 10000);
 const riskDecision = engine.evaluate(stratOutput);
 const artifact = buildTradeArtifact(stratOutput, riskDecision, 12345);
 assert(artifact.version === '1.0', 'Version is 1.0');
-assert(artifact.agentName === 'Actura', `Agent name: ${artifact.agentName}`);
+assert(artifact.agentName === 'Kairos', `Agent name: ${artifact.agentName}`);
 assert(artifact.agentId === 12345, `Agent ID: ${artifact.agentId}`);
 assert(artifact.timestamp.length > 0, `Timestamp: ${artifact.timestamp}`);
 assert(['trade_checkpoint', 'risk_halt'].includes(artifact.type), `Type: ${artifact.type}`);

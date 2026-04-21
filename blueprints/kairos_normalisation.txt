@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════════════════════════
 // KAIROS — Data Feed Normalisation Layer
 // Wraps AIsa x402 endpoints and normalises responses to the exact shapes
-// that existing Actura downstream code expects — no changes needed to
+// that existing downstream code expects — no changes needed to
 // strategy, oracle-integrity, sentiment scoring, or PRISM consumers.
 // ═══════════════════════════════════════════════════════════════════════════════
 

@@ -1,5 +1,5 @@
 /**
- * Test Runner — runs all Actura tests
+ * Test Runner — runs all Kairos tests
  */
 export {};
 //# sourceMappingURL=run-tests.d.ts.map

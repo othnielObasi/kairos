@@ -20,7 +20,7 @@
 
 
 // ─── src/services/kairos-data-feeds.ts ───────────────────────────────────────
-// Drop-in replacement for Actura's data feed layer.
+// Drop-in replacement for the previous data feed layer.
 // Imports createPayingFetch from x402-client.mjs — handles 402→sign→retry.
 // Each fetch call is a real x402 USDC payment on Arc testnet.
 
@@ -170,7 +170,7 @@ export async function fetchKrakenFeed(pair = 'ETH'): Promise<KrakenFeedResult> {
   return data;
 }
 
-// ─── Market news feed (new — no equivalent in Actura) ─────────────────────────
+// ─── Market news feed (new — no equivalent in the earlier stack) ──────────────
 // Uses: /apis/v2/tavily/search — $0.0096 per call
 // Provides: real-time market news for context injection into AI reasoning
 

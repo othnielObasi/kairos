@@ -64,7 +64,7 @@ assert(authRecovered === testWallet.address, `Auth signer verified: ${authRecove
 console.log('\n── Artifact Hashing ──');
 const sampleArtifact = {
     version: '1.0',
-    agentName: 'Actura',
+    agentName: 'Kairos',
     timestamp: new Date().toISOString(),
     type: 'trade_checkpoint',
     decision: { approved: true, explanation: 'Test trade' },

@@ -1,5 +1,5 @@
 /**
- * Register Actura on ERC-8004 Identity Registry
+ * Register Kairos on ERC-8004 Identity Registry
  *
  * Usage: npm run register
  *

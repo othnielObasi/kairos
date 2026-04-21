@@ -592,16 +592,16 @@ class CircleWalletSigner extends ethers.AbstractSigner {
 // # ── AIsa API (x402-paid, no API key needed) ──────────────────────────────────
 // AISA_BASE_URL=https://api.aisa.one/apis/v2
 //
-// # ── CONTRACTS (redeploy ActuraRiskPolicy.sol on Arc) ────────────────────────
-// RISK_ROUTER_ADDRESS=<deploy ActuraRiskPolicy.sol on Arc testnet>
+// # ── CONTRACTS (redeploy KairosRiskPolicy.sol on Arc) ────────────────────────
+// RISK_ROUTER_ADDRESS=<deploy KairosRiskPolicy.sol on Arc testnet>
 //
-// # ── UNCHANGED FROM ACTURA ───────────────────────────────────────────────────
+// # ── REMAINING KAIROS CONFIG ─────────────────────────────────────────────────
 // PINATA_JWT=<unchanged>
 // TRADING_PAIR=WETH/USDC
 // MAX_POSITION_PCT=<unchanged>
 // MAX_DAILY_LOSS_PCT=<unchanged>
 // MODE=paper
-// # ... all other Actura vars unchanged
+// # ... keep the rest of the Kairos runtime vars as configured
 //
 // ═══════════════════════════════════════════════════════════════════════════════
 // TWO-WALLET ARCHITECTURE
