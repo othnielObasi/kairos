@@ -54,7 +54,7 @@ function downgradeTier(name: TrustTierName) {
 }
 
 /**
- * Evaluate whether the trading agent is allowed to deploy capital this cycle.
+ * Evaluate whether the runtime is allowed to deploy capital this cycle.
  */
 export async function evaluateSupervisoryDecision(input: SupervisoryInput): Promise<SupervisoryDecision> {
   const reason: string[] = [];

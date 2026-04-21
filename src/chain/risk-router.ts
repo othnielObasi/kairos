@@ -1,5 +1,5 @@
 /**
- * Risk Router — Hackathon Shared Contract Client
+ * Risk Router — Arc Contract Client
  *
  * Submits signed TradeIntents to the shared RiskRouter.
  * ABI from SHARED_CONTRACTS.md (Path B).

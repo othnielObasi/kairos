@@ -1,16 +1,16 @@
 /**
  * AI Reasoning Engine
  * 
- * Provides intelligent, human-readable explanations for every trade
+ * Provides intelligent, human-readable explanations for every execution
  * decision using a 3-tier LLM failover chain:
  *
  *   Claude (Anthropic) → Gemini (Google) → GPT-4o (OpenAI) → deterministic fallback
  *
- * The AI doesn't MAKE the trade decision — the risk engine does.
+ * The AI doesn't MAKE the execution decision — the risk engine does.
  * The AI EXPLAINS and ENRICHES the decision with context.
  *
- * This is Kairos's differentiator: "Not the smartest trader.
- * The most accountable." — and the AI makes accountability *readable*.
+ * This is Kairos's differentiator: "Not the fastest agent.
+ * The most accountable." — and the AI makes accountability readable.
  */
 
 import { createLogger } from '../agent/logger.js';
@@ -43,7 +43,7 @@ interface AIReasoning {
 
 const FALLBACK_REASONING: AIReasoning = {
   marketContext: 'Market analysis unavailable — using quantitative signals only.',
-  tradeRationale: 'Decision based on SMA crossover and volatility-adjusted momentum.',
+  tradeRationale: 'Decision based on quantified signals and bounded risk controls.',
   riskNarrative: 'Risk checks performed per standard protocol.',
   confidenceFactors: ['SMA trend alignment', 'Volatility within normal range'],
   watchItems: ['Sudden volatility spike', 'Trend reversal'],
@@ -51,7 +51,7 @@ const FALLBACK_REASONING: AIReasoning = {
 };
 
 /**
- * Generate AI reasoning for a trade decision.
+ * Generate AI reasoning for an execution decision.
  * Cascade: Claude → Gemini → OpenAI → deterministic fallback.
  */
 export async function generateReasoning(
@@ -200,7 +200,7 @@ function buildReasoningPrompt(
     }
   }
 
-  return `You are the reasoning engine for Kairos, an accountable autonomous trading agent. Analyze this trade decision and provide structured reasoning.
+  return `You are the reasoning engine for Kairos, an Arc-native agentic payments runtime. Analyze this execution decision and provide structured reasoning.
 
 MARKET SNAPSHOT:
 - Current price: $${strategy.currentPrice.toFixed(2)}

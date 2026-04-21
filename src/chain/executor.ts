@@ -1,5 +1,5 @@
 /**
- * Trade Executor — Hackathon Shared Contract Flow
+ * Trade Executor — Governed Execution Flow
  *
  * Full pipeline:
  * 1. Build TradeIntent from strategy output
