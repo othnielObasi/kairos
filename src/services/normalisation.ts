@@ -96,8 +96,8 @@ export async function fetchPriceData(ticker = 'ETH'): Promise<PriceData> {
   try {
     const r1 = await billEvent('data-coingecko', { source:'aisa-financial-prices', type:'data' });
     const r2 = await billEvent('data-kraken',    { source:'aisa-financial-prices', type:'data' });
-    billingStore.addApiEvent(r1, 'coingecko');
-    billingStore.addApiEvent(r2, 'kraken');
+    billingStore.addApiEvent(r1, 'coingecko', 'x402');
+    billingStore.addApiEvent(r2, 'kraken', 'x402');
   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
 
   return normalised;
@@ -208,8 +208,8 @@ export async function fetchSentimentData(asset = 'BTC'): Promise<SentimentData> 
   try {
     const r1 = await billEvent('data-feargreed',    { source:'aisa-twitter-sentiment', type:'data' });
     const r2 = await billEvent('data-alphavantage', { source:'aisa-financial-news',    type:'data' });
-    billingStore.addApiEvent(r1, 'feargreed');
-    billingStore.addApiEvent(r2, 'alphavantage');
+    billingStore.addApiEvent(r1, 'feargreed', 'x402');
+    billingStore.addApiEvent(r2, 'alphavantage', 'x402');
   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
 
   return {
@@ -389,7 +389,7 @@ export async function fetchPrismData(
   // Record billing for Track 2
   try {
     const r = await billEvent('data-prism', { source:'aisa-perplexity-sonar', type:'data' });
-    billingStore.addApiEvent(r, 'prism');
+    billingStore.addApiEvent(r, 'prism', 'x402');
   } catch(e) { logger.warn('[Kairos] billing skip:', e); }
 
   // Also store raw Sonar text for AI reasoning context injection

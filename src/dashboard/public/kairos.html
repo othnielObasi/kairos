@@ -211,7 +211,7 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
       <div class="mi-sub">governed cycles total</div>
     </div>
     <div class="mi">
-      <div class="mi-lbl">Arc transactions</div>
+      <div class="mi-lbl">Real Arc txns</div>
       <div class="mi-val" id="mb-txns">0</div>
       <div class="tx-prog">
         <div class="tx-trk"><div class="tx-fill" id="mb-txbar" style="width:0%"></div></div>
@@ -321,7 +321,7 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
   <!-- PROOF BAR — 6 columns now including x402 vs Stripe comparison -->
   <div class="pbar">
     <div class="pi">
-      <div class="pi-lbl">Arc transactions</div>
+      <div class="pi-lbl">Real Arc txns</div>
       <div class="pi-val p" id="p-txns">0</div>
       <div class="pi-sub" id="p-tsub">0 / 50 required</div>
       <div class="pi-bar"><div class="pi-fill" id="p-tbar" style="width:0%"></div></div>
@@ -334,7 +334,7 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
     <div class="pi">
       <div class="pi-lbl">Cost per decision</div>
       <div class="pi-val" id="p-cpd">$0.000</div>
-      <div class="pi-sub">12 Circle events per cycle</div>
+      <div class="pi-sub" id="p-cpd-sub">0 billable events</div>
     </div>
     <div class="pi">
       <div class="pi-lbl">vs Ethereum gas</div>
@@ -528,28 +528,37 @@ function renderT4(checkpoints) {
 
 // ── MOMENT + PROOF BARS ──────────────────────────────────────────────────────
 function updateBars(billing, status) {
-  const txns   = billing.totalTxns  || 0;
+  const txns   = billing.realTxns ?? billing.totalTxns ?? 0;
+  const target = billing.txnRequirementTarget || 50;
+  const pending = billing.pendingTxns || 0;
+  const totalEvents = billing.totalEvents || txns;
   const spend  = billing.totalSpend || 0;
   const cycles = status.totalCycles || status.cycleCount || 890;
   const trust  = status.trustScore  || status.trust?.score || "—";
   const tier   = status.capitalTier || status.trust?.tier  || "—";
   const agentId= status.agentId     || "22";
-  const cpd    = txns > 0 ? spend / txns : 0;
-  const pct    = Math.min(100, (txns / 50) * 100);
+  const cpd    = totalEvents > 0 ? spend / totalEvents : 0;
+  const pct    = Math.min(100, (txns / target) * 100);
+  const txnLabel = pending > 0
+    ? txns + " / " + target + " required · " + pending + " pending/fallback"
+    : txns + " / " + target + " required";
 
   el("mb-cycles").textContent = cycles;
   el("mb-txns").textContent   = txns;
   el("mb-spend").textContent  = fU(spend);
   el("mb-cpd").textContent    = fU(cpd);
   el("mb-txbar").style.width  = pct + "%";
-  el("mb-txreq").textContent  = txns + " / 50 required";
+  el("mb-txreq").textContent  = txnLabel;
   el("mb-trust").textContent  = trust;
   el("mb-tsub").textContent   = tier + " tier · Agent #" + agentId;
 
   el("p-txns").textContent    = txns;
-  el("p-tsub").textContent    = txns + " / 50+ required";
+  el("p-tsub").textContent    = pending > 0
+    ? txns + " / " + target + "+ required · " + pending + " pending/fallback"
+    : txns + " / " + target + "+ required";
   el("p-spend").textContent   = fU(spend);
   el("p-cpd").textContent     = fU(cpd);
+  el("p-cpd-sub").textContent = totalEvents + " billable events";
   el("p-tbar").style.width    = pct + "%";
 }
 
