@@ -77,7 +77,7 @@ export const config = {
     atrPeriod: 14,
     basePositionPct: 0.04,  // 4% of capital per trade
     stopLossAtrMultiple: 2.5,
-    baselineVolatility: 0.01,  // 1% daily vol baseline — ETH sandbox vol is low
+    baselineVolatility: 0.02,  // 2% daily vol baseline aligned with the runtime risk model
   },
 
   // Kraken CLI

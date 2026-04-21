@@ -218,7 +218,7 @@ Deterministic volatility-regime profile switching with hysteresis:
 | LOW_VOL | 0.50 | 0.80 | 4.0% | 3% |
 | NORMAL | 0.50 | 1.00 | 4.0% | 2% |
 | HIGH_VOL | 0.60 | 1.20 | 3.0% | 3% |
-| EXTREME_DEFENSIVE | 0.75 | 1.00 | 2.0% | 5% |
+| EXTREME_DEFENSIVE | 1.50 | 1.00 | 2.0% | 5% |
 
 Key behaviors:
 - **Hysteresis-based transitions** — separate enter/exit thresholds prevent oscillation
