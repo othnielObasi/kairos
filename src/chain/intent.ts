@@ -7,7 +7,7 @@
  */
 import { ethers, type TypedDataField } from 'ethers';
 import { config } from '../agent/config.js';
-import { getWallet } from './sdk.js';
+import { getSigner, getWalletAddress } from './sdk.js';
 
 export const TRADE_INTENT_TYPES: Record<string, TypedDataField[]> = {
   TradeIntent: [
@@ -51,10 +51,9 @@ export function buildTradeIntent(params: {
   deadlineSeconds: number;
   nonce: bigint;
 }): TradeIntentData {
-  const wallet = getWallet();
   return {
     agentId: BigInt(params.agentId),
-    agentWallet: wallet.address,
+    agentWallet: getWalletAddress(),
     pair: params.pair,
     action: params.action,
     amountUsdScaled: BigInt(Math.round(params.amountUsd * 100)),
@@ -70,9 +69,9 @@ export async function signTradeIntent(intent: TradeIntentData): Promise<{
   domain: ethers.TypedDataDomain;
   hash: string;
 }> {
-  const wallet = getWallet();
+  const signer = getSigner();
   const domain = getTradeIntentDomain();
-  const signature = await wallet.signTypedData(domain, TRADE_INTENT_TYPES, intent);
+  const signature = await signer.signTypedData(domain, TRADE_INTENT_TYPES, intent);
   const hash = hashTradeIntent(intent, domain);
   return { intent, signature, domain, hash };
 }

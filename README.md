@@ -2,8 +2,6 @@
 
 Kairos is an Arc-native agentic payments runtime built for the Agentic Economy on Arc hackathon. It demonstrates how an application or agent can charge, pay, and settle value per action with USDC on Arc using Circle infrastructure.
 
-The repository no longer carries the previous sandbox identity. Kairos is the active product here. The current runtime still uses a market-execution reference flow to exercise high-frequency governed decisions, but that reference workload is now framed in service of the Arc + Circle economic proof, not as the product identity.
-
 ## Hackathon Alignment
 
 Kairos is designed around the hackathon brief:
@@ -24,13 +22,13 @@ The implementation maps to the event tracks like this:
 
 ## What The Runtime Does
 
-Kairos runs a governed execution loop:
+Kairos runs a governed metering and settlement loop:
 
-1. Pull paid inputs and market or context data
+1. Pull paid inputs and service data through x402-compatible flows
 2. Run policy, oracle, supervisory, and routing checks
-3. Bill governance and compute events in USDC
-4. Execute approved actions through the Arc-connected flow
-5. Persist artifacts, billing data, and integration state for review
+3. Bill governance, compute, and data events in USDC
+4. Settle approved actions through the Arc-connected flow
+5. Persist receipts, billing data, and integration state for review
 
 This gives the project a concrete, high-frequency workload that can demonstrate 50+ onchain transactions, usage-based billing, and settlement visibility.
 
@@ -97,7 +95,7 @@ npm run mcp
 | `/api/state` | Full runtime snapshot |
 | `/api/feeds/status` | Feed and integration health |
 | `/api/billing` | Economic proof and payment aggregates |
-| `/api/trades` | Recent approved execution records from the reference workflow |
+| `/api/trades` | Approved action receipt feed exposed by the current demo loop |
 | `/kairos` | Economic proof dashboard |
 | `kairos://state/runtime` | MCP runtime resource |
 | `kairos://state/integration` | MCP integration resource |
@@ -105,6 +103,6 @@ npm run mcp
 
 ## Notes
 
-- Legacy planning and tuning markdown has been removed.
-- The current code still contains market and execution modules because they are the live reference workload used to produce the payment proof.
-- If you want the next pass to remove or rename those underlying market-execution modules too, that is a deeper runtime refactor rather than a documentation cleanup.
+- Circle Wallets and Arc are the primary settlement path when configured.
+- The current implementation still uses execution-oriented internals to generate high-frequency receipts and payment proof.
+- Repo-facing docs and registration metadata now describe Kairos as agentic payments infrastructure.

@@ -12,7 +12,7 @@
 import { createLogger } from '../agent/logger.js';
 import { retry } from '../agent/retry.js';
 import { config, isSupportedTestnet } from '../agent/config.js';
-import { getWallet } from './sdk.js';
+import { getWalletAddress } from './sdk.js';
 import { buildTradeIntent, signTradeIntent, TRADE_INTENT_TYPES } from './intent.js';
 import { verifyTypedDataSignature } from './eip1271.js';
 import { submitTradeIntent, simulateIntent, getIntentNonce } from './risk-router.js';
@@ -127,9 +127,8 @@ export async function executeTrade(
     const { signature, domain } = await signTradeIntent(intent);
 
     // ── Step 4b: Verify signature locally ──
-    const wallet = getWallet();
     const verification = await verifyTypedDataSignature(
-      wallet.address,
+      getWalletAddress(),
       domain,
       TRADE_INTENT_TYPES,
       intent as unknown as Record<string, unknown>,

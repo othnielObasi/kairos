@@ -24,7 +24,7 @@ import { ethers } from 'ethers';
 import { createHash } from 'crypto';
 import { execSync } from 'child_process';
 import os from 'os';
-import { getWallet } from '../chain/sdk.js';
+import { getSigner, getWalletAddress } from '../chain/sdk.js';
 import { createLogger } from '../agent/logger.js';
 import { config } from '../agent/config.js';
 
@@ -138,7 +138,8 @@ function hashMeasurement(m: EnvironmentMeasurement): string {
  * - A timestamp (freshness)
  */
 export async function generateAttestation(): Promise<AttestationReport> {
-  const wallet = getWallet();
+  const signer = getSigner();
+  const agentAddress = getWalletAddress();
   const measurement = collectMeasurement();
   const measurementHash = hashMeasurement(measurement);
 
@@ -147,20 +148,20 @@ export async function generateAttestation(): Promise<AttestationReport> {
 
   const domain = getAttestationDomain();
   const value = {
-    agentAddress: wallet.address,
+    agentAddress,
     measurementHash,
     nonce: attestationNonce,
     timestamp,
   };
 
-  const signature = await wallet.signTypedData(domain, ATTESTATION_TYPES, value);
+  const signature = await signer.signTypedData(domain, ATTESTATION_TYPES, value);
 
   // Self-verify for integrity
   const recovered = ethers.verifyTypedData(domain, ATTESTATION_TYPES, value, signature);
-  const valid = recovered.toLowerCase() === wallet.address.toLowerCase();
+  const valid = recovered.toLowerCase() === agentAddress.toLowerCase();
 
   if (!valid) {
-    log.error('Attestation self-verification failed', { recovered, expected: wallet.address });
+    log.error('Attestation self-verification failed', { recovered, expected: agentAddress });
   } else {
     log.info('TEE attestation generated', {
       commit: measurement.gitCommit,
@@ -172,7 +173,7 @@ export async function generateAttestation(): Promise<AttestationReport> {
   return {
     version: '1.0',
     type: 'software-tee',
-    agentAddress: wallet.address,
+    agentAddress,
     measurement,
     measurementHash,
     nonce: attestationNonce.toString(),

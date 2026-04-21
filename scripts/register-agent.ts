@@ -11,7 +11,7 @@
  * 5. Outputs the agent ID for .env
  */
 
-import { initChain, getBalance, getWalletAddress } from '../src/chain/sdk.js';
+import { initChain, getBalance, getWalletAddress, waitForCircleWallets } from '../src/chain/sdk.js';
 import { buildRegistrationJson, registerAgent, setAgentMetadata, getAgentCount } from '../src/chain/identity.js';
 import { uploadJson } from '../src/trust/ipfs.js';
 import { config } from '../src/agent/config.js';
@@ -25,9 +25,11 @@ async function main() {
 
   // Step 1: Initialize chain connection
   console.log('Step 1: Connecting to chain...');
-  const { wallet } = initChain();
+  initChain();
+  await waitForCircleWallets();
+  const walletAddress = getWalletAddress();
   const balance = await getBalance();
-  console.log(`  Wallet: ${wallet.address}`);
+  console.log(`  Wallet: ${walletAddress}`);
   console.log(`  Balance: ${balance} ETH`);
 
   if (parseFloat(balance) < 0.001) {
@@ -81,7 +83,7 @@ async function main() {
   console.log('═══════════════════════════════════════════');
   console.log(`  Agent ID:       ${agentId}`);
   console.log(`  Token URI:      ${ipfsResult.uri}`);
-  console.log(`  Wallet:         ${wallet.address}`);
+  console.log(`  Wallet:         ${walletAddress}`);
   console.log(`  Chain:          ${config.chainId}`);
   console.log(`  Registry:       ${config.identityRegistry}`);
   console.log('');

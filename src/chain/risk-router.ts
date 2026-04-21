@@ -14,7 +14,7 @@ import { billingStore } from '../services/billing-store.js';
 
 import { ethers } from 'ethers';
 import { config } from '../agent/config.js';
-import { getWallet, waitForTx } from './sdk.js';
+import { getSigner, waitForTx } from './sdk.js';
 import { createLogger } from '../agent/logger.js';
 import type { TradeIntentData } from './intent.js';
 
@@ -33,7 +33,7 @@ let contract: ethers.Contract | null = null;
 function getContract(): ethers.Contract {
   if (!contract) {
     if (!config.riskRouterAddress) throw new Error('RISK_ROUTER_ADDRESS not set');
-    contract = new ethers.Contract(config.riskRouterAddress, RISK_ROUTER_ABI, getWallet());
+    contract = new ethers.Contract(config.riskRouterAddress, RISK_ROUTER_ABI, getSigner());
   }
   return contract;
 }

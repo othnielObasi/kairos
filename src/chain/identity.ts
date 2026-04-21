@@ -8,7 +8,7 @@ import { Buffer } from 'node:buffer';
 import { ethers } from 'ethers';
 import { config } from '../agent/config.js';
 import { buildMandateMetadataJson, getDefaultMandate } from './agent-mandate.js';
-import { getWallet, waitForTx } from './sdk.js';
+import { getSigner, getWalletAddress, waitForTx } from './sdk.js';
 
 const IDENTITY_ABI = [
   'function register(string agentURI, tuple(string metadataKey, bytes metadataValue)[] metadata) external returns (uint256)',
@@ -58,10 +58,9 @@ function getContract(): ethers.Contract {
     // Use a dedicated provider if chain differs.
     if (config.identityRegistryChainId !== config.chainId && config.identityRegistryRpcUrl) {
       const idProvider = new ethers.JsonRpcProvider(config.identityRegistryRpcUrl);
-      const idWallet = new ethers.Wallet(config.privateKey, idProvider);
-      contract = new ethers.Contract(config.identityRegistry, IDENTITY_ABI, idWallet);
+      contract = new ethers.Contract(config.identityRegistry, IDENTITY_ABI, getSigner().connect(idProvider));
     } else {
-      contract = new ethers.Contract(config.identityRegistry, IDENTITY_ABI, getWallet());
+      contract = new ethers.Contract(config.identityRegistry, IDENTITY_ABI, getSigner());
     }
   }
   return contract;
@@ -105,7 +104,7 @@ export function buildRegistrationJson(options: {
   return {
     type: 'https://eips.ethereum.org/EIPS/eip-8004#registration-v1',
     name: config.agentName,
-    description: `${config.agentDescription}. Governed autonomous capital agent with neuro-symbolic policy checks, supervisory capital controls, pre-trade execution simulation, oracle integrity validation, and trust receipts for every decision. Mandate: ${JSON.stringify(buildMandateMetadataJson(mandate))}`,
+    description: `${config.agentDescription}. Arc-native agentic payments runtime with programmable USDC settlement, x402-gated service access, governed action checks, execution simulation, and auditable receipts for every billed or settled action. Runtime mandate: ${JSON.stringify(buildMandateMetadataJson(mandate))}`,
     image: options.imageUrl || config.agentImageUrl || '',
     services: [
       ...(options.dashboardUrl ? [{ name: 'web', endpoint: options.dashboardUrl }] : []),
@@ -116,7 +115,7 @@ export function buildRegistrationJson(options: {
     x402Support: true,
     active: options.active ?? true,
     registrations,
-    supportedTrust: options.supportedTrust || ['reputation', 'crypto-economic', 'tee-attestation'],
+    supportedTrust: options.supportedTrust || ['payment-receipts', 'usage-metering', 'tee-attestation'],
   };
 }
 
@@ -171,8 +170,7 @@ export async function setAgentUri(agentId: number, newUri: string): Promise<stri
 
 export async function setVerifiedAgentWallet(agentId: number, newWalletPrivateKey: string, deadlineSeconds = 3600): Promise<string> {
   const registry = getContract();
-  const ownerWallet = getWallet();
-  const newWallet = new ethers.Wallet(newWalletPrivateKey.startsWith('0x') ? newWalletPrivateKey : `0x${newWalletPrivateKey}`, ownerWallet.provider);
+  const newWallet = new ethers.Wallet(newWalletPrivateKey.startsWith('0x') ? newWalletPrivateKey : `0x${newWalletPrivateKey}`);
   const deadline = Math.floor(Date.now() / 1000) + deadlineSeconds;
   const domain = {
     name: 'ERC8004IdentityRegistry',
@@ -203,7 +201,6 @@ export async function getAgentWallet(agentId: number): Promise<string> {
 
 export async function getAgentCount(): Promise<number> {
   const registry = getContract();
-  const wallet = getWallet();
-  return Number(await registry.balanceOf(wallet.address));
+  return Number(await registry.balanceOf(getWalletAddress()));
 }
 

@@ -76,7 +76,7 @@ export async function waitForCircleWallets(): Promise<void> {
  * Get wallet address — returns Circle Wallets address if configured
  */
 export function getWalletAddress(): string {
-  if (circleSigner && process.env.AGENT_WALLET_ADDRESS) return process.env.AGENT_WALLET_ADDRESS;
+  if (USE_CIRCLE_WALLETS && process.env.AGENT_WALLET_ADDRESS) return process.env.AGENT_WALLET_ADDRESS;
   if (!wallet) throw new Error('Chain not initialized — call initChain() first');
   return wallet.address;
 }
@@ -110,8 +110,8 @@ export function getWallet(): ethers.Wallet {
  * Check wallet balance
  */
 export async function getBalance(): Promise<string> {
-  const { provider, wallet } = initChain();
-  const balance = await provider.getBalance(wallet.address);
+  const { provider } = initChain();
+  const balance = await provider.getBalance(getWalletAddress());
   return ethers.formatEther(balance);
 }
 

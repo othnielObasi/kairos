@@ -12,7 +12,7 @@
  */
 
 import { ethers } from 'ethers';
-import { getWallet } from './sdk.js';
+import { getSigner, getWalletAddress } from './sdk.js';
 
 export interface FeedbackAuthParams {
   clientAddress: string;  // Who is authorized to give feedback
@@ -26,7 +26,7 @@ export interface FeedbackAuthParams {
  * The agent signs a message authorizing a specific client to submit feedback
  */
 export async function signFeedbackAuth(params: FeedbackAuthParams): Promise<string> {
-  const wallet = getWallet();
+  const signer = getSigner();
 
   // Build the authorization message
   const message = ethers.solidityPacked(
@@ -35,7 +35,7 @@ export async function signFeedbackAuth(params: FeedbackAuthParams): Promise<stri
   );
 
   const messageHash = ethers.keccak256(message);
-  const signature = await wallet.signMessage(ethers.getBytes(messageHash));
+  const signature = await signer.signMessage(ethers.getBytes(messageHash));
 
   console.log(`[FEEDBACK-AUTH] Authorization signed for client ${params.clientAddress}`);
   return signature;
@@ -46,10 +46,8 @@ export async function signFeedbackAuth(params: FeedbackAuthParams): Promise<stri
  * The agent authorizes itself to submit feedback
  */
 export async function signSelfAuthorization(agentId: number): Promise<string> {
-  const wallet = getWallet();
-
   return signFeedbackAuth({
-    clientAddress: wallet.address,
+    clientAddress: getWalletAddress(),
     agentId,
     maxFeedbackCount: 1000,  // Allow many self-assessments
     expiresAt: Math.floor(Date.now() / 1000) + 86400 * 30,  // 30 days

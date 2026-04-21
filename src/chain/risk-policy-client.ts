@@ -14,7 +14,7 @@
 import { ethers } from 'ethers';
 import { createLogger } from '../agent/logger.js';
 import { config } from '../agent/config.js';
-import { getProvider, getWallet, waitForTx } from './sdk.js';
+import { getProvider, getSigner, waitForTx } from './sdk.js';
 
 const log = createLogger('RISK-POLICY');
 
@@ -57,7 +57,7 @@ function getWriteContract(): ethers.Contract | null {
   const addr = getPolicyAddress();
   if (!addr) return null;
   if (!contract) {
-    contract = new ethers.Contract(addr, RISK_POLICY_ABI, getWallet());
+    contract = new ethers.Contract(addr, RISK_POLICY_ABI, getSigner());
   }
   return contract;
 }
