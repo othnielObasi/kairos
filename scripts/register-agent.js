@@ -1,5 +1,5 @@
 /**
- * Register Actura on ERC-8004 Identity Registry
+ * Register Kairos on ERC-8004 Identity Registry
  *
  * Usage: npm run register
  *
@@ -17,7 +17,7 @@ import { config } from '../src/agent/config.js';
 async function main() {
     console.log('');
     console.log('═══════════════════════════════════════════');
-    console.log('  ACTURA — Agent Registration');
+    console.log('  KAIROS — Agent Registration');
     console.log('═══════════════════════════════════════════');
     console.log('');
     // Step 1: Initialize chain connection
@@ -45,15 +45,15 @@ async function main() {
     // Step 3: Build initial registration JSON (without agentId — set after registration)
     console.log('Step 3: Building registration JSON...');
     const registrationJson = buildRegistrationJson({
-        dashboardUrl: 'https://actura.sovereignailab.com',
-        mcpEndpoint: 'https://actura.sovereignailab.com/mcp',
-        a2aEndpoint: 'https://actura.sovereignailab.com/.well-known/agent-card.json',
+        dashboardUrl: 'https://kairos.sovereignailab.com',
+        mcpEndpoint: 'https://kairos.sovereignailab.com/mcp',
+        a2aEndpoint: 'https://kairos.sovereignailab.com/.well-known/agent-card.json',
         mandateCapitalUsd: 100000,
     });
     console.log('  ✅ Registration JSON built (ERC-8004 v1.0 compliant)\n');
     // Step 4: Upload to IPFS
     console.log('Step 4: Uploading to IPFS...');
-    const ipfsResult = await uploadJson(registrationJson, `actura-registration-${Date.now()}`);
+    const ipfsResult = await uploadJson(registrationJson, `kairos-registration-${Date.now()}`);
     console.log(`  CID: ${ipfsResult.cid}`);
     console.log(`  URI: ${ipfsResult.uri}`);
     console.log(`  Gateway: ${ipfsResult.gatewayUrl}`);

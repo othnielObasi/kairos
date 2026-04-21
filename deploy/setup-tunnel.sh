@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────
-#  Actura — Cloudflare Tunnel Setup
+#  Kairos — Cloudflare Tunnel Setup
 #  Run AFTER setup-vultr.sh and AFTER editing .env
 #
 #  This script:
@@ -11,10 +11,10 @@
 # ─────────────────────────────────────────────────────────
 set -euo pipefail
 
-TUNNEL_NAME="${1:-actura}"
+TUNNEL_NAME="${1:-kairos}"
 
 echo "══════════════════════════════════════"
-echo "  Actura — Cloudflare Tunnel Setup"
+echo "  Kairos — Cloudflare Tunnel Setup"
 echo "══════════════════════════════════════"
 
 # ── 1. Login to Cloudflare ──
@@ -63,7 +63,7 @@ echo "  Config written to /etc/cloudflared/config.yml"
 echo "[4/5] Creating DNS routes..."
 echo "  NOTE: If you have a custom domain, replace the hostnames above"
 echo "  with your domain and run:"
-echo "    cloudflared tunnel route dns ${TUNNEL_NAME} actura.yourdomain.com"
+echo "    cloudflared tunnel route dns ${TUNNEL_NAME} kairos.yourdomain.com"
 echo "    cloudflared tunnel route dns ${TUNNEL_NAME} mcp.yourdomain.com"
 echo ""
 echo "  For now, using the default *.cfargotunnel.com subdomain."
@@ -81,12 +81,12 @@ echo ""
 echo "  Dashboard: https://${TUNNEL_NAME}.cfargotunnel.com"
 echo "  MCP:       https://mcp-${TUNNEL_NAME}.cfargotunnel.com"
 echo ""
-echo "  Update /opt/actura/.env:"
+echo "  Update /opt/kairos/.env:"
 echo "    DASHBOARD_URL=https://${TUNNEL_NAME}.cfargotunnel.com"
 echo "    MCP_ENDPOINT=https://mcp-${TUNNEL_NAME}.cfargotunnel.com/mcp"
 echo ""
 echo "  Then restart the agent:"
-echo "    pm2 restart actura-agent"
+echo "    pm2 restart kairos-agent"
 echo ""
 echo "  Tunnel status:  cloudflared tunnel info ${TUNNEL_NAME}"
 echo "  Tunnel logs:    journalctl -u cloudflared -f"

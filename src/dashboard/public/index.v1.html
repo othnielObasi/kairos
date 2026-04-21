@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Actura Runtime Control Plane</title>
+  <title>Kairos Runtime Control Plane</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
@@ -306,17 +306,17 @@ function Preview() {
       id: 47 + tick, signal: "LONG", conf: 0.87, bias: bayesBias, confAdj: adjustedConfidence,
       regime, profile, alpha: 1.32, edgePct, costBps, edgeGate, price: currentPrice,
       size: supervisory.tradeAllowed ? 0.0612 * supervisory.effectiveMultiplier : 0,
-      approved: supervisory.tradeAllowed, trustScore, tier, receipt: "QmActuraReceipt...9af2", tx: "0x8f1c...0a71",
+      approved: supervisory.tradeAllowed, trustScore, tier, receipt: "QmKairosReceipt...9af2", tx: "0x8f1c...0a71",
     },
     {
       id: 46 + tick, signal: "SHORT", conf: 0.64, bias: -0.04, confAdj: 0.60,
       regime: "RANGING", profile: "LOW_VOL", alpha: -0.34, edgePct: 0.0013, costBps: 18, edgeGate: "FAIL",
-      price: currentPrice - 18, size: 0, approved: false, trustScore: 78, tier: "TIER_2_LIMITED", receipt: "QmActuraReceipt...7bc4", tx: "—",
+      price: currentPrice - 18, size: 0, approved: false, trustScore: 78, tier: "TIER_2_LIMITED", receipt: "QmKairosReceipt...7bc4", tx: "—",
     },
     {
       id: 45 + tick, signal: "LONG", conf: 0.58, bias: 0.02, confAdj: 0.60,
       regime: "UNCERTAIN", profile: "NORMAL", alpha: 0.24, edgePct: 0.0019, costBps: 17, edgeGate: "WATCH",
-      price: currentPrice - 9, size: 0, approved: false, trustScore: 84, tier: "TIER_2_LIMITED", receipt: "QmActuraReceipt...11c0", tx: "—",
+      price: currentPrice - 9, size: 0, approved: false, trustScore: 84, tier: "TIER_2_LIMITED", receipt: "QmKairosReceipt...11c0", tx: "—",
     },
   ], [tick, bayesBias, adjustedConfidence, regime, profile, edgePct, costBps, edgeGate, currentPrice, supervisory, trustScore, tier]);
 
@@ -378,9 +378,9 @@ function Preview() {
     <div style={{ minHeight: "100vh", background: "#06080c", color: "#e8ecf4", fontFamily: "system-ui,-apple-system,sans-serif" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 24px", borderBottom: "1px solid #1a2436", background: "linear-gradient(180deg,#0a0f18,#06080c)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 8, background: "linear-gradient(135deg,#00e68a,#00d4ff)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "monospace", fontWeight: 700, fontSize: 15, color: "#06080c" }}>A</div>
+          <div style={{ width: 34, height: 34, borderRadius: 8, background: "linear-gradient(135deg,#00e68a,#00d4ff)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "monospace", fontWeight: 700, fontSize: 15, color: "#06080c" }}>K</div>
           <div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>Actura Runtime Control Plane</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>Kairos Runtime Control Plane</div>
             <div style={{ fontSize: 9, color: "#4a5872", fontFamily: "monospace", letterSpacing: 1.5, textTransform: "uppercase" }}>GACR · ERC-8004 · Trust Governed Autonomous Capital</div>
           </div>
         </div>

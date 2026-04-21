@@ -14,7 +14,7 @@ Most agents demo payments. Kairos uses payment as the governance mechanism.
 
 Before any trade executes, Kairos must pass five governed stages — mandate enforcement, oracle integrity, execution simulation, supervisory decision, and risk routing. Each stage fires a **Circle Nanopayment** ($0.001 USDC). The agent cannot proceed without paying. The cost of governance is the proof of governance.
 
-This is not a prototype. Kairos is built on **Actura** — a live governed trading agent with 890+ executed cycles, Elite trust tier, and rank 4/48 on the ERC-8004 reputation registry before this hackathon started. The Arc migration adds the Circle payment layer. The governance system is unchanged.
+This is not a prototype. Kairos already has 890+ executed cycles, Elite trust tier, and rank 4/48 on the ERC-8004 reputation registry before this hackathon started. The Arc migration adds the Circle payment layer. The governance system is unchanged.
 
 ---
 
@@ -63,7 +63,7 @@ Every trading cycle simultaneously touches all four hackathon tracks:
 
 All five data feeds replaced with AIsa's native x402 API catalog (`https://api.aisa.one/apis/v2/`). Real x402 payments, real Arc settlement, real tx hashes — no fallback.
 
-| Actura source | AIsa endpoint | Price |
+| Replaced source | AIsa endpoint | Price |
 |---|---|---|
 | CoinGecko price feed | `/financial/prices/snapshot` | $0.024 |
 | Kraken market data | `/financial/prices/snapshot` | $0.024 |
@@ -108,10 +108,10 @@ kairos/
 │   └── dashboard/
 │       ├── server.ts                   # + /api/billing + /api/gateway-balance + /kairos
 │       └── public/
-│           ├── index.html              # Existing Actura dashboard (unchanged)
+│           ├── index.html              # Existing Kairos dashboard
 │           └── kairos.html             # NEW — Arc hackathon judge view
 ├── contracts/
-│   └── ActuraRiskPolicy.sol            # Redeploy on Arc testnet (same logic)
+│   └── KairosRiskPolicy.sol            # Redeploy on Arc testnet
 ├── .env.arc                            # Arc + Circle platform config
 └── README.md
 ```
@@ -131,7 +131,7 @@ Circle Developer Account — developer.circle.com
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/othnielObasi/actura-gacr-agent.git kairos
+git clone https://github.com/othnielObasi/kairos.git kairos
 cd kairos
 git checkout arc-kairos
 npm install
@@ -173,10 +173,10 @@ OWS_WALLET_ADDRESS=<derived from OWS_MNEMONIC>
 AISA_BASE_URL=https://api.aisa.one/apis/v2
 
 # Contract
-RISK_ROUTER_ADDRESS=<deploy ActuraRiskPolicy.sol on Arc>
+RISK_ROUTER_ADDRESS=<deploy KairosRiskPolicy.sol on Arc>
 ```
 
-### 3. Deploy ActuraRiskPolicy.sol on Arc
+### 3. Deploy KairosRiskPolicy.sol on Arc
 
 ```bash
 # Add Arc to hardhat.config.ts
@@ -289,7 +289,7 @@ On Ethereum mainnet, each $0.001 governance payment costs $2–20 in ETH gas. Th
 
 ## Demo
 
-Live judge dashboard: `http://api.actura.nov-tia.com:3000/kairos`
+Live judge dashboard: `http://api.kairos.nov-tia.com:3000/kairos`
 
 The dashboard shows all four tracks firing in real time — governance stage payments, AIsa data pull payments, LLM compute payments, and trade settlements — with clickable Arc block explorer links on every transaction hash.
 
@@ -297,9 +297,9 @@ The dashboard shows all four tracks firing in real time — governance stage pay
 
 ---
 
-## Unchanged from Actura
+## Stable in Kairos
 
-The following are identical to the Actura codebase — zero modifications:
+The following remain intact in the Kairos codebase:
 
 - All 24 test suites
 - Full governance pipeline logic
@@ -326,16 +326,16 @@ The following are identical to the Actura codebase — zero modifications:
 | Validation / Reputation scores | 99/99 |
 | Test suites | 24 · all passing |
 
-All metrics from live Actura deployment on Ethereum Sepolia before hackathon start.
+All metrics reflect the governed trading runtime before the Arc migration.
 
 ---
 
 ## Built By
 
 **Othniel Obasi** · Founder · NOVTIA Ltd · London  
-`github.com/othnielObasi/actura-gacr-agent`
+`github.com/othnielObasi/kairos`
 
-*Kairos is built on Actura, which competed in the Surge hackathon (March 30 – April 12 2026) on Ethereum Sepolia. The Arc migration is the arc-kairos branch.*
+*Kairos continues the same governed trading architecture with Arc-native payment infrastructure.*
 
 ---
 

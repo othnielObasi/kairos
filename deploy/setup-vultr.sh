@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────
-#  Actura — Vultr Server Setup Script
+#  Kairos — Vultr Server Setup Script
 #  Run as root on a fresh Ubuntu 24.04 LTS Vultr instance:
-#    curl -sL https://raw.githubusercontent.com/othnielObasi/actura-gacr-agent/main/deploy/setup-vultr.sh | bash
+#    curl -sL https://raw.githubusercontent.com/othnielObasi/kairos/main/deploy/setup-vultr.sh | bash
 # ─────────────────────────────────────────────────────────
 set -euo pipefail
 
-APP_DIR="/opt/actura"
-APP_USER="actura"
-REPO="https://github.com/othnielObasi/actura-gacr-agent.git"
+APP_DIR="/opt/kairos"
+APP_USER="kairos"
+REPO="https://github.com/othnielObasi/kairos.git"
 NODE_MAJOR=22
 
 echo "══════════════════════════════════════"
-echo "  Actura — Server Setup"
+echo "  Kairos — Server Setup"
 echo "══════════════════════════════════════"
 
 # ── 1. System updates & essentials ──
@@ -58,7 +58,7 @@ rm /tmp/cloudflared.deb
 echo "[7/7] Creating .env template..."
 if [ ! -f $APP_DIR/.env ]; then
   cat > $APP_DIR/.env << 'ENVEOF'
-# ─── Actura Environment Variables ───
+# ─── Kairos Environment Variables ───
 # Fill these in before starting the agent.
 
 MODE=live
@@ -75,7 +75,7 @@ PINATA_JWT=
 PINATA_GATEWAY=
 
 # Agent identity
-AGENT_NAME=Actura
+AGENT_NAME=Kairos
 AGENT_ID=
 
 # Dashboard & MCP (cloudflared will proxy these)
@@ -104,8 +104,8 @@ echo "════════════════════════�
 echo "  ✅ Server setup complete!"
 echo ""
 echo "  Next steps:"
-echo "  1. Edit /opt/actura/.env with your keys"
-echo "  2. Run:  bash /opt/actura/deploy/setup-tunnel.sh"
-echo "  3. Start:  cd /opt/actura && pm2 start ecosystem.config.cjs"
+echo "  1. Edit /opt/kairos/.env with your keys"
+echo "  2. Run:  bash /opt/kairos/deploy/setup-tunnel.sh"
+echo "  3. Start:  cd /opt/kairos && pm2 start ecosystem.config.cjs"
 echo "  4. Save:  pm2 save && pm2 startup"
 echo "══════════════════════════════════════"

@@ -1,5 +1,5 @@
 /**
- * Test Runner — runs all Actura tests
+ * Test Runner — runs all Kairos tests
  */
 import { spawnSync } from 'child_process';
 const tests = [
@@ -15,7 +15,7 @@ const tests = [
 ];
 console.log('');
 console.log('═══════════════════════════════════════════');
-console.log('  ACTURA TEST SUITE');
+console.log('  KAIROS TEST SUITE');
 console.log('═══════════════════════════════════════════');
 console.log('');
 let allPassed = true;
