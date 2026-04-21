@@ -47,7 +47,7 @@ These governance and risk controls remain identical regardless of trading mode:
 - Trust scorecard dimensions and tier boundaries
 - IPFS artifact structure and upload
 - On-chain risk policy (KairosRiskPolicy contract)
-- ERC-8004 identity/reputation/validation registries
+- identity registry and routing contract surfaces
 - Adaptive learning with immutable cage bounds
 
 ---

@@ -1,5 +1,5 @@
 /**
- * Register Kairos on ERC-8004 Identity Registry
+ * Register Kairos on the identity registry
  * 
  * Usage: npm run register
  * 
@@ -55,7 +55,7 @@ async function main() {
     a2aEndpoint: 'https://kairos.sovereignailab.com/.well-known/agent-card.json',
     mandateCapitalUsd: 100000,
   });
-  console.log('  ✅ Registration JSON built (ERC-8004 v1.0 compliant)\n');
+  console.log('  ✅ Registration JSON built\n');
 
   // Step 4: Upload to IPFS
   console.log('Step 4: Uploading to IPFS...');
@@ -71,7 +71,7 @@ async function main() {
   const agentId = await registerAgent(ipfsResult.uri);
   console.log(`  ✅ Registered! Agent ID: ${agentId}\n`);
 
-  // Step 6: agentWallet is auto-set to owner address on registration per ERC-8004 v1.0
+  // Step 6: agentWallet is auto-set to the owner address on registration
   // No need to call setMetadata for it
   console.log('Step 6: Agent wallet auto-set to owner address ✅\n');
 

@@ -31,7 +31,7 @@ export function validateConfig(): ValidationResult {
     errors.push('RPC_URL is required');
   }
   if (config.chainId !== ARC_TESTNET_CHAIN_ID) {
-    warnings.push(`CHAIN_ID is ${config.chainId} (${getChainLabel(config.chainId)}), expected ${ARC_TESTNET_CHAIN_ID} (Arc Testnet) for the hackathon path`);
+    warnings.push(`CHAIN_ID is ${config.chainId} (${getChainLabel(config.chainId)}), expected ${ARC_TESTNET_CHAIN_ID} (Arc Testnet) for the primary Arc path`);
   }
 
   // Trading params sanity checks

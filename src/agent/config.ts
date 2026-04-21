@@ -1,10 +1,10 @@
 import '../env/load.js';
 
 export const ARC_TESTNET_CHAIN_ID = 5042002;
-const SANDBOX_TESTNET_CHAIN_IDS = new Set<number>([ARC_TESTNET_CHAIN_ID, 11155111, 84532]);
+const SUPPORTED_TESTNET_CHAIN_IDS = new Set<number>([ARC_TESTNET_CHAIN_ID, 11155111, 84532]);
 
-export function isSandboxTestnet(chainId: number): boolean {
-  return SANDBOX_TESTNET_CHAIN_IDS.has(chainId);
+export function isSupportedTestnet(chainId: number): boolean {
+  return SUPPORTED_TESTNET_CHAIN_IDS.has(chainId);
 }
 
 export function getChainLabel(chainId: number): string {
@@ -28,14 +28,11 @@ export const config = {
   rpcUrl: process.env.RPC_URL || 'https://rpc.testnet.arc.network',
   chainId: parseInt(process.env.CHAIN_ID || String(ARC_TESTNET_CHAIN_ID)),
   
-  // Hackathon / Circle contracts on Arc
+  // On-chain routing and identity
   agentRegistryAddress: process.env.AGENT_REGISTRY_ADDRESS || '',
-  hackathonVaultAddress: process.env.HACKATHON_VAULT_ADDRESS || '',
   riskRouterAddress: process.env.RISK_ROUTER_ADDRESS || '',
-  reputationRegistry: process.env.REPUTATION_REGISTRY || '0x8004B663056A597Dffe9eCcC1965A193B7388713',
-  validationRegistry: process.env.VALIDATION_REGISTRY || '0x8004Cb1BF31DAf7788923b405b754f57acEB4272',
 
-  // ERC-8004 registries default to Arc testnet
+  // Identity registry defaults to Arc testnet
   identityRegistry: process.env.IDENTITY_REGISTRY || '0x8004A818BFB912233c491871b3d84c89A494BD9e',
   identityRegistryChainId: parseInt(process.env.IDENTITY_REGISTRY_CHAIN_ID || String(ARC_TESTNET_CHAIN_ID)),
   identityRegistryRpcUrl: process.env.IDENTITY_REGISTRY_RPC_URL || 'https://rpc.testnet.arc.network',
@@ -56,11 +53,8 @@ export const config = {
   restrictedProtocols: (process.env.RESTRICTED_PROTOCOLS || '').split(',').map(s => s.trim()).filter(Boolean),
   requireHumanApprovalAboveUsd: parseFloat(process.env.REQUIRE_HUMAN_APPROVAL_ABOVE_USD || '20000'),
 
-  // Hackathon / ERC-8004 adapters
-  capitalVaultAddress: process.env.CAPITAL_VAULT_ADDRESS || '',  // legacy
+  // Integration endpoints
   dexRouterAddress: process.env.DEX_ROUTER_ADDRESS || '',
-  validatorAddress: process.env.VALIDATOR_ADDRESS || '',
-  preferredReviewerAddresses: (process.env.PREFERRED_REVIEWER_ADDRESSES || '').split(',').map(s => s.trim()).filter(Boolean),
   agentImageUrl: process.env.AGENT_IMAGE_URL || '',
   dashboardUrl: process.env.DASHBOARD_URL || 'http://localhost:3000',
   mcpEndpoint: process.env.MCP_ENDPOINT || 'http://localhost:3001/mcp',

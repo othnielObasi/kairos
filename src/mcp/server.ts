@@ -2,7 +2,7 @@
 /**
  * Kairos MCP Server
  * Lightweight MCP-compatible HTTP + JSON-RPC server for discovery, tools,
- * resources, and prompts. Designed for hackathon demos and local integration.
+ * resources, and prompts. Designed for local and hosted integration.
  */
 
 import express from 'express';

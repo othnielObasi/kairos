@@ -12,7 +12,6 @@ import { getOperatorActionReceipts, getOperatorControlState } from '../agent/ope
 import { computeRiskAdjustedMetrics } from '../analytics/performance-metrics.js';
 import { config } from '../agent/config.js';
 import { getKrakenFeedStatus } from '../data/kraken-feed.js';
-import { getIndexedEvents, getIndexerStatus } from '../chain/event-indexer.js';
 
 export type McpVisibility = 'public' | 'restricted' | 'operator';
 
@@ -132,27 +131,21 @@ const performanceResource: McpResource = {
   },
 };
 
-const erc8004Resource: McpResource = {
-  uri: 'kairos://state/erc8004',
-  name: 'ERC-8004 Integration State',
-  description: 'Current registry addresses and readiness for trustless agent integration',
+const integrationResource: McpResource = {
+  uri: 'kairos://state/integration',
+  name: 'Integration State',
+  description: 'Current routing, identity, and external interface readiness',
   visibility: 'public',
   mimeType: 'application/json',
   handler: () => ({
     identityRegistry: config.identityRegistry,
-    reputationRegistry: config.reputationRegistry,
-    validationRegistry: config.validationRegistry,
     riskRouterAddress: config.riskRouterAddress,
-    hackathonVaultAddress: config.hackathonVaultAddress,
     mcpEndpoint: config.mcpEndpoint,
     a2aEndpoint: config.a2aEndpoint,
     registrationUri: config.registrationUri,
     readiness: {
       identity: Boolean(config.identityRegistry),
-      reputation: Boolean(config.reputationRegistry),
-      validation: Boolean(config.validationRegistry),
       router: Boolean(config.riskRouterAddress),
-      vault: Boolean(config.hackathonVaultAddress),
     },
   }),
 };
@@ -160,7 +153,7 @@ const erc8004Resource: McpResource = {
 const artifactsResource: McpResource = {
   uri: 'kairos://state/artifacts',
   name: 'Recent Artifacts',
-  description: 'Recent validation artifacts and receipts',
+  description: 'Recent decision artifacts and receipts',
   visibility: 'public',
   mimeType: 'application/json',
   handler: (params) => {
@@ -204,21 +197,6 @@ const feedsResource: McpResource = {
   }),
 };
 
-const eventsResource: McpResource = {
-  uri: 'kairos://state/events',
-  name: 'On-Chain Events',
-  description: 'Indexed ERC-8004 registry events (reputation feedback, validation requests/responses)',
-  visibility: 'public',
-  mimeType: 'application/json',
-  handler: (params) => {
-    const limit = typeof params?.limit === 'number' ? params.limit : 50;
-    return {
-      indexer: getIndexerStatus(),
-      events: getIndexedEvents().slice(-limit),
-    };
-  },
-};
-
 export const ALL_RESOURCES: McpResource[] = [
   trustResource,
   marketResource,
@@ -226,9 +204,8 @@ export const ALL_RESOURCES: McpResource[] = [
   positionsResource,
   operatorResource,
   performanceResource,
-  erc8004Resource,
+  integrationResource,
   artifactsResource,
   tradeHistoryResource,
   feedsResource,
-  eventsResource,
 ];

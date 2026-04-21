@@ -1,5 +1,5 @@
 /**
- * Hackathon EIP-712 TradeIntent builder/signing.
+ * EIP-712 TradeIntent builder/signing.
  * Uses the configured RiskRouter domain for the active settlement chain.
  *
  * TradeIntent fields per SHARED_CONTRACTS.md:

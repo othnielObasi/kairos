@@ -2,7 +2,7 @@
  * TEE Attestation — Software-Based Trusted Execution Environment Attestation
  *
  * Since real TEE hardware (Intel SGX / ARM TrustZone) is not available in
- * the hackathon sandbox, this module provides a software-based attestation
+ * the current runtime environment, this module provides a software-based attestation
  * scheme that mirrors the TEE attestation workflow:
  *
  * 1. Collects an environment fingerprint (OS, Node version, code integrity hash)

@@ -2,7 +2,7 @@
  * Social Sharing Module — Trade Summary Generator
  *
  * Auto-generates shareable trade summaries formatted for X/Twitter.
- * Used by the dashboard's "share" feature and the judge walkthrough page.
+ * Used by the dashboard's share feature and the economic-proof page.
  */
 
 import { config } from '../agent/config.js';
@@ -41,12 +41,14 @@ ${decision} | Confidence: ${(params.confidence * 100).toFixed(0)}%
 
 Every trade is auditable on IPFS. Zero trust assumptions.
 
-@Surgexyz_ @lablabai #SurgeHackathon #ERC8004 #DeFi #Base`;
+Arc-native execution. Circle-powered micropayments.
+
+#Kairos #Arc #Circle #USDC`;
 
   return {
     text,
-    hashtags: ['SurgeHackathon', 'ERC8004', 'DeFi', 'Base'],
-    mentions: ['@Surgexyz_', '@lablabai'],
+    hashtags: ['Kairos', 'Arc', 'Circle', 'USDC'],
+    mentions: [],
     url: params.artifactCid ? `${config.pinataGateway}/${params.artifactCid}` : null,
   };
 }
@@ -74,12 +76,14 @@ ${pnlEmoji} PnL: $${params.pnl.toFixed(2)} (${pnlPct}%)
 
 Fully governed. Every decision auditable.
 
-@Surgexyz_ @lablabai #SurgeHackathon #ERC8004 #DeFi`;
+Arc-native execution. Circle-powered micropayments.
+
+#Kairos #Arc #Circle`;
 
   return {
     text,
-    hashtags: ['SurgeHackathon', 'ERC8004', 'DeFi'],
-    mentions: ['@Surgexyz_', '@lablabai'],
+    hashtags: ['Kairos', 'Arc', 'Circle'],
+    mentions: [],
     url: null,
   };
 }
