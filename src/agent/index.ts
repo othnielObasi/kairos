@@ -1,8 +1,8 @@
 /**
- * KAIROS — Accountable Autonomous Trading Agent
+ * KAIROS — Arc-Native Agentic Payments Runtime
  * Production-Grade Main Agent Loop
  *
- * "Not the smartest trader. The most accountable."
+ * "Not the fastest agent. The most accountable."
  *
  * Features:
  * - Structured logging with levels
@@ -90,7 +90,7 @@ let lastSentiment: SentimentResult | null = null;
 async function initAgent(): Promise<void> {
   console.log('');
   console.log('═══════════════════════════════════════════');
-  console.log('  KAIROS — Accountable Autonomous Trading Agent');
+  console.log('  KAIROS — Arc-Native Agentic Payments Runtime');
   console.log('  Arc-native governed execution runtime');
   console.log('═══════════════════════════════════════════');
   console.log('');

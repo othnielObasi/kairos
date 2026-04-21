@@ -2,8 +2,8 @@
  * SAGE — Self-Adapting Generative Engine
  *
  * An adaptive learning layer for responsible, self-improving AI agents.
- * Sits between the agent planner and signal generation, observing trade
- * outcomes and using LLM reflection to learn which signals work.
+ * Sits between the agent planner and signal generation, observing execution
+ * outcomes and using LLM reflection to learn which patterns work.
  *
  * Produces:
  *   - Reflection Insights (lessons learned from trade batches)
@@ -554,7 +554,7 @@ function buildReflectionPrompt(outcomes: SAGEOutcome[]): string {
       return `  ${k}: ${v.toFixed(3)} (range: ${cage.min}–${cage.max})`;
     }).join('\n');
 
-  return `You are the SAGE (Self-Adapting Generative Engine) reflection engine for Kairos, an autonomous crypto trading agent.
+  return `You are the SAGE (Self-Adapting Generative Engine) reflection engine for Kairos, an autonomous agentic payments runtime with a market-based reference workflow.
 
 Analyze these recent trade outcomes and provide structured learning.
 
@@ -599,7 +599,7 @@ Respond ONLY with valid JSON (no markdown, no backticks):
       "expiresAfterTrades": 30
     }
   ],
-  "contextSummary": "Brief summary of accumulated trading wisdom for this market regime"
+  "contextSummary": "Brief summary of accumulated execution learnings for this operating regime"
 }`;
 }
 

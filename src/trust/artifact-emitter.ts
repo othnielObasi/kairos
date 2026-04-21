@@ -528,7 +528,7 @@ export function enrichArtifact(
     artifact.aiReasoning = aiReasoning;
   }
 
-  // Kairos Arc billing snapshot — appended to every artifact for hackathon judges
+  // Kairos Arc billing snapshot — appended to every artifact for economic-proof review
   (artifact as any).kairosArcBilling = billingStore.toJSON();
 
   return artifact;

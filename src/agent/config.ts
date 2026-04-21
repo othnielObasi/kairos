@@ -43,7 +43,7 @@ export const config = {
   
   // Agent
   agentName: process.env.AGENT_NAME || 'Kairos',
-  agentDescription: process.env.AGENT_DESCRIPTION || 'Accountable autonomous trading agent',
+  agentDescription: process.env.AGENT_DESCRIPTION || 'Arc-native agentic payments runtime',
   agentId: process.env.AGENT_ID ? parseInt(process.env.AGENT_ID) : null,
 
   // Mandate / Permissions

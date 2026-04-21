@@ -208,7 +208,7 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
     <div class="mi">
       <div class="mi-lbl">Governed moments</div>
       <div class="mi-val p" id="mb-cycles">—</div>
-      <div class="mi-sub">trading cycles total</div>
+      <div class="mi-sub">governed cycles total</div>
     </div>
     <div class="mi">
       <div class="mi-lbl">Arc transactions</div>
@@ -253,7 +253,7 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
       <div class="trk-hdr">
         <div class="trk-num">TRACK 01 · PRIMARY</div>
         <div class="trk-title">Agent-to-Agent Loop</div>
-        <div class="trk-sub">Trading agent pays per governance stage · Circle Nanopayments · $0.001 USDC · instant confirmation · Arc batch settlement</div>
+        <div class="trk-sub">Kairos pays per governance stage · Circle Nanopayments · $0.001 USDC · instant confirmation · Arc batch settlement</div>
         <div class="trk-total-row">
           <span class="trk-total-lbl">Session spend</span>
           <span class="trk-total-val c1" id="t1-total">$0.000 USDC</span>
@@ -305,14 +305,14 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
       <div class="trk-hdr">
         <div class="trk-num">TRACK 04</div>
         <div class="trk-title">Real-Time Micro-Commerce</div>
-        <div class="trk-sub">Approved trades settle in USDC on Arc · Circle Wallets · sub-second finality · per-interaction settlement · no human in the loop</div>
+        <div class="trk-sub">Approved actions settle in USDC on Arc · Circle Wallets · sub-second finality · per-interaction settlement · no human in the loop</div>
         <div class="trk-total-row">
           <span class="trk-total-lbl">Settled volume</span>
           <span class="trk-total-val c4" id="t4-total">$0.00 USDC</span>
         </div>
       </div>
       <div class="trk-body" id="t4-body">
-        <div class="empty"><div class="empty-dot"></div>Awaiting approved trades<br>All governance stages must clear</div>
+        <div class="empty"><div class="empty-dot"></div>Awaiting approved actions<br>All governance stages must clear</div>
       </div>
     </div>
 
@@ -493,7 +493,7 @@ function renderT4(checkpoints) {
   const trades = (checkpoints||[]).filter(c => c.status==="CLOSED"||c.tradeId||c.direction);
   const body = el("t4-body");
   if (!trades.length) {
-    body.innerHTML = '<div class="empty"><div class="empty-dot"></div>Awaiting approved trades<br>All governance stages must clear</div>';
+    body.innerHTML = '<div class="empty"><div class="empty-dot"></div>Awaiting approved actions<br>All governance stages must clear</div>';
     el("t4-total").textContent = "$0.00 USDC"; return;
   }
   body.innerHTML = "";
