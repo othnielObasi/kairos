@@ -15,7 +15,7 @@
  * - Health check endpoint
  */
 
-import { config, isSandboxTestnet } from './config.js';
+import { config, isSupportedTestnet } from './config.js';
 import { createLogger, getRecentLogs, getErrorLogs } from './logger.js';
 import { validateConfig } from './validator.js';
 import { Scheduler } from './scheduler.js';
@@ -44,14 +44,12 @@ import { fetchLivePrice, fetchOHLCHistory, buildLiveCandle, getLiveFeedStatus } 
 import { fetchSentiment, type SentimentResult } from '../data/sentiment-feed.js';
 import { fetchPrismData, fetchPrismResolve, prismConfidenceModifier, type PrismData } from '../data/prism-feed.js';
 import { getKrakenFeedStatus } from '../data/kraken-feed.js';
-import { postCheckpoint } from '../chain/validation.js';
 import { checkTradeOnChain, recordTradeOnChain, recordCloseOnChain, getOnChainRiskState } from '../chain/risk-policy-client.js';
-// Validation & reputation scores posted by hackathon judge bot (no self-attestation)
 import { executeKrakenTrade, closeKrakenPosition, getKrakenAccountSnapshot, krakenPreflight } from '../data/kraken-bridge.js';
 import { getCliStatus } from '../data/kraken-cli.js';
-import { startIndexer, getIndexerStatus, getIndexedEvents } from '../chain/event-indexer.js';
 import { getOperatorControlState, getLatestOperatorAction } from './operator-control.js';
 import { recordClosedTrade, getRecentTrades, getTradeStats, loadClosedTrades, type ClosedTrade } from './trade-log.js';
+import { pathToFileURL } from 'url';
 
 const log = createLogger('AGENT');
 
@@ -77,7 +75,6 @@ const LOSS_STREAK_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
 const LOSS_STREAK_THRESHOLD = 3;
 let recentCloseTimestamps: { time: number; win: boolean }[] = [];
 let lossStreakCooldownUntil = 0;
-let lastValidationPostAt = 0;
 
 
 let marketData: MarketData;
@@ -94,7 +91,7 @@ async function initAgent(): Promise<void> {
   console.log('');
   console.log('═══════════════════════════════════════════');
   console.log('  KAIROS — Accountable Autonomous Trading Agent');
-  console.log('  Sovereign AI Lab × ERC-8004');
+  console.log('  Arc-native governed execution runtime');
   console.log('═══════════════════════════════════════════');
   console.log('');
 
@@ -272,13 +269,11 @@ async function initAgent(): Promise<void> {
     latestPrice: `$${marketData.prices[marketData.prices.length - 1].toFixed(2)}`,
   });
 
-  // Start on-chain event indexer (non-blocking, polls every 30s)
   if (config.privateKey && agentId) {
     try {
       const { initChain, waitForCircleWallets } = await import('../chain/sdk.js');
       initChain();
       await waitForCircleWallets(); // ensure Circle Wallets signer is ready before first trade
-      startIndexer(agentId);
 
       // Reconcile on-chain position count with local state.
       // If the on-chain contract thinks more positions are open than local
@@ -302,7 +297,7 @@ async function initAgent(): Promise<void> {
         log.warn('On-chain position sync failed (non-critical)', { error: String(syncErr) });
       }
     } catch (e) {
-      log.warn('Event indexer failed to start — chain not configured', { error: String(e) });
+      log.warn('Chain services failed to initialize', { error: String(e) });
     }
   }
 }
@@ -687,7 +682,7 @@ async function runCycle(): Promise<void> {
     side: strategyOutput.signal.direction as 'LONG' | 'SHORT',
     notionalUsd: riskDecision.finalPositionSize * strategyOutput.currentPrice,
     volatility: strategyOutput.indicators.volatility ?? 0.02,
-    isTestnet: isSandboxTestnet(config.chainId),
+    isTestnet: isSupportedTestnet(config.chainId),
     enabledDexes: config.allowedProtocols.filter(
       (p): p is DexId => p === 'aerodrome' || p === 'uniswap'
     ),
@@ -697,8 +692,8 @@ async function runCycle(): Promise<void> {
     : { selectedDex: 'uniswap' as DexId, quotes: [], savingsBps: 0, rationale: ['no trade'], timestamp: new Date().toISOString(), routingVersion: '1.0' };
 
   // Step 4b: Execution simulation — required pre-trade safety stage (uses DEX-specific fees)
-  // On supported hackathon testnets, use minimal fee assumptions.
-  const isTestnet = isSandboxTestnet(config.chainId);
+  // On supported testnets, use minimal fee assumptions.
+  const isTestnet = isSupportedTestnet(config.chainId);
   const executionSimulation = await simulateExecution({
     strategyOutput,
     riskDecision,
@@ -848,40 +843,31 @@ async function runCycle(): Promise<void> {
   const checkpoint = saveCheckpoint(strategyOutput, riskDecision, artifact, ipfsResult);
 
   // Step 8: Execute trade
-  let mainExecutorRanValidation = false;
   if (shouldExecute) {
     if (MODE === 'live' && agentId && config.riskRouterAddress) {
-      // REAL EXECUTION: Sign intent → Risk Router → Validation → Reputation
-      // Only runs when Risk Router is configured (hackathon publishes the address)
+      // Real execution: sign intent, route through the risk router, then record the outcome.
       const execResult = await executeTrade(strategyOutput, riskDecision, artifact, agentId);
       if (execResult.success) {
         checkpoint.onChainTxHash = execResult.intentTxHash;
-        mainExecutorRanValidation = true;
         ipfsResult = ipfsResult || { cid: execResult.artifactIpfsCid!, uri: execResult.artifactIpfsUri!, gatewayUrl: '' };
       } else {
         log.warn('On-chain execution failed — recording locally only', { error: execResult.error });
       }
     }
 
-    // Step 8b: Kraken CLI execution (combined track — runs alongside ERC-8004)
+    // Step 8b: Kraken CLI execution
     // Paper trading doesn't need API keys — just the CLI binary with local simulation
     const krakenPaperEnabled = process.env.KRAKEN_PAPER_TRADING !== 'false';
     const krakenLiveEnabled = !!(process.env.KRAKEN_API_KEY && process.env.KRAKEN_API_SECRET);
     const krakenEnabled = krakenLiveEnabled || krakenPaperEnabled;
     if (krakenEnabled && (MODE === 'live' || MODE === 'kraken' || krakenPaperEnabled)) {
-      const krakenResult = await executeKrakenTrade(
-        strategyOutput, riskDecision, artifact, agentId,
-        { skipOnChainValidation: mainExecutorRanValidation },
-      );
+      const krakenResult = await executeKrakenTrade(strategyOutput, riskDecision, artifact);
       if (krakenResult.success) {
         (checkpoint as any).krakenOrderId = krakenResult.orderId;
         (checkpoint as any).krakenPaperTrade = krakenResult.paperTrade;
         if (!ipfsResult && krakenResult.artifactIpfsCid) {
           ipfsResult = { cid: krakenResult.artifactIpfsCid, uri: krakenResult.artifactIpfsUri!, gatewayUrl: '', size: 0 };
           checkpoint.ipfs = ipfsResult;
-        }
-        if (!checkpoint.onChainTxHash && krakenResult.validationTxHash) {
-          checkpoint.onChainTxHash = krakenResult.validationTxHash;
         }
         log.info('Kraken order executed', {
           orderId: krakenResult.orderId,
@@ -968,16 +954,6 @@ async function runCycle(): Promise<void> {
 
     // Persist immediately after opening a position so it survives crashes
     persistState();
-  }
-
-  // Step 8d: Post validation attestation to ValidationRegistry (rate-limited to 1 per 5 min)
-  const VAL_POST_INTERVAL_MS = 60 * 1000;
-  if (agentId && (Date.now() - lastValidationPostAt) >= VAL_POST_INTERVAL_MS) {
-    lastValidationPostAt = Date.now();
-    const cpDir = checkpoint.strategyOutput?.signal?.direction || "NEUTRAL";
-    const valHash = "0x" + (await import("node:crypto")).createHash("sha256").update(checkpoint.timestamp + "-" + cpDir).digest("hex");
-    postCheckpoint(agentId, valHash, 100, 'Cycle ' + cycleCount + ' ' + cpDir)
-      .catch(function(e) { log.warn('Validation posting failed (non-critical)', { error: String(e).slice(0, 120) }); });
   }
 
   // Step 9: Update trailing stops and check stop-losses
@@ -1179,7 +1155,6 @@ export function getAgentState() {
     liveFeed: getLiveFeedStatus(),
     krakenFeed: getKrakenFeedStatus(),
     krakenCli: getCliStatus(),
-    eventIndexer: getIndexerStatus(),
     recentCheckpoints: getCheckpoints(10),
     scheduler: scheduler?.getState() ?? null,
     maxPositions: MAX_OPEN_POSITIONS,
@@ -1204,8 +1179,6 @@ export function getHealthCheck() {
     positions: riskEngine?.getOpenPositions().length ?? 0,
     agentId: agentId ?? config.agentId ?? 338,
     identityRegistry: config.identityRegistry,
-    reputationRegistry: config.reputationRegistry,
-    validationRegistry: config.validationRegistry,
     chainId: config.chainId,
     ownerAddress,
     riskPolicyAddress: process.env.RISK_POLICY_ADDRESS || '',
@@ -1260,10 +1233,11 @@ export async function runSimulation(cycles: number = 50): Promise<void> {
 }
 
 // ──── Entry Point ────
-import { executeTrade, preflight, claimSandboxCapital } from '../chain/executor.js';
+import { executeTrade } from '../chain/executor.js';
 import { getWalletAddress } from '../chain/sdk.js';
-import { startDashboard, stopDashboard } from '../dashboard/server.js';
-import { startMcpServer, stopMcpServer } from '../mcp/server.js';
+
+let stopDashboardServer: (() => Promise<void>) | null = null;
+let stopMcpRuntime: (() => Promise<void>) | null = null;
 
 // ──── Graceful Shutdown ────
 
@@ -1277,7 +1251,10 @@ function gracefulShutdown(signal: string): void {
   scheduler?.shutdown(signal);
   persistState();
 
-  Promise.all([stopDashboard(), stopMcpServer()])
+  Promise.all([
+    stopDashboardServer ? stopDashboardServer() : Promise.resolve(),
+    stopMcpRuntime ? stopMcpRuntime() : Promise.resolve(),
+  ])
     .then(() => {
       log.info('All servers stopped. Goodbye.');
       process.exit(0);
@@ -1304,51 +1281,43 @@ process.on('uncaughtException', (err) => {
   }
 });
 
-// Start servers
-startDashboard(3000);
-startMcpServer(3001);
+const isEntryPoint = Boolean(process.argv[1]) && pathToFileURL(process.argv[1]).href === import.meta.url;
 
-// Run in simulation mode (swap for scheduler in production)
-// Run in selected mode
-if (MODE === 'live') {
-  // Production: preflight → claim sandbox → scheduler
-
+if (isEntryPoint) {
   (async () => {
-    await initAgent();
+    const [{ startDashboard, stopDashboard }, { startMcpServer, stopMcpServer }] = await Promise.all([
+      import('../dashboard/server.js'),
+      import('../mcp/server.js'),
+    ]);
 
-    // Preflight checks
-    const flight = await preflight();
-    if (!flight.ready) {
-      log.warn('Preflight issues found — some features may not work');
+    stopDashboardServer = stopDashboard;
+    stopMcpRuntime = stopMcpServer;
+
+    // Start servers
+    startDashboard(3000);
+    startMcpServer(3001);
+
+    // Run in selected mode
+    if (MODE === 'live') {
+      await initAgent();
+
+      // Start scheduled trading
+      scheduler = new Scheduler(config.tradingIntervalMs);
+      scheduler.onShutdown(() => {
+        log.info('Persisting state on shutdown...');
+        persistState();
+      });
+      scheduler.start(runCycle, () => {
+        log.info('Daily circuit breaker reset');
+        riskEngine.resetDaily();
+      });
+      return;
     }
 
-    // Claim sandbox capital (idempotent — safe to call multiple times)
-    if (config.capitalVaultAddress) {
-      try {
-        await claimSandboxCapital();
-      } catch (e) {
-        log.warn('Sandbox claim failed — may already be claimed', { error: String(e) });
-      }
-    }
-
-    // Start scheduled trading
-    scheduler = new Scheduler(config.tradingIntervalMs);
-    scheduler.onShutdown(() => {
-      log.info('Persisting state on shutdown...');
-      persistState();
-    });
-    scheduler.start(runCycle, () => {
-      log.info('Daily circuit breaker reset');
-      riskEngine.resetDaily();
-    });
+    // Simulation: run N cycles fast
+    await runSimulation(50);
   })().catch(err => {
-    log.fatal('Live mode startup failed', { error: String(err) });
-    process.exit(1);
-  });
-} else {
-  // Simulation: run N cycles fast
-  runSimulation(50).catch(err => {
-    log.fatal('Simulation failed', { error: String(err) });
+    log.fatal('Runtime startup failed', { error: String(err) });
     process.exit(1);
   });
 }

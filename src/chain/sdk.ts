@@ -16,7 +16,7 @@ let wallet: ethers.Wallet | null = null;
 let circleSigner: ethers.Signer | null = null;
 let circleInitPromise: Promise<void> | null = null;
 
-// Circle Wallets integration — recommended for hackathon
+// Circle Wallets integration — recommended for Arc-native settlement
 const USE_CIRCLE_WALLETS = !!(process.env.CIRCLE_API_KEY && process.env.CIRCLE_WALLET_ID);
 
 /**
@@ -31,7 +31,7 @@ export function initChain(): { provider: ethers.JsonRpcProvider; wallet: ethers.
     batchMaxCount: 1,       // disable batching — free-tier RPCs reject batch requests
   });
 
-  // Try Circle Wallets first (recommended by hackathon) — properly awaited
+  // Try Circle Wallets first (recommended for production settlement) — properly awaited
   if (USE_CIRCLE_WALLETS) {
     circleInitPromise = (async () => {
       try {

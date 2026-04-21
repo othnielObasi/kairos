@@ -25,7 +25,7 @@ Most agents demo payments. Kairos uses payment as the governance mechanism.
 
 Before any trade executes, Kairos must pass five governed stages — mandate enforcement, oracle integrity, execution simulation, supervisory decision, and risk routing. Each stage fires a **Circle Nanopayment** ($0.001 USDC). The agent cannot proceed without paying. The cost of governance is the proof of governance.
 
-Kairos is built on top of a battle-tested governed trading agent with 890+ executed cycles, Elite trust tier, and rank 4/48 on an ERC-8004 reputation registry. The governance system is proven — the Arc migration adds the Circle payment layer on top.
+Kairos is built on top of a battle-tested governed trading agent with 890+ executed cycles and a mature governance stack. The Arc migration adds Circle payment rails without carrying forward the old external validation sandbox.
 
 ### Key Differentiators
 
@@ -301,7 +301,7 @@ kairos/
 │   │   ├── agent-mandate.ts            # + Nanopayment hook (stage 0)
 │   │   ├── execution-simulator.ts      # + Nanopayment hook (stage 2)
 │   │   ├── executor.ts                 # Trade settlement via Circle Wallets
-│   │   ├── identity.ts                # ERC-8004 identity management
+│   │   ├── identity.ts                # Agent identity management
 │   │   ├── risk-policy-client.ts      # On-chain risk policy interface
 │   │   └── risk-router.ts             # + Nanopayment hook (stage 4)
 │   ├── data/
@@ -348,7 +348,7 @@ kairos/
 │       ├── server.ts                  # + /api/billing + /api/gateway-balance + /kairos
 │       └── public/
 │           ├── index.html             # Operational dashboard
-│           └── kairos.html            # Arc hackathon judge view
+│           └── kairos.html            # Arc economic proof view
 ├── contracts/
 │   └── KairosRiskPolicy.sol           # Deployed on Arc testnet
 ├── test/                              # Core test suite + optional integrations
@@ -424,7 +424,7 @@ Exposes tools, resources, and prompts via the [Model Context Protocol](https://m
 | `kairos://state/trust` | Trust score, timeline, and capital-rights state |
 | `kairos://state/market` | Live market indicators and pricing |
 | `kairos://state/mandate` | Capital mandate, allowlists, and governance limits |
-| `kairos://state/erc8004` | ERC-8004 integration state |
+| `kairos://state/integration` | Routing, identity, and interface readiness |
 | `kairos://state/risk` | Risk engine configuration and status |
 | `kairos://state/operator` | Operator control state and action receipts |
 | `kairos://state/performance` | Risk-adjusted performance metrics |
@@ -585,7 +585,6 @@ Full test coverage includes:
 | `test-supervisory-meta-agent.ts` | Supervisory decisions, position throttling |
 | `test-operator-control.ts` | Pause/resume/emergency stop receipts |
 | `test-trust-recovery-mode.ts` | Recovery mode entry/exit, regime-aware streaks |
-| `test-erc8004-adapters.ts` | ERC-8004 registration & adapter compliance |
 | `test-identity-registration.ts` | Identity registry integration |
 | `test-regime-governance.ts` | Regime profile switching, hysteresis, drawdown lock |
 | `test-performance-metrics.ts` | Sharpe, Sortino, max drawdown, Calmar, profit factor |

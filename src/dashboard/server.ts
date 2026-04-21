@@ -13,7 +13,7 @@ import { getAgentState, getHealthCheck, getLogs, getErrors } from '../agent/inde
 import { getRecentTrades, getTradeStats, loadClosedTrades } from '../agent/trade-log.js';
 import { computeRiskAdjustedMetrics, type EquityPoint } from '../analytics/performance-metrics.js';
 import { getCheckpoints, getTradeCheckpoints } from '../trust/checkpoint.js';
-import { ARC_TESTNET_CHAIN_ID, config, getChainLabel } from '../agent/config.js';
+import { config } from '../agent/config.js';
 import { getReputationTimeline, getLastTrustScore } from '../trust/trust-policy-scorecard.js';
 import { getOperatorControlState, getOperatorActionReceipts, pauseTrading, resumeTrading, emergencyStop } from '../agent/operator-control.js';
 import { buildRegistrationJson } from '../chain/identity.js';
@@ -24,12 +24,8 @@ import { fetchPrismData } from '../data/prism-feed.js';
 import { billingStore } from '../services/billing-store.js';
 import { getCliStatus, checkCliHealth } from '../data/kraken-cli.js';
 import { getKrakenAccountSnapshot, krakenPreflight } from '../data/kraken-bridge.js';
-import { getIndexedEvents, getIndexerStatus } from '../chain/event-indexer.js';
 import { generateAttestationSummary } from '../security/tee-attestation.js';
-import { getAverageValidationScore } from '../chain/validation.js';
-import { getHackathonReputation } from '../chain/reputation.js';
 import { ethers } from 'ethers';
-import { getWallet } from '../chain/sdk.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DASHBOARD_PORT = parseInt(process.env.PORT || '3000', 10);
@@ -99,7 +95,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     res.sendFile(path.join(__dirname, 'public', 'trades.html'));
   });
 
-  // Judge walkthrough — single-page hackathon summary
+  // Economic proof walkthrough
   app.get('/judge', (_req, res) => {
     res.redirect('/kairos');
   });
@@ -182,62 +178,6 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
       },
       sentiment: state.sentiment ?? null,
     });
-  });
-
-  /** Hackathon sandbox status */
-  app.get('/api/sandbox', async (_req, res) => {
-    try {
-      const aId = config.agentId;
-      const chain = config.chainId || ARC_TESTNET_CHAIN_ID;
-      const riskRouter = config.riskRouterAddress || '';
-      const vaultAddr = config.hackathonVaultAddress || '';
-      const registryAddr = config.agentRegistryAddress || '';
-      const reputationAddr = config.reputationRegistry || '';
-      const validationAddr = config.validationRegistry || '';
-
-      let vaultBalance: string | null = null;
-      let walletBalance: string | null = null;
-      let validationScore: number | null = null;
-      let reputationScore: number | null = null;
-
-      try {
-        const wallet = getWallet();
-        walletBalance = ethers.formatEther(await wallet.provider!.getBalance(wallet.address));
-      } catch { /* chain not init */ }
-
-      if (aId && vaultAddr) {
-        try {
-          const wallet = getWallet();
-          const vault = new ethers.Contract(vaultAddr, ['function getBalance(uint256 agentId) external view returns (uint256)'], wallet);
-          vaultBalance = ethers.formatEther(await vault.getBalance(aId));
-        } catch { /* vault read failed */ }
-      }
-
-      if (aId) {
-        try { validationScore = await getAverageValidationScore(aId); } catch { /* no score yet */ }
-        try { reputationScore = await getHackathonReputation(aId); } catch { /* no score yet */ }
-      }
-
-      res.json({
-        connected: !!riskRouter,
-        chainId: chain,
-        network: getChainLabel(chain),
-        agentId: aId || null,
-        walletBalance,
-        vaultBalance,
-        validationScore,
-        reputationScore,
-        contracts: {
-          agentRegistry: registryAddr || null,
-          hackathonVault: vaultAddr || null,
-          riskRouter: riskRouter || null,
-          reputationRegistry: reputationAddr || null,
-          validationRegistry: validationAddr || null,
-        },
-      });
-    } catch (e) {
-      res.json({ connected: false, error: String(e) });
-    }
   });
 
   /** Recent checkpoints */
@@ -470,17 +410,6 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     res.json({ errors: getErrors(limit) });
   });
 
-  /** On-chain indexed events */
-  app.get('/api/events', (req, res) => {
-    const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
-    const typeFilter = req.query.type as string | undefined;
-    const validTypes = ['reputation_feedback', 'validation_request', 'validation_response'];
-    const events = validTypes.includes(typeFilter as string)
-      ? getIndexedEvents(typeFilter as any).slice(-limit)
-      : getIndexedEvents().slice(-limit);
-    res.json({ count: events.length, indexer: getIndexerStatus(), events });
-  });
-
   /** Kraken feed status + live ticker */
   app.get('/api/feeds/kraken', async (_req, res) => {
     const status = getKrakenFeedStatus();
@@ -514,7 +443,6 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     res.json({
       kraken: getKrakenFeedStatus(),
       krakenCli: getCliStatus(),
-      indexer: getIndexerStatus(),
     });
   });
 

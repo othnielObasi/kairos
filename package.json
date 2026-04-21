@@ -11,7 +11,6 @@
     "start:arc": "tsx src/agent/index.ts",
     "register": "tsx scripts/register-agent.ts",
     "generate:registration": "tsx scripts/generate-registration.ts",
-    "bootstrap:erc8004": "tsx scripts/bootstrap-erc8004.ts",
     "test": "tsx test/run-tests.ts",
     "test:strategy": "tsx test/test-strategy.ts",
     "test:risk": "tsx test/test-risk.ts",
@@ -46,7 +45,6 @@
     "typescript": "^5.3.0"
   },
   "keywords": [
-    "erc-8004",
     "trading-agent",
     "trustless",
     "ethereum",

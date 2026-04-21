@@ -8,10 +8,10 @@
  * 1. Agent's strategy + risk engine produce a governed trade decision
  * 2. This bridge converts it to a Kraken order
  * 3. Kraken CLI places the order (paper or live)
- * 4. Results are fed back into the agent's tracking, artifacts, and trust system
+ * 4. Results are fed back into the agent's tracking and artifact trail
  *
- * The bridge preserves all ERC-8004 trust artifacts — every Kraken trade
- * also gets an IPFS decision artifact, on-chain validation, and reputation feedback.
+ * The bridge preserves decision artifacts — every Kraken trade
+ * can still emit an IPFS proof without depending on legacy validation layers.
  */
 
 import { createLogger } from '../agent/logger.js';
@@ -35,8 +35,6 @@ import {
   fetchKrakenTradeHistory,
 } from './kraken-feed.js';
 import { uploadArtifact } from '../trust/ipfs.js';
-import { validateTradeArtifact } from '../chain/validation.js';
-import { postTradeOutcomeFeedback } from '../chain/reputation.js';
 import type { StrategyOutput } from '../strategy/momentum.js';
 import type { RiskDecision } from '../risk/engine.js';
 import type { ValidationArtifact } from '../trust/artifact-emitter.js';
@@ -59,8 +57,6 @@ export interface KrakenExecutionResult {
   stopLossOrderId: string | null;
   artifactIpfsCid: string | null;
   artifactIpfsUri: string | null;
-  validationTxHash: string | null;
-  reputationTxHash: string | null;
   error: string | null;
   executionTimeMs: number;
 }
@@ -86,8 +82,6 @@ export async function executeKrakenTrade(
   strategyOutput: StrategyOutput,
   riskDecision: RiskDecision,
   artifact: ValidationArtifact,
-  agentId: number | null,
-  options?: { skipOnChainValidation?: boolean },
 ): Promise<KrakenExecutionResult> {
   const start = Date.now();
   const result: KrakenExecutionResult = {
@@ -104,8 +98,6 @@ export async function executeKrakenTrade(
     stopLossOrderId: null,
     artifactIpfsCid: null,
     artifactIpfsUri: null,
-    validationTxHash: null,
-    reputationTxHash: null,
     error: null,
     executionTimeMs: 0,
   };
@@ -227,52 +219,6 @@ export async function executeKrakenTrade(
       log.info('Trade artifact uploaded', { cid: ipfsResult.cid });
     } catch (e) {
       log.warn('IPFS upload failed — trade still executed', { error: String(e) });
-    }
-
-    // ── Step 5: On-chain validation (if agent is registered and not already done by main executor) ──
-    const validatorKey = process.env.VALIDATOR_PRIVATE_KEY;
-    if (agentId && validatorKey && result.artifactIpfsUri && !options?.skipOnChainValidation) {
-      try {
-        const validation = await retry(
-          () => validateTradeArtifact(
-            agentId,
-            validatorKey,
-            result.artifactIpfsUri!,
-            artifact as object,
-            riskDecision.checks,
-          ),
-          { maxRetries: 2, baseDelayMs: 2000, label: 'Kraken trade validation' }
-        );
-        result.validationTxHash = validation.responseTx;
-        log.info('On-chain validation submitted', {
-          requestHash: validation.requestHash,
-          score: validation.score,
-        });
-      } catch (e) {
-        log.warn('On-chain validation failed — trade still valid', { error: String(e) });
-      }
-    }
-
-    // ── Step 6: Post reputation feedback (skip if main executor already posted) ──
-    const reviewerKey = process.env.REVIEWER_PRIVATE_KEY || process.env.VALIDATOR_PRIVATE_KEY;
-    if (agentId && reviewerKey && !options?.skipOnChainValidation) {
-      try {
-        const conf = strategyOutput.signal.confidence;
-        const dir = direction === 'LONG' ? 1 : -1;
-        const estimatedYieldPct = dir * (conf - 0.5) * riskDecision.finalPositionSize * 0.01;
-
-        result.reputationTxHash = await retry(
-          () => postTradeOutcomeFeedback(reviewerKey, agentId, {
-            yieldPercent: estimatedYieldPct,
-            period: 'day',
-            artifactUri: result.artifactIpfsUri || '',
-          }),
-          { maxRetries: 2, baseDelayMs: 1500, label: 'Kraken trade reputation' }
-        );
-        log.info('Reputation feedback submitted', { txHash: result.reputationTxHash });
-      } catch (e) {
-        log.warn('Reputation feedback failed', { error: String(e) });
-      }
     }
 
   } catch (error) {

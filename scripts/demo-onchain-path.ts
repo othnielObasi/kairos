@@ -2,21 +2,18 @@
  * One real end-to-end on-chain demo path.
  *
  * Purpose:
- * - validate wallet + router readiness
- * - optionally claim sandbox capital
  * - build a real TradeIntent path using the current execution pipeline
  *
  * Run:
  *   npm run demo:onchain
  *
  * Optional env:
- *   CLAIM_SANDBOX=true    -> attempt sandbox capital claim first
  *   RUN_ONCHAIN_DEMO=true -> actually submit the trade intent
  */
 
 import '../src/env/load.js';
 
-import { preflight, claimSandboxCapital, executeTrade } from '../src/chain/executor.js';
+import { executeTrade } from '../src/chain/executor.js';
 import { buildTradeArtifact } from '../src/trust/artifact-emitter.js';
 import { generateSimulatedData } from '../src/data/price-feed.js';
 import { runStrategy, resetStrategy } from '../src/strategy/momentum.js';
@@ -24,17 +21,6 @@ import { RiskEngine } from '../src/risk/engine.js';
 
 async function main() {
   console.log('\n=== Kairos On-Chain Demo Path ===\n');
-  const flight = await preflight();
-  console.log('Preflight:', flight);
-  if (!flight.ready) {
-    console.error('Preflight failed. Resolve the issues above before running the on-chain demo.');
-    process.exit(1);
-  }
-
-  if (process.env.CLAIM_SANDBOX === 'true') {
-    const claimTx = await claimSandboxCapital();
-    console.log('Sandbox claim tx:', claimTx);
-  }
 
   const market = generateSimulatedData(80, 3000, 0.02, 0.0004);
   resetStrategy();

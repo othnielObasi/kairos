@@ -6,20 +6,16 @@
  * 2. Simulate via RiskRouter.simulateIntent() (dry-run)
  * 3. Sign with EIP-712
  * 4. Submit to RiskRouter.submitTradeIntent()
- * 5. Upload validation artifact to IPFS
- * 6. Post checkpoint to ValidationRegistry.postEIP712Attestation()
- * 7. Post reputation feedback to ReputationRegistry.submitFeedback()
+ * 5. Upload execution artifact to IPFS
  */
 
-import { ethers } from 'ethers';
 import { createLogger } from '../agent/logger.js';
 import { retry } from '../agent/retry.js';
-import { config, isSandboxTestnet } from '../agent/config.js';
-import { getWallet, getWalletAddress, getBalance, initChain } from './sdk.js';
-import { buildTradeIntent, signTradeIntent, TRADE_INTENT_TYPES, getTradeIntentDomain, hashTradeIntent, type TradeIntentData } from './intent.js';
+import { config, isSupportedTestnet } from '../agent/config.js';
+import { getWallet } from './sdk.js';
+import { buildTradeIntent, signTradeIntent, TRADE_INTENT_TYPES } from './intent.js';
 import { verifyTypedDataSignature } from './eip1271.js';
 import { submitTradeIntent, simulateIntent, getIntentNonce } from './risk-router.js';
-// Validation & reputation scores posted by hackathon judge bot (no self-attestation)
 import { simulateExecution } from './execution-simulator.js';
 import { uploadArtifact } from '../trust/ipfs.js';
 import type { ValidationArtifact } from '../trust/artifact-emitter.js';
@@ -46,7 +42,7 @@ export interface ExecutionResult {
 export { ExecutionResult as ExecutionResultLegacy };
 
 /**
- * Full trade execution pipeline via hackathon shared contracts.
+ * Full trade execution pipeline via the configured shared contracts.
  */
 export async function executeTrade(
   strategyOutput: StrategyOutput,
@@ -72,7 +68,7 @@ export async function executeTrade(
   try {
     // ── Step 0: Local pre-trade simulation ──
     // On testnet, gas is free — don't let fictional gas costs block profitable trades.
-    const isTestnet = isSandboxTestnet(config.chainId);
+    const isTestnet = isSupportedTestnet(config.chainId);
     const localSim = await simulateExecution({
       strategyOutput,
       riskDecision,
@@ -96,7 +92,7 @@ export async function executeTrade(
     // ── Step 2: Build TradeIntent ──
     const direction = strategyOutput.signal.direction as 'LONG' | 'SHORT';
     const action = direction === 'LONG' ? 'BUY' : 'SELL';
-    // Position size in USD (capped at $500 per hackathon rules)
+    // Position size in USD (bounded to the router's current safety cap)
     const positionUsd = Math.min(riskDecision.finalPositionSize * strategyOutput.currentPrice, 500);
 
     const intent = buildTradeIntent({
@@ -158,8 +154,7 @@ export async function executeTrade(
     result.approved = submission.approved;
     result.rejectReason = submission.rejectReason ?? null;
 
-    // Validation & reputation scores are now posted by the hackathon judge bot
-    // every 4 hours based on on-chain activity. No self-attestation needed.
+    // Additional attestations can be layered on later if needed.
 
     if (!submission.approved) {
       result.error = `Trade rejected: ${submission.rejectReason || 'unknown'}`;
@@ -206,132 +201,3 @@ export async function executeTrade(
   }
 }
 
-// ──── Hackathon Vault ────
-
-const VAULT_ABI = [
-  'function claimAllocation(uint256 agentId) external',
-  'function getBalance(uint256 agentId) external view returns (uint256)',
-  'function hasClaimed(uint256 agentId) external view returns (bool)',
-  'function allocationPerTeam() external view returns (uint256)',
-];
-
-/**
- * Claim sandbox capital from the HackathonVault.
- * Every team gets 0.05 ETH — one claim per agentId.
- */
-export async function claimSandboxCapital(): Promise<string> {
-  if (!config.hackathonVaultAddress) {
-    log.warn('HACKATHON_VAULT_ADDRESS not set — skipping claim');
-    return '';
-  }
-  if (!config.agentId) {
-    log.warn('AGENT_ID not set — cannot claim vault');
-    return '';
-  }
-
-  const wallet = getWallet();
-  const vault = new ethers.Contract(config.hackathonVaultAddress, VAULT_ABI, wallet);
-
-  // Check if already claimed
-  try {
-    const claimed = await vault.hasClaimed(config.agentId);
-    if (claimed) {
-      log.info('Sandbox capital already claimed');
-      const balance = await vault.getBalance(config.agentId);
-      log.info('Vault balance', { eth: ethers.formatEther(balance) });
-      return 'already_claimed';
-    }
-  } catch { /* hasClaimed might not exist — proceed to claim */ }
-
-  log.info('Claiming sandbox capital...', { agentId: config.agentId });
-  const tx = await vault.claimAllocation(config.agentId);
-  const receipt = await retry(
-    async () => {
-      const r = await tx.wait();
-      if (!r) throw new Error('No receipt');
-      return r;
-    },
-    { maxRetries: 3, baseDelayMs: 3000, label: 'Vault claim wait' },
-  );
-
-  log.info('Sandbox capital claimed!', { txHash: receipt.hash });
-  return receipt.hash;
-}
-
-/**
- * Check sandbox balance in the vault
- */
-export async function getSandboxBalance(): Promise<string> {
-  if (!config.hackathonVaultAddress || !config.agentId) return '0';
-
-  try {
-    const wallet = getWallet();
-    const vault = new ethers.Contract(config.hackathonVaultAddress, VAULT_ABI, wallet);
-    const balance = await vault.getBalance(config.agentId);
-    return ethers.formatEther(balance);
-  } catch (error) {
-    log.error('Failed to check sandbox balance', { error: String(error) });
-    return '0';
-  }
-}
-
-/**
- * Pre-flight check — verify everything is ready for trading.
- */
-export async function preflight(): Promise<{ ready: boolean; issues: string[] }> {
-  const issues: string[] = [];
-
-  // Check wallet
-  try {
-    initChain();
-    const address = getWalletAddress();
-    log.info(`Wallet: ${address}`);
-  } catch {
-    issues.push('Wallet not configured — set PRIVATE_KEY in .env');
-  }
-
-  // Check balance
-  try {
-    const bal = await getBalance();
-    if (parseFloat(bal) < 0.001) {
-      issues.push(`Insufficient ETH for gas: ${bal} ETH (need > 0.001)`);
-    } else {
-      log.info(`Balance: ${bal} ETH`);
-    }
-  } catch {
-    issues.push('Cannot check balance — RPC connection failed');
-  }
-
-  // Check hackathon contracts
-  if (!config.riskRouterAddress) {
-    issues.push('RISK_ROUTER_ADDRESS not set');
-  }
-  if (!config.agentId) {
-    issues.push('AGENT_ID not set — register on AgentRegistry first');
-  }
-  if (!config.hackathonVaultAddress) {
-    issues.push('HACKATHON_VAULT_ADDRESS not set');
-  }
-
-  // Check Validation Registry
-  if (!config.validationRegistry) {
-    issues.push('VALIDATION_REGISTRY not set');
-  }
-
-  // Check IPFS
-  if (!config.pinataJwt) {
-    issues.push('PINATA_JWT not set — artifacts will use mock IPFS');
-  }
-
-  if (issues.length > 0) {
-    issues.forEach(i => log.warn(`Preflight: ${i}`));
-  } else {
-    log.info('Preflight passed — ready to trade on hackathon sandbox');
-  }
-
-  return { ready: issues.length === 0, issues };
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise(r => setTimeout(r, ms));
-}

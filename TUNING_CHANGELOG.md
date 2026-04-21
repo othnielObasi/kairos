@@ -158,7 +158,7 @@ npm run build && pm2 restart kairos-agent
 - Implement ERC-4626 vault for capital delegation
 - On-chain position tracking (replace simulation mode)
 - Real DEX execution via Uniswap V3 / Aerodrome
-- Capital Sandbox integration with ERC-8004 Risk Router
+- Capital delegation flow through the live routing layer
 - Audit smart contracts
 
 ### Phase 5: Production Hardening (Month 4+)

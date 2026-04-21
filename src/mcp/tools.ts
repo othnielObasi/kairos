@@ -1,7 +1,7 @@
 
 /**
  * Rich MCP Tool Surface for Kairos
- * Public tools expose read-only risk, trust, validation, performance, and explainability.
+ * Public tools expose read-only risk, trust, performance, and explainability.
  * Restricted tools generate governed trade proposals.
  * Operator tools allow supervised runtime intervention.
  */
@@ -15,14 +15,13 @@ import { computeRiskAdjustedMetrics, type EquityPoint, type TradeOutcome } from 
 import { getAdaptiveParams, getAdaptationSummary, getContextStats } from '../strategy/adaptive-learning.js';
 import { emergencyStop, getLatestOperatorAction, getOperatorActionReceipts, getOperatorControlState, pauseTrading, resumeTrading } from '../agent/operator-control.js';
 import { getRecentTrades, getTradeStats } from '../agent/trade-log.js';
-import { config, getChainLabel, isSandboxTestnet } from '../agent/config.js';
+import { config, getChainLabel, isSupportedTestnet } from '../agent/config.js';
 import { buildTradeIntent, hashTradeIntent, signTradeIntent } from '../chain/intent.js';
 import { initChain } from '../chain/sdk.js';
 import { routeTrade, getAvailableDexes, getDexProfile, type DexId } from '../chain/dex-router.js';
 import { fetchKrakenTicker, getKrakenFeedStatus, fetchKrakenBalance, fetchKrakenOpenOrders, fetchKrakenTradeHistory } from '../data/kraken-feed.js';
 import { getCliStatus, checkCliHealth, placeMarketOrder, placeLimitOrder, cancelOrder, cancelAllOrders, getBalanceViaCli } from '../data/kraken-cli.js';
 import { getKrakenAccountSnapshot } from '../data/kraken-bridge.js';
-import { getIndexedEvents, getIndexerStatus } from '../chain/event-indexer.js';
 
 export type McpVisibility = 'public' | 'restricted' | 'operator';
 
@@ -265,54 +264,6 @@ const explainTrade: McpTool = {
   },
 };
 
-const getValidationStatusTool: McpTool = {
-  name: 'get_validation_status',
-  description: 'Return local validation status for a trade and whether live registry validation is configured.',
-  category: 'validation',
-  visibility: 'public',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      trade_id: { type: 'number', description: 'Checkpoint/trade identifier' },
-    },
-  },
-  handler: (args) => {
-    const cp = typeof args.trade_id === 'number' ? getCheckpoint(args.trade_id) : getLastCheckpoint();
-    if (!cp) {
-      return { error: 'No trade checkpoint found' };
-    }
-    return {
-      tradeId: cp.id,
-      approved: cp.riskDecision.approved,
-      receiptUri: cp.ipfs?.uri || null,
-      txHash: cp.onChainTxHash || null,
-      validationRegistryConfigured: Boolean(config.validationRegistry),
-      validatorConfigured: Boolean(config.validatorAddress),
-      localChecks: cp.riskDecision.checks,
-      latestCheckpoint: checkpointSummary(cp),
-    };
-  },
-};
-
-const getReputationSummaryTool: McpTool = {
-  name: 'get_reputation_summary',
-  description: 'Return local trust/reputation summary and adapter readiness.',
-  category: 'trust',
-  visibility: 'public',
-  inputSchema: { type: 'object', properties: {} },
-  handler: () => {
-    const score = getLastTrustScore(safeState()?.agentId ?? null);
-    const history = getTrustHistory(safeState()?.agentId ?? null, 20);
-    return {
-      trustScore: score,
-      trustHistoryCount: history.length,
-      reputationRegistryConfigured: Boolean(config.reputationRegistry),
-      preferredReviewerAddresses: config.preferredReviewerAddresses,
-      latestFeedbackTag: history.length ? (history[history.length - 1] as any).outcomeContext?.validationTag || null : null,
-    };
-  },
-};
-
 const proposeTrade: McpTool = {
   name: 'propose_trade',
   description: 'Create a governed trade proposal without submitting it.',
@@ -496,7 +447,7 @@ const getDexRoutingInfo: McpTool = {
     const market = state?.market;
     const notionalUsd = typeof args.notional_usd === 'number' ? args.notional_usd : 300;
     const side = args.side === 'SHORT' ? 'SHORT' : 'LONG';
-    const isTestnet = isSandboxTestnet(config.chainId);
+    const isTestnet = isSupportedTestnet(config.chainId);
     const enabledDexes = config.allowedProtocols.filter(
       (p): p is DexId => p === 'aerodrome' || p === 'uniswap'
     );
@@ -544,33 +495,6 @@ const getKrakenMarketTool: McpTool = {
       note: ticker
         ? `Kraken ${pair}: $${ticker.price.toFixed(2)} (spread: $${ticker.spread.toFixed(2)}, vol24h: ${ticker.volume24h.toFixed(2)})`
         : 'Kraken feed unavailable — using CoinGecko/DeFiLlama fallback',
-    };
-  },
-};
-
-const getIndexedEventsTool: McpTool = {
-  name: 'get_indexed_events',
-  description: 'Return on-chain events from ERC-8004 registries (reputation feedback, validation requests/responses) indexed by the agent.',
-  category: 'validation',
-  visibility: 'public',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      limit: { type: 'number', description: 'Max events to return (default: 20)' },
-      type: { type: 'string', description: 'Filter by event type: reputation_feedback, validation_request, validation_response' },
-    },
-  },
-  handler: (args) => {
-    const limit = typeof args.limit === 'number' ? Math.min(args.limit, 200) : 20;
-    const validTypes = ['reputation_feedback', 'validation_request', 'validation_response'];
-    const typeFilter = typeof args.type === 'string' && validTypes.includes(args.type)
-      ? args.type as 'reputation_feedback' | 'validation_request' | 'validation_response'
-      : undefined;
-    const events = typeFilter ? getIndexedEvents(typeFilter) : getIndexedEvents();
-    return {
-      indexer: getIndexerStatus(),
-      events: events.slice(-limit),
-      count: events.length,
     };
   },
 };
@@ -746,10 +670,7 @@ export const ALL_TOOLS: McpTool[] = [
   getPerformanceMetrics,
   getTradeHistory,
   explainTrade,
-  getValidationStatusTool,
-  getReputationSummaryTool,
   getKrakenMarketTool,
-  getIndexedEventsTool,
   getKrakenBalanceTool,
   getKrakenOrdersTool,
   getKrakenTradesTool,

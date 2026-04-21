@@ -1,8 +1,8 @@
 /**
  * Signing Utilities
  * 
- * NOTE: feedbackAuth was REMOVED in ERC-8004 v1.0.
- * The Reputation Registry no longer requires pre-authorization.
+ * NOTE: feedbackAuth is no longer part of the current feedback flow.
+ * External feedback no longer requires pre-authorization.
  * Anyone can call giveFeedback() (except the agent owner for their own agent).
  * 
  * These signing utilities are kept for:
