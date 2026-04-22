@@ -1,4 +1,4 @@
-import { NanopaymentReceipt } from './nanopayments.js';
+import { NanopaymentReceipt, hasVerifiedTxHash } from './nanopayments.js';
 
 const STAGE_NAMES = [
   'Mandate',
@@ -21,7 +21,7 @@ export interface ApiBreakdown {
 }
 
 function isRealReceipt(receipt: NanopaymentReceipt): boolean {
-  return typeof receipt.txHash === 'string' && !receipt.txHash.startsWith('pending_');
+  return hasVerifiedTxHash(receipt);
 }
 
 class BillingStore {
@@ -131,6 +131,60 @@ class BillingStore {
     this.recordReceipt(3, receipt);
   }
 
+  private countReceipts(receipts: NanopaymentReceipt[]) {
+    const realTxns = receipts.filter(isRealReceipt).length;
+    return {
+      realTxns,
+      pendingTxns: receipts.length - realTxns,
+    };
+  }
+
+  private buildStageVerificationCounts() {
+    const stageRealCounts = new Array(7).fill(0);
+    const stagePendingCounts = new Array(7).fill(0);
+
+    for (const receipt of this.t1Events) {
+      const stageIndex = STAGE_NAMES.indexOf(receipt.source || '');
+      if (stageIndex < 0) continue;
+      if (isRealReceipt(receipt)) stageRealCounts[stageIndex]++;
+      else stagePendingCounts[stageIndex]++;
+    }
+
+    return { stageRealCounts, stagePendingCounts };
+  }
+
+  private buildApiBreakdownSnapshot(): ApiBreakdown {
+    const snapshot: ApiBreakdown = {};
+
+    for (const [sourceKey, info] of Object.entries(this.apiBreakdown)) {
+      snapshot[sourceKey] = {
+        calls: info.calls,
+        spend: info.spend,
+        mode: info.mode,
+        realTxns: 0,
+        pendingTxns: 0,
+      };
+    }
+
+    for (const receipt of this.t2Events) {
+      const sourceKey = receipt.source || 'unknown';
+      if (!snapshot[sourceKey]) {
+        snapshot[sourceKey] = {
+          calls: 0,
+          spend: 0,
+          mode: receipt.mode === 'x402' ? 'x402' : 'fallback',
+          realTxns: 0,
+          pendingTxns: 0,
+        };
+      }
+
+      if (isRealReceipt(receipt)) snapshot[sourceKey].realTxns++;
+      else snapshot[sourceKey].pendingTxns++;
+    }
+
+    return snapshot;
+  }
+
   resetCycleStages() {
     this.stageCounts = new Array(7).fill(0);
     this.stageRealCounts = new Array(7).fill(0);
@@ -139,34 +193,43 @@ class BillingStore {
   }
 
   toJSON() {
+    const t1Counts = this.countReceipts(this.t1Events);
+    const t2Counts = this.countReceipts(this.t2Events);
+    const t3Counts = this.countReceipts(this.t3Events);
+    const { stageRealCounts, stagePendingCounts } = this.buildStageVerificationCounts();
+    const apiBreakdown = this.buildApiBreakdownSnapshot();
+    const totalTxns = t1Counts.realTxns + t2Counts.realTxns + t3Counts.realTxns;
+    const pendingTxns = t1Counts.pendingTxns + t2Counts.pendingTxns + t3Counts.pendingTxns;
+    const totalEvents = this.t1Events.length + this.t2Events.length + this.t3Events.length;
+
     return {
       t1Events: this.t1Events.slice(0, 20),
       stageCounts: this.stageCounts,
-      stageRealCounts: this.stageRealCounts,
-      stagePendingCounts: this.stagePendingCounts,
+      stageRealCounts,
+      stagePendingCounts,
       stageSpend: this.stageSpend,
       t1Spend: this.t1Spend,
-      t1RealTxns: this.t1RealTxns,
-      t1PendingTxns: this.t1PendingTxns,
+      t1RealTxns: t1Counts.realTxns,
+      t1PendingTxns: t1Counts.pendingTxns,
 
       t2Events: this.t2Events.slice(0, 20),
-      apiBreakdown: this.apiBreakdown,
+      apiBreakdown,
       t2Spend: this.t2Spend,
-      t2RealTxns: this.t2RealTxns,
-      t2PendingTxns: this.t2PendingTxns,
+      t2RealTxns: t2Counts.realTxns,
+      t2PendingTxns: t2Counts.pendingTxns,
 
       t3Events: this.t3Events.slice(0, 20),
       t3Spend: this.t3Spend,
-      t3RealTxns: this.t3RealTxns,
-      t3PendingTxns: this.t3PendingTxns,
+      t3RealTxns: t3Counts.realTxns,
+      t3PendingTxns: t3Counts.pendingTxns,
 
-      totalTxns: this.totalTxns,
-      realTxns: this.totalTxns,
-      totalEvents: this.totalEvents,
-      pendingTxns: this.pendingTxns,
+      totalTxns,
+      realTxns: totalTxns,
+      totalEvents,
+      pendingTxns,
       totalSpend: this.totalSpend,
       txnRequirementTarget: 50,
-      meetsTxnRequirement: this.totalTxns >= 50,
+      meetsTxnRequirement: totalTxns >= 50,
 
       chain: 'Arc Testnet',
       product: 'Kairos',

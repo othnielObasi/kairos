@@ -403,6 +403,7 @@ function setConn(s) {
 
 function statusClass(state) {
   if (state === "live_api" || state === "kraken_live") return "live";
+  if (state === "verifying") return "warn";
   if (state === "no_keys") return "warn";
   if (state === "kraken_paper") return "paper";
   if (state === "arc_settled") return "arc";
@@ -442,6 +443,40 @@ function formatExecutionClass(execution) {
   return "local";
 }
 
+function receiptRef(e, className = "ev-hash") {
+  const txRef = e.txHash || e.hash || "";
+  const label = txRef.startsWith("0x")
+    ? txRef
+    : (e.referenceId ? `Circle tx ${e.referenceId}` : (txRef || "pending..."));
+
+  if (txRef.startsWith("0x")) {
+    return `<a class="${className}" href="${ARC_EXPLORER + txRef}" target="_blank" rel="noopener">${label}</a>`;
+  }
+
+  return `<span class="${className}" title="${label}">${label}</span>`;
+}
+
+function receiptVerificationBadge(e, confirmedLabel) {
+  const txRef = e.txHash || e.hash || "";
+  if (e.mode === "fallback") {
+    return '<span class="ev-badge fb">FALLBACK</span>';
+  }
+
+  if (txRef.startsWith("0x")) {
+    return `<span class="ev-badge nano">${confirmedLabel}</span>`;
+  }
+
+  if (e.referenceId) {
+    return '<span class="ev-badge fb">VERIFYING</span>';
+  }
+
+  return '<span class="ev-badge fb">PENDING</span>';
+}
+
+if (window.location.href.endsWith("#")) {
+  window.history.replaceState(null, "", window.location.pathname + window.location.search);
+}
+
 // ── T1 ──────────────────────────────────────────────────────────────────────
 function renderT1(data) {
   const sc = el("t1-stages");
@@ -471,8 +506,8 @@ function renderT1(data) {
     row.innerHTML = `
       <span class="ev-tag" style="color:var(--purple)">${e.source||e.eventName||"—"}</span>
       <span class="ev-amt" style="color:var(--teal)">${fU(e.amount||e.amt)}</span>
-      <a class="ev-hash" href="${(e.txHash||e.hash||"").startsWith("0x")?ARC_EXPLORER+(e.txHash||e.hash):"#"}" target="_blank" rel="noopener">${e.txHash||e.hash||"pending..."}</a>
-      <span class="ev-badge nano">NANO</span>
+      ${receiptRef(e)}
+      ${receiptVerificationBadge(e, "NANO")}
       <span class="ev-time">${e.time||fTs(e.confirmedAt)}</span>
     `;
     fc.appendChild(row);
@@ -511,13 +546,16 @@ function renderT2(data) {
   const fc = el("t2-feed"); fc.innerHTML = "";
   events.slice(0,6).forEach(e => {
     const isX402 = e.mode === "x402" || e.source === "coingecko" || e.source === "kraken";
+    const badge = isX402
+      ? '<span class="ev-badge x402">x402</span>'
+      : receiptVerificationBadge(e, "API");
     const row = document.createElement("div");
     row.className = "ev-row";
     row.innerHTML = `
       <span class="ev-tag" style="color:var(--blue)">${e.source||e.eventName||"—"}</span>
       <span class="ev-amt" style="color:var(--blue)">${fU(e.amount||e.amt)}</span>
-      <a class="ev-hash" href="${(e.txHash||e.hash||"").startsWith("0x")?ARC_EXPLORER+(e.txHash||e.hash):"#"}" target="_blank" rel="noopener">${e.txHash||e.hash||"pending..."}</a>
-      <span class="ev-badge ${isX402?"x402":"fb"}">${isX402?"x402":"fallback"}</span>
+      ${receiptRef(e)}
+      ${badge}
       <span class="ev-time">${e.time||fTs(e.confirmedAt)}</span>
     `;
     fc.appendChild(row);
@@ -545,12 +583,12 @@ function renderT3(data, track) {
     const div = document.createElement("div");
     div.className = "cmp-item";
     const settlement = formatSettlementMode(e.mode);
-    const txRef = e.txHash || e.hash || "pending...";
+    const refMarkup = receiptRef(e);
     div.innerHTML = `
       <span class="cmp-icon">◆</span>
       <div class="cmp-body">
         <div class="cmp-name">${e.model || e.eventName || "—"}</div>
-        <div class="cmp-meta">${e.type || "inference"} · ${settlement} · ${e.time || fTs(e.confirmedAt)} · <span style="color:var(--blue)">${txRef}</span></div>
+        <div class="cmp-meta">${e.type || "inference"} · ${settlement} · ${e.time || fTs(e.confirmedAt)} · ${refMarkup}</div>
       </div>
       <span class="cmp-amt">${fU(e.amount || e.amt)}</span>
     `;

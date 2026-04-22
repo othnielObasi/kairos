@@ -23,6 +23,7 @@ import { getSAGEStatus, getActivePlaybookRules } from '../strategy/sage-engine.j
 import { getKrakenFeedStatus, fetchKrakenTicker, fetchKrakenBalance, fetchKrakenOpenOrders, fetchKrakenTradeHistory } from '../data/kraken-feed.js';
 import { fetchPrismData } from '../data/prism-feed.js';
 import { billingStore } from '../services/billing-store.js';
+import { hasVerifiedTxHash } from '../services/nanopayments.js';
 import { getCliStatus, checkCliHealth } from '../data/kraken-cli.js';
 import { getKrakenAccountSnapshot, krakenPreflight } from '../data/kraken-bridge.js';
 import { generateAttestationSummary } from '../security/tee-attestation.js';
@@ -47,6 +48,7 @@ function formatBillingMode(mode: string | undefined | null): string {
 }
 
 function buildTrack3Status() {
+  const billing = billingStore.toJSON();
   const latestEvent = billingStore.t3Events[0] ?? null;
   const sage = getSAGEStatus();
   const providers = [
@@ -62,9 +64,20 @@ function buildTrack3Status() {
   let fallbackReason: string | null = null;
 
   if (latestEvent) {
-    state = 'live_api';
-    label = 'LIVE API';
-    note = `${latestEvent.model || latestEvent.eventName || 'Compute'} billed as ${latestEvent.type || 'inference'} via ${formatBillingMode(latestEvent.mode)}.`;
+    if (hasVerifiedTxHash(latestEvent)) {
+      state = 'live_api';
+      label = 'LIVE API';
+      note = `${latestEvent.model || latestEvent.eventName || 'Compute'} billed as ${latestEvent.type || 'inference'} via ${formatBillingMode(latestEvent.mode)}.`;
+    } else if (latestEvent.referenceId) {
+      state = 'verifying';
+      label = 'VERIFYING';
+      note = `${latestEvent.model || latestEvent.eventName || 'Compute'} has a Circle transaction reference, but its on-chain Arc hash is still being resolved.`;
+    } else {
+      state = 'fallback';
+      label = 'FALLBACK';
+      note = `${latestEvent.model || latestEvent.eventName || 'Compute'} used a fallback billing receipt because no verified Arc settlement hash is available yet.`;
+      fallbackReason = 'Fallback billing receipt active because the Arc settlement hash was not produced by the current signer path.';
+    }
   } else if (configuredCount === 0) {
     state = 'no_keys';
     label = 'NO KEYS';
@@ -82,9 +95,9 @@ function buildTrack3Status() {
     lastComputeModel: latestEvent?.model ?? null,
     lastComputeType: latestEvent?.type ?? null,
     lastSettlementMode: latestEvent?.mode ?? null,
-    realTxns: billingStore.t3RealTxns,
-    pendingTxns: billingStore.t3PendingTxns,
-    totalEvents: billingStore.t3Events.length,
+    realTxns: billing.t3RealTxns,
+    pendingTxns: billing.t3PendingTxns,
+    totalEvents: billing.t3Events.length,
     fallbackReason,
     sage: {
       enabled: sage.enabled,

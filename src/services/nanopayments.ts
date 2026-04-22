@@ -58,8 +58,55 @@ export interface NanopaymentReceipt {
   type?:       string;  // 'governance' | 'data' | 'inference' | 'reflection'
   mode?:       string;  // 'x402' | 'nanopayment' | 'fallback'
   txHash:      string;
+  referenceId?: string;
+  verificationState?: 'confirmed' | 'pending' | 'fallback';
   amount:      number;
   confirmedAt: number;
+}
+
+interface TransferResult {
+  txHash: Hash | null;
+  referenceId: string | null;
+}
+
+export function hasVerifiedTxHash(receipt: Pick<NanopaymentReceipt, 'txHash'>): boolean {
+  return typeof receipt.txHash === 'string' && /^0x[a-fA-F0-9]{64}$/.test(receipt.txHash);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function resolveCircleTransactionHash(transactionId: string): Promise<Hash | null> {
+  if (!circleClient) return null;
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      const { data } = await circleClient.getTransaction({ id: transactionId } as any);
+      const txHash = (data as any)?.transaction?.txHash || (data as any)?.txHash || null;
+      if (txHash && /^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+        return txHash as Hash;
+      }
+    } catch (error) {
+      if (attempt === 4) {
+        console.warn(`[NANO] Failed to resolve Circle txHash for ${transactionId}:`, (error as Error).message || error);
+      }
+    }
+
+    await sleep(1500);
+  }
+
+  return null;
+}
+
+async function hydrateCircleReceipt(receipt: NanopaymentReceipt): Promise<void> {
+  if (!receipt.referenceId || hasVerifiedTxHash(receipt)) return;
+
+  const resolved = await resolveCircleTransactionHash(receipt.referenceId);
+  if (resolved) {
+    receipt.txHash = resolved;
+    receipt.verificationState = 'confirmed';
+  }
 }
 
 // ── Signer initialisation ────────────────────────────────────────────────────
@@ -133,7 +180,7 @@ async function ensureSigner(): Promise<boolean> {
 
 // ── Core transfer function ───────────────────────────────────────────────────
 
-async function sendUSDCTransfer(to: string, amountUsdc: number): Promise<Hash> {
+async function sendUSDCTransfer(to: string, amountUsdc: number): Promise<TransferResult> {
   // USDC on Arc has 6 decimals for ERC-20 transfers
   const amountRaw = parseUnits(amountUsdc.toFixed(6), 6);
 
@@ -147,11 +194,15 @@ async function sendUSDCTransfer(to: string, amountUsdc: number): Promise<Hash> {
       fee:                  { type: 'level', config: { feeLevel: 'LOW' } },
       blockchain:           'ARC-TESTNET',
     } as any);
-    const txHash = (data as any)?.transaction?.txHash
-                || (data as any)?.transactionId
-                || (data as any)?.id;
-    if (!txHash) throw new Error('Circle DCW returned no txHash');
-    return txHash as Hash;
+    const txHash = (data as any)?.transaction?.txHash || (data as any)?.txHash || null;
+    const referenceId = (data as any)?.transaction?.id
+      || (data as any)?.transactionId
+      || (data as any)?.id
+      || null;
+    return {
+      txHash: txHash && /^0x[a-fA-F0-9]{64}$/.test(txHash) ? txHash as Hash : null,
+      referenceId,
+    };
   }
 
   // ── viem EOA path ───────────────────────────────────────────────────────
@@ -163,7 +214,10 @@ async function sendUSDCTransfer(to: string, amountUsdc: number): Promise<Hash> {
     args: [getAddress(to), amountRaw],
     chain: ARC_CHAIN,
   });
-  return hash;
+  return {
+    txHash: hash,
+    referenceId: hash,
+  };
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────
@@ -186,16 +240,23 @@ export async function billEvent(
     const ready = await ensureSigner();
     if (!ready) throw new Error('no signer');
 
-    const txHash = await sendUSDCTransfer(BILLING_ADDRESS, NANO_AMOUNT);
-
-    return {
+    const transfer = await sendUSDCTransfer(BILLING_ADDRESS, NANO_AMOUNT);
+    const receipt: NanopaymentReceipt = {
       eventName,
       ...meta,
       mode:        circleWalletMode ? 'circle-wallets' : 'nanopayment',
-      txHash:      txHash,
+      txHash:      transfer.txHash ?? `pending_${transfer.referenceId ?? Date.now()}`,
+      referenceId: transfer.referenceId ?? undefined,
+      verificationState: transfer.txHash ? 'confirmed' : 'pending',
       amount:      NANO_AMOUNT,
       confirmedAt: Date.now(),
     };
+
+    if (circleWalletMode && transfer.referenceId && !transfer.txHash) {
+      void hydrateCircleReceipt(receipt);
+    }
+
+    return receipt;
   } catch (err) {
     // Log but never block — return pending receipt
     console.warn(`[NANO] billEvent failed (${eventName}):`, (err as Error).message || err);
@@ -204,6 +265,7 @@ export async function billEvent(
       ...meta,
       mode:        'fallback',
       txHash:      'pending_' + Date.now(),
+      verificationState: 'fallback',
       amount:      NANO_AMOUNT,
       confirmedAt: Date.now(),
     };
@@ -214,7 +276,7 @@ export async function billEvent(
 
 /** Return the total number of real (non-pending) nanopayment tx hashes seen. */
 export function getRealTxCount(receipts: NanopaymentReceipt[]): number {
-  return receipts.filter(r => !r.txHash.startsWith('pending_')).length;
+  return receipts.filter(hasVerifiedTxHash).length;
 }
 
 // ───────────────────────────────────────────────────────────────────────────────
