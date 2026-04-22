@@ -98,6 +98,15 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
 .c1 { color:var(--purple); } .c2 { color:var(--blue); } .c3 { color:var(--amber); } .c4 { color:var(--teal); }
 .trk-body { flex:1; overflow-y:auto; padding:12px; scrollbar-width:none; min-height:400px; }
 .trk-body::-webkit-scrollbar { display:none; }
+.trk-status { display:flex; align-items:flex-start; gap:8px; margin-top:10px; padding:8px 10px; border:1px solid rgba(255,255,255,.05); background:rgba(255,255,255,.02); border-radius:3px; }
+.trk-pill { font-size:8px; letter-spacing:.12em; padding:2px 6px; border-radius:2px; flex-shrink:0; border:1px solid rgba(255,255,255,.08); }
+.trk-pill.live { color:var(--teal); border-color:rgba(0,229,160,.2); background:rgba(0,229,160,.08); }
+.trk-pill.warn { color:var(--amber); border-color:rgba(240,165,0,.25); background:rgba(240,165,0,.08); }
+.trk-pill.idle { color:var(--text2); border-color:rgba(255,255,255,.08); background:rgba(255,255,255,.03); }
+.trk-pill.arc { color:var(--teal); border-color:rgba(0,229,160,.2); background:rgba(0,229,160,.08); }
+.trk-pill.paper { color:var(--amber); border-color:rgba(240,165,0,.25); background:rgba(240,165,0,.08); }
+.trk-pill.local { color:var(--red); border-color:rgba(255,68,68,.25); background:rgba(255,68,68,.08); }
+.trk-note { font-size:9px; color:var(--text2); line-height:1.5; }
 
 /* ── EVENT ROW ── */
 .ev-row { display:flex; align-items:center; gap:6px; padding:4px 0; border-bottom:1px solid rgba(255,255,255,.025); animation:rowIn .3s ease; }
@@ -153,7 +162,11 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
 .tr-hash { font-size:9px; color:var(--blue); cursor:pointer; }
 .tr-hash:hover { color:#5599EE; }
 .tr-time { font-size:9px; color:var(--text3); margin-left:auto; }
-.tr-arc  { font-size:8px; color:var(--teal2); letter-spacing:.08em; padding:1px 6px; border:1px solid rgba(29,158,117,.3); border-radius:2px; }
+.tr-arc  { font-size:8px; letter-spacing:.08em; padding:1px 6px; border-radius:2px; border:1px solid rgba(255,255,255,.08); }
+.tr-arc.arc { color:var(--teal2); border-color:rgba(29,158,117,.3); }
+.tr-arc.paper { color:var(--amber); border-color:rgba(240,165,0,.25); }
+.tr-arc.live { color:var(--blue); border-color:rgba(39,117,202,.25); }
+.tr-arc.local { color:var(--red); border-color:rgba(255,68,68,.25); }
 
 /* ── EMPTY ── */
 .empty { padding:24px 12px; text-align:center; color:var(--text3); font-size:10px; line-height:1.8; }
@@ -290,6 +303,10 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
         <div class="trk-num">TRACK 03</div>
         <div class="trk-title">Usage-Based Compute</div>
         <div class="trk-sub">Agent pays per LLM inference and SAGE reflection · Circle Nanopayments · Claude → Gemini → OpenAI · Gemini 2.5 Pro SAGE</div>
+        <div class="trk-status">
+          <span class="trk-pill idle" id="t3-pill">IDLE</span>
+          <div class="trk-note" id="t3-note">LLM providers are configured, but no billed inference or reflection has run yet.</div>
+        </div>
         <div class="trk-total-row">
           <span class="trk-total-lbl">Session spend</span>
           <span class="trk-total-val c3" id="t3-total">$0.000 USDC</span>
@@ -306,6 +323,10 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
         <div class="trk-num">TRACK 04</div>
         <div class="trk-title">Real-Time Micro-Commerce</div>
         <div class="trk-sub">Approved actions settle in USDC on Arc · Circle Wallets · sub-second finality · per-interaction settlement · no human in the loop</div>
+        <div class="trk-status">
+          <span class="trk-pill idle" id="t4-pill">IDLE</span>
+          <div class="trk-note" id="t4-note">Awaiting approved actions to settle.</div>
+        </div>
         <div class="trk-total-row">
           <span class="trk-total-lbl">Settled volume</span>
           <span class="trk-total-val c4" id="t4-total">$0.00 USDC</span>
@@ -378,6 +399,47 @@ function setConn(s) {
   d.className = "live-dot" + (s==="live"?"":" "+(s==="error"?"err":"conn"));
   l.className = "live-lbl" + (s==="live"?"":" "+(s==="error"?"err":"conn"));
   l.textContent = s==="live"?"LIVE":s==="error"?"ERROR":"CONNECTING";
+}
+
+function statusClass(state) {
+  if (state === "live_api" || state === "kraken_live") return "live";
+  if (state === "no_keys") return "warn";
+  if (state === "kraken_paper") return "paper";
+  if (state === "arc_settled") return "arc";
+  if (state === "local_only") return "local";
+  return "idle";
+}
+
+function setTrackStatus(prefix, track) {
+  const pill = el(prefix + "-pill");
+  const note = el(prefix + "-note");
+  if (!pill || !note || !track) return;
+  pill.className = "trk-pill " + statusClass(track.state);
+  pill.textContent = track.label || "IDLE";
+  note.textContent = track.note || "";
+}
+
+function formatSettlementMode(mode) {
+  if (mode === "circle-wallets") return "Circle Wallets";
+  if (mode === "nanopayment") return "Nanopayment";
+  if (mode === "fallback") return "Fallback receipt";
+  return "Pending receipt";
+}
+
+function formatExecutionLabel(execution) {
+  if (!execution) return "Local only";
+  if (execution.executionMode === "arc_settled") return "Arc settled";
+  if (execution.executionMode === "kraken_live") return "Kraken live";
+  if (execution.executionMode === "kraken_paper") return "Paper execution";
+  return "Local only";
+}
+
+function formatExecutionClass(execution) {
+  if (!execution) return "local";
+  if (execution.executionMode === "arc_settled") return "arc";
+  if (execution.executionMode === "kraken_live") return "live";
+  if (execution.executionMode === "kraken_paper") return "paper";
+  return "local";
 }
 
 // ── T1 ──────────────────────────────────────────────────────────────────────
@@ -464,24 +526,33 @@ function renderT2(data) {
 }
 
 // ── T3 ──────────────────────────────────────────────────────────────────────
-function renderT3(data) {
+function renderT3(data, track) {
   const events = data.t3Events || [];
   const body = el("t3-body");
+  setTrackStatus("t3", track);
+
   if (!events.length) {
-    body.innerHTML = '<div class="empty"><div class="empty-dot"></div>Awaiting LLM reasoning<br>fires after governance clears</div>';
-    el("t3-total").textContent = "$0.000 USDC"; return;
+    const emptyCopy = track && track.state === "no_keys"
+      ? "No LLM API keys configured<br>Deterministic fallback reasoning active"
+      : "Awaiting billed inference<br>fires after governance clears";
+    body.innerHTML = `<div class="empty"><div class="empty-dot"></div>${emptyCopy}</div>`;
+    el("t3-total").textContent = "$0.000 USDC";
+    return;
   }
+
   body.innerHTML = "";
   events.slice(0,10).forEach(e => {
     const div = document.createElement("div");
     div.className = "cmp-item";
+    const settlement = formatSettlementMode(e.mode);
+    const txRef = e.txHash || e.hash || "pending...";
     div.innerHTML = `
       <span class="cmp-icon">◆</span>
       <div class="cmp-body">
-        <div class="cmp-name">${e.model||e.eventName||"—"}</div>
-        <div class="cmp-meta">${e.type||"inference"} · ${e.time||fTs(e.confirmedAt)} · <span style="color:var(--blue)">${e.txHash||e.hash||"pending..."}</span></div>
+        <div class="cmp-name">${e.model || e.eventName || "—"}</div>
+        <div class="cmp-meta">${e.type || "inference"} · ${settlement} · ${e.time || fTs(e.confirmedAt)} · <span style="color:var(--blue)">${txRef}</span></div>
       </div>
-      <span class="cmp-amt">${fU(e.amount||e.amt)}</span>
+      <span class="cmp-amt">${fU(e.amount || e.amt)}</span>
     `;
     body.appendChild(div);
   });
@@ -489,23 +560,43 @@ function renderT3(data) {
 }
 
 // ── T4 ──────────────────────────────────────────────────────────────────────
-function renderT4(checkpoints) {
-  const trades = (checkpoints||[]).filter(c => c.status==="CLOSED"||c.tradeId||c.direction);
+function renderT4(checkpoints, track) {
+  const trades = (checkpoints || []).filter(c => c.execution && c.execution.requested && (c.direction || c.signal) !== "NEUTRAL");
   const body = el("t4-body");
+  setTrackStatus("t4", track);
+
   if (!trades.length) {
-    body.innerHTML = '<div class="empty"><div class="empty-dot"></div>Awaiting approved actions<br>All governance stages must clear</div>';
-    el("t4-total").textContent = "$0.00 USDC"; return;
+    const emptyCopy = track && track.state === "local_only"
+      ? "Approved actions recorded locally<br>No confirmed external settlement yet"
+      : "Awaiting approved actions<br>All governance stages must clear";
+    body.innerHTML = `<div class="empty"><div class="empty-dot"></div>${emptyCopy}</div>`;
+    el("t4-total").textContent = "$0.00 USDC";
+    return;
   }
+
   body.innerHTML = "";
   let vol = 0;
   trades.slice(0,8).forEach(t => {
-    const dir  = (t.direction||t.signal||"LONG").toLowerCase();
-    const pair = t.pair||t.tradingPair||"WETH/USDC";
-    const size = parseFloat(t.positionSizeUsd||t.size||0);
-    const hash = t.txHash||t.onChainHash||"pending...";
-    const time = t.closedAt ? fTs(t.closedAt) : "—";
-    vol += size;
-    const isLong = dir==="long"||dir==="buy";
+    const dir = (t.direction || t.signal || "LONG").toLowerCase();
+    const pair = t.pair || t.tradingPair || "WETH/USDC";
+    const size = parseFloat(t.positionSizeUsd || t.size || 0);
+    const execution = t.execution || null;
+    const modeLabel = formatExecutionLabel(execution);
+    const modeClass = formatExecutionClass(execution);
+    const settlementRef = execution && execution.executionMode === "arc_settled"
+      ? (execution.settlementTxHash || t.txHash || "pending...")
+      : (execution?.kraken?.orderId ? `order ${execution.kraken.orderId}` : (execution?.error || "local record"));
+    const settlementTime = execution?.settledAt ? fTs(execution.settledAt) : fTs(t.timestamp);
+    const isLong = dir === "long" || dir === "buy";
+
+    if (execution && execution.executionMode === "arc_settled") {
+      vol += size;
+    }
+
+    const refHtml = execution && execution.executionMode === "arc_settled" && settlementRef.startsWith("0x")
+      ? `<a class="tr-hash" href="${ARC_EXPLORER + settlementRef}" target="_blank" rel="noopener">${settlementRef}</a>`
+      : `<span class="tr-hash">${settlementRef}</span>`;
+
     const div = document.createElement("div");
     div.className = "trade-item";
     div.innerHTML = `
@@ -515,15 +606,15 @@ function renderT4(checkpoints) {
         <span class="tr-size">${fU2(size)}</span>
       </div>
       <div class="tr-row2">
-        <a class="tr-hash" href="${hash.startsWith("0x")?ARC_EXPLORER+hash:"#"}" target="_blank" rel="noopener">${hash}</a>
-        <span class="tr-arc">Arc ✓</span>
+        ${refHtml}
+        <span class="tr-arc ${modeClass}">${modeLabel}</span>
         <span class="ev-badge usdc">USDC</span>
-        <span class="tr-time">${time}</span>
+        <span class="tr-time">${settlementTime}</span>
       </div>
     `;
     body.appendChild(div);
   });
-  el("t4-total").textContent = fU2(vol) + " USDC";
+  el("t4-total").textContent = fU2(track?.settledVolumeUsd ?? vol) + " USDC";
 }
 
 // ── MOMENT + PROOF BARS ──────────────────────────────────────────────────────
@@ -579,8 +670,8 @@ async function poll() {
 
     renderT1(billing);
     renderT2(billing);
-    renderT3(billing);
-    renderT4(checkpoints.checkpoints || checkpoints);
+    renderT3(billing, status.tracks?.track3 || null);
+    renderT4(checkpoints.checkpoints || checkpoints, status.tracks?.track4 || null);
     updateBars(billing, status);
 
     // Gateway balance
@@ -606,3 +697,5 @@ setInterval(poll, POLL);
 </script>
 </body>
 </html>
+
+

@@ -33,7 +33,13 @@ import { runAdaptation, recordTradeOutcome, getAdaptiveParams, getAdaptationSumm
 import { RegimeGovernanceController, mapVolToRegime } from '../strategy/regime-governance.js';
 import { loadSAGEState, recordSAGEOutcome, runSAGEReflection, getSAGEStatus, getActivePlaybookRules, isSAGEEnabled } from '../strategy/sage-engine.js';
 import { uploadArtifact } from '../trust/ipfs.js';
-import { saveCheckpoint, getCheckpoints, getTradeCheckpoints } from '../trust/checkpoint.js';
+import {
+  saveCheckpoint,
+  getCheckpoints,
+  getTradeCheckpoints,
+  createCheckpointExecution,
+  flushCheckpoint,
+} from '../trust/checkpoint.js';
 import { computeMarketState } from '../data/market-state.js';
 import { evaluateOracleIntegrity } from '../security/oracle-integrity.js';
 import { evaluateMandate, getDefaultMandate, buildMandateRiskChecks } from '../chain/agent-mandate.js';
@@ -841,16 +847,34 @@ async function runCycle(): Promise<void> {
 
   // Step 7: Record checkpoint
   const checkpoint = saveCheckpoint(strategyOutput, riskDecision, artifact, ipfsResult);
+  checkpoint.execution = createCheckpointExecution({
+    requested: shouldExecute,
+    approved: riskDecision.approved,
+    notionalUsd: riskDecision.finalPositionSize * strategyOutput.currentPrice,
+  });
 
   // Step 8: Execute trade
   if (shouldExecute) {
     if (MODE === 'live' && agentId && config.riskRouterAddress) {
       // Real execution: sign intent, route through the risk router, then record the outcome.
+      checkpoint.execution.router.attempted = true;
       const execResult = await executeTrade(strategyOutput, riskDecision, artifact, agentId);
-      if (execResult.success) {
+      checkpoint.execution.router.approved = execResult.approved;
+      checkpoint.execution.router.txHash = execResult.intentTxHash;
+
+      if (execResult.success && execResult.intentTxHash) {
         checkpoint.onChainTxHash = execResult.intentTxHash;
+        checkpoint.execution.executionMode = 'arc_settled';
+        checkpoint.execution.settlementStatus = 'confirmed';
+        checkpoint.execution.settlementVenue = 'arc';
+        checkpoint.execution.settlementTxHash = execResult.intentTxHash;
+        checkpoint.execution.settledAt = new Date().toISOString();
+        checkpoint.execution.error = null;
+        checkpoint.execution.router.error = null;
         ipfsResult = ipfsResult || { cid: execResult.artifactIpfsCid!, uri: execResult.artifactIpfsUri!, gatewayUrl: '' };
       } else {
+        checkpoint.execution.router.error = execResult.rejectReason || execResult.error || 'Risk router execution failed';
+        checkpoint.execution.error = checkpoint.execution.router.error;
         log.warn('On-chain execution failed — recording locally only', { error: execResult.error });
       }
     }
@@ -861,14 +885,28 @@ async function runCycle(): Promise<void> {
     const krakenLiveEnabled = !!(process.env.KRAKEN_API_KEY && process.env.KRAKEN_API_SECRET);
     const krakenEnabled = krakenLiveEnabled || krakenPaperEnabled;
     if (krakenEnabled && (MODE === 'live' || MODE === 'kraken' || krakenPaperEnabled)) {
+      checkpoint.execution.kraken.attempted = true;
       const krakenResult = await executeKrakenTrade(strategyOutput, riskDecision, artifact);
+      checkpoint.execution.kraken.orderId = krakenResult.orderId;
+      checkpoint.execution.kraken.paperTrade = krakenResult.paperTrade;
+      checkpoint.execution.kraken.executionMode = krakenResult.executionMode;
+
       if (krakenResult.success) {
-        (checkpoint as any).krakenOrderId = krakenResult.orderId;
-        (checkpoint as any).krakenPaperTrade = krakenResult.paperTrade;
         if (!ipfsResult && krakenResult.artifactIpfsCid) {
           ipfsResult = { cid: krakenResult.artifactIpfsCid, uri: krakenResult.artifactIpfsUri!, gatewayUrl: '', size: 0 };
           checkpoint.ipfs = ipfsResult;
         }
+
+        checkpoint.execution.kraken.error = null;
+        if (checkpoint.execution.executionMode !== 'arc_settled') {
+          checkpoint.execution.executionMode = krakenResult.paperTrade ? 'kraken_paper' : 'kraken_live';
+          checkpoint.execution.settlementStatus = krakenResult.paperTrade ? 'paper' : 'confirmed';
+          checkpoint.execution.settlementVenue = 'kraken';
+          checkpoint.execution.settlementTxHash = null;
+          checkpoint.execution.settledAt = new Date().toISOString();
+          checkpoint.execution.error = null;
+        }
+
         log.info('Kraken order executed', {
           orderId: krakenResult.orderId,
           paper: krakenResult.paperTrade,
@@ -876,9 +914,26 @@ async function runCycle(): Promise<void> {
           volume: krakenResult.volume,
         });
       } else {
+        checkpoint.execution.kraken.error = krakenResult.error || 'Kraken execution failed';
+        if (checkpoint.execution.executionMode !== 'arc_settled') {
+          checkpoint.execution.error = checkpoint.execution.kraken.error;
+        }
         log.warn('Kraken execution failed — position tracked locally only', { error: krakenResult.error });
       }
     }
+
+    if (checkpoint.execution.executionMode === 'local_only') {
+      const executionErrors = [
+        checkpoint.execution.router.error,
+        checkpoint.execution.kraken.error,
+      ].filter((value): value is string => Boolean(value));
+
+      if (executionErrors.length > 0) {
+        checkpoint.execution.error = executionErrors.join(' | ');
+      }
+    }
+
+    flushCheckpoint(checkpoint);
 
     // Step 8c: Record trade on-chain in KairosRiskPolicy
     if (shouldExecute) {
@@ -1321,3 +1376,4 @@ if (isEntryPoint) {
     process.exit(1);
   });
 }
+

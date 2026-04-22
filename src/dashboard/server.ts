@@ -12,9 +12,10 @@ import type { Server } from 'http';
 import { getAgentState, getHealthCheck, getLogs, getErrors } from '../agent/index.js';
 import { getRecentTrades, getTradeStats, loadClosedTrades } from '../agent/trade-log.js';
 import { computeRiskAdjustedMetrics, type EquityPoint } from '../analytics/performance-metrics.js';
-import { getCheckpoints, getTradeCheckpoints } from '../trust/checkpoint.js';
+import { getCheckpoints, getTradeCheckpoints, getCheckpointExecution } from '../trust/checkpoint.js';
 import { config } from '../agent/config.js';
 import { getReputationTimeline, getLastTrustScore } from '../trust/trust-policy-scorecard.js';
+import { resolveTrustTier } from '../trust/reputation-evolution.js';
 import { getOperatorControlState, getOperatorActionReceipts, pauseTrading, resumeTrading, emergencyStop } from '../agent/operator-control.js';
 import { buildRegistrationJson } from '../chain/identity.js';
 import { generateTradePost, generateDailySummaryPost, buildTwitterIntentUrl } from '../social/share.js';
@@ -29,6 +30,156 @@ import { ethers } from 'ethers';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DASHBOARD_PORT = parseInt(process.env.PORT || '3000', 10);
+
+function getRuntimeConfig() {
+  return {
+    mode: process.env.MODE || 'simulation',
+    dataSource: process.env.DATA_SOURCE || 'live',
+  };
+}
+
+function formatBillingMode(mode: string | undefined | null): string {
+  if (mode === 'circle-wallets') return 'Circle Wallets';
+  if (mode === 'nanopayment') return 'Nanopayment';
+  if (mode === 'fallback') return 'Fallback receipt';
+  if (mode === 'x402') return 'x402';
+  return 'Unknown';
+}
+
+function buildTrack3Status() {
+  const latestEvent = billingStore.t3Events[0] ?? null;
+  const sage = getSAGEStatus();
+  const providers = [
+    { id: 'anthropic', label: 'Claude', configured: Boolean(process.env.ANTHROPIC_API_KEY) },
+    { id: 'gemini', label: 'Gemini', configured: Boolean(process.env.GEMINI_API_KEY) },
+    { id: 'openai', label: 'OpenAI', configured: Boolean(process.env.OPENAI_API_KEY) },
+  ];
+  const configuredCount = providers.filter((provider) => provider.configured).length;
+
+  let state = 'idle';
+  let label = 'IDLE';
+  let note = 'LLM providers are configured, but no billed inference or reflection has run yet.';
+  let fallbackReason: string | null = null;
+
+  if (latestEvent) {
+    state = 'live_api';
+    label = 'LIVE API';
+    note = `${latestEvent.model || latestEvent.eventName || 'Compute'} billed as ${latestEvent.type || 'inference'} via ${formatBillingMode(latestEvent.mode)}.`;
+  } else if (configuredCount === 0) {
+    state = 'no_keys';
+    label = 'NO KEYS';
+    note = 'No Anthropic, Gemini, or OpenAI API keys configured. Kairos is using deterministic fallback reasoning.';
+    fallbackReason = 'Deterministic reasoning fallback active because no LLM API keys are configured.';
+  }
+
+  return {
+    state,
+    label,
+    note,
+    providers,
+    apiKeysConfigured: configuredCount > 0,
+    lastComputeAt: latestEvent ? new Date(latestEvent.confirmedAt).toISOString() : null,
+    lastComputeModel: latestEvent?.model ?? null,
+    lastComputeType: latestEvent?.type ?? null,
+    lastSettlementMode: latestEvent?.mode ?? null,
+    realTxns: billingStore.t3RealTxns,
+    pendingTxns: billingStore.t3PendingTxns,
+    totalEvents: billingStore.t3Events.length,
+    fallbackReason,
+    sage: {
+      enabled: sage.enabled,
+      lastReflection: sage.lastReflection,
+      pendingOutcomes: sage.pendingOutcomes,
+      reflectionCount: sage.reflectionCount,
+    },
+  };
+}
+
+function buildTrack4Status(agentState: ReturnType<typeof getAgentState>) {
+  const cliStatus = getCliStatus();
+  const actions = getTradeCheckpoints(50)
+    .map((checkpoint) => {
+      const execution = getCheckpointExecution(checkpoint);
+      return {
+        id: checkpoint.id,
+        timestamp: checkpoint.timestamp,
+        direction: checkpoint.strategyOutput.signal.direction,
+        notionalUsd: execution.notionalUsd,
+        execution,
+      };
+    })
+    .filter((entry) => entry.execution.requested && entry.direction !== 'NEUTRAL');
+
+  const counts = {
+    arcSettled: 0,
+    krakenLive: 0,
+    krakenPaper: 0,
+    localOnly: 0,
+    skipped: 0,
+  };
+  let settledVolumeUsd = 0;
+
+  for (const action of actions) {
+    switch (action.execution.executionMode) {
+      case 'arc_settled':
+        counts.arcSettled += 1;
+        settledVolumeUsd += action.notionalUsd;
+        break;
+      case 'kraken_live':
+        counts.krakenLive += 1;
+        break;
+      case 'kraken_paper':
+        counts.krakenPaper += 1;
+        break;
+      case 'local_only':
+        counts.localOnly += 1;
+        break;
+      default:
+        counts.skipped += 1;
+        break;
+    }
+  }
+
+  const latestAction = actions.length > 0 ? actions[actions.length - 1] : null;
+  let state = 'idle';
+  let label = 'IDLE';
+  let note = 'Awaiting approved actions to settle.';
+
+  if (counts.arcSettled > 0) {
+    state = 'arc_settled';
+    label = 'ARC SETTLED';
+    note = `${counts.arcSettled} approved action(s) settled on Arc with USDC.`;
+  } else if (counts.krakenLive > 0) {
+    state = 'kraken_live';
+    label = 'KRAKEN LIVE';
+    note = 'Approved actions reached live Kraken execution, but not Arc settlement.';
+  } else if (counts.krakenPaper > 0) {
+    state = 'kraken_paper';
+    label = 'PAPER EXECUTION';
+    note = 'Approved actions executed in Kraken paper mode; they are not on-chain settlements.';
+  } else if (counts.localOnly > 0) {
+    state = 'local_only';
+    label = 'LOCAL ONLY';
+    note = 'Approved actions were recorded locally without confirmed external settlement.';
+  }
+
+  return {
+    state,
+    label,
+    note,
+    counts,
+    actionsRecorded: actions.length,
+    settledVolumeUsd,
+    lastSettlementAt: latestAction?.execution.settledAt ?? null,
+    latestMode: latestAction?.execution.executionMode ?? null,
+    routerReady: Boolean((process.env.MODE || 'simulation') === 'live' && agentState.agentId && config.riskRouterAddress),
+    kraken: {
+      cliInstalled: cliStatus.installed,
+      apiKeyConfigured: cliStatus.apiKeyConfigured,
+      paperTrading: cliStatus.paperTrading,
+    },
+  };
+}
 
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -87,7 +238,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
 
   // Default route → final production dashboard
   app.get('/', (_req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'kairos.html'));
   });
 
   // Trade history page — separate tab
@@ -109,7 +260,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     const origin = _req.headers.origin;
     const allowed = origin && (
       /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
-      /^https:\/\/(app|api)\.kairos\.nov-tia\.com$/.test(origin)
+      /^https:\/\/kairos\.nov-tia\.com$/.test(origin)
     );
     if (allowed) {
       res.header('Access-Control-Allow-Origin', origin);
@@ -120,6 +271,34 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
   });
 
   // ── A2A Agent Discovery ──
+  // Surface MCP on the main hostname so deployment can use the root domain only.
+  app.use('/mcp', async (req, res, next) => {
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(204);
+      return;
+    }
+
+    try {
+      const upstream = await fetch(`http://127.0.0.1:3001${req.originalUrl}`, {
+        method: req.method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(req.headers['x-kairos-role'] ? { 'X-Kairos-Role': String(req.headers['x-kairos-role']) } : {}),
+        },
+        body: ['GET', 'HEAD'].includes(req.method) ? undefined : JSON.stringify(req.body ?? {}),
+      });
+
+      const contentType = upstream.headers.get('content-type');
+      if (contentType) {
+        res.setHeader('Content-Type', contentType);
+      }
+
+      res.status(upstream.status).send(await upstream.text());
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.get('/.well-known/agent-card.json', (_req, res) => {
     const registration = buildRegistrationJson({
       agentId: config.agentId ?? undefined,
@@ -139,7 +318,6 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     const schedulerState = state.scheduler;
     const recentTrades = getRecentTrades(1);
     const lastClosedAt = recentTrades.length > 0 ? recentTrades[0].closedAt : null;
-    // Also consider open positions — the most recently opened one counts as trade activity
     const openPositions = state.risk.openPositions;
     const lastOpenedAt = openPositions.length > 0
       ? openPositions.reduce((latest: string | null, p: any) => {
@@ -147,11 +325,15 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
           return !latest || p.openedAt > latest ? p.openedAt : latest;
         }, null as string | null)
       : null;
-    // Use whichever is more recent: last closed trade or last opened position
     const lastTradeAt = [lastClosedAt, lastOpenedAt]
       .filter(Boolean)
       .sort()
       .pop() ?? null;
+    const effectiveTrustScore = getLastTrustScore(state.agentId) ?? 95;
+    const trustTier = resolveTrustTier(effectiveTrustScore).tier;
+    const track3 = buildTrack3Status();
+    const track4 = buildTrack4Status(state);
+
     res.json({
       agent: {
         name: config.agentName,
@@ -159,6 +341,11 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
         running: state.running,
         cycleCount: state.cycleCount,
       },
+      agentId: state.agentId ?? config.agentId ?? null,
+      totalCycles: state.cycleCount,
+      trustScore: effectiveTrustScore,
+      capitalTier: trustTier,
+      runtime: getRuntimeConfig(),
       heartbeat: {
         running: state.running,
         lastCycleAt: schedulerState?.lastCycleAt ?? null,
@@ -177,6 +364,10 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
         totalTrades: state.risk.totalTrades,
       },
       sentiment: state.sentiment ?? null,
+      tracks: {
+        track3,
+        track4,
+      },
     });
   });
 
@@ -184,24 +375,32 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
   app.get('/api/checkpoints', (req, res) => {
     const limit = parseInt(req.query.limit as string) || 20;
     const approvedOnly = req.query.approved === 'true';
-    const checkpoints = approvedOnly ? getTradeCheckpoints(limit) : getCheckpoints(limit);
+    const source = approvedOnly ? getTradeCheckpoints(limit) : getCheckpoints(limit);
+    const checkpoints = source.slice().reverse();
 
     res.json({
       count: checkpoints.length,
-      checkpoints: checkpoints.map(cp => ({
-        id: cp.id,
-        timestamp: cp.timestamp,
-        signal: cp.strategyOutput.signal.direction,
-        confidence: cp.strategyOutput.signal.confidence,
-        price: cp.strategyOutput.currentPrice,
-        approved: cp.riskDecision.approved,
-        explanation: cp.riskDecision.explanation,
-        positionSize: cp.riskDecision.finalPositionSize,
-        artifactIpfs: cp.ipfs?.uri || null,
-        ipfsCid: cp.ipfs?.cid || null,
-        txHash: cp.onChainTxHash || null,
-        onChainTxHash: cp.onChainTxHash || null,
-      })),
+      checkpoints: checkpoints.map(cp => {
+        const execution = getCheckpointExecution(cp);
+        return {
+          id: cp.id,
+          timestamp: cp.timestamp,
+          signal: cp.strategyOutput.signal.direction,
+          direction: cp.strategyOutput.signal.direction,
+          pair: config.tradingPair,
+          confidence: cp.strategyOutput.signal.confidence,
+          price: cp.strategyOutput.currentPrice,
+          approved: cp.riskDecision.approved,
+          explanation: cp.riskDecision.explanation,
+          positionSize: cp.riskDecision.finalPositionSize,
+          positionSizeUsd: execution.notionalUsd,
+          artifactIpfs: cp.ipfs?.uri || null,
+          ipfsCid: cp.ipfs?.cid || null,
+          txHash: execution.settlementTxHash || cp.onChainTxHash || null,
+          onChainTxHash: cp.onChainTxHash || null,
+          execution,
+        };
+      }),
     });
   });
 
@@ -609,3 +808,4 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     }
   });
 }
+

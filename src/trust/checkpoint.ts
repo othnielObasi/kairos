@@ -25,6 +25,116 @@ export interface Checkpoint {
   artifact: ValidationArtifact;
   ipfs: IpfsUploadResult | null;
   onChainTxHash: string | null;
+  execution?: CheckpointExecution;
+}
+
+export type CheckpointExecutionMode =
+  | 'arc_settled'
+  | 'kraken_live'
+  | 'kraken_paper'
+  | 'local_only'
+  | 'skipped';
+
+export type CheckpointSettlementStatus =
+  | 'confirmed'
+  | 'paper'
+  | 'local_only'
+  | 'skipped';
+
+export interface CheckpointExecution {
+  requested: boolean;
+  approved: boolean;
+  notionalUsd: number;
+  executionMode: CheckpointExecutionMode;
+  settlementStatus: CheckpointSettlementStatus;
+  settlementVenue: 'arc' | 'kraken' | 'local' | null;
+  settlementTxHash: string | null;
+  settledAt: string | null;
+  error: string | null;
+  router: {
+    attempted: boolean;
+    approved: boolean | null;
+    txHash: string | null;
+    error: string | null;
+  };
+  kraken: {
+    attempted: boolean;
+    orderId: string | null;
+    paperTrade: boolean | null;
+    executionMode: 'cli' | 'mcp' | 'rest-fallback' | null;
+    error: string | null;
+  };
+}
+
+export function createCheckpointExecution(params: {
+  requested: boolean;
+  approved: boolean;
+  notionalUsd: number;
+}): CheckpointExecution {
+  return {
+    requested: params.requested,
+    approved: params.approved,
+    notionalUsd: params.notionalUsd,
+    executionMode: params.requested ? 'local_only' : 'skipped',
+    settlementStatus: params.requested ? 'local_only' : 'skipped',
+    settlementVenue: params.requested ? 'local' : null,
+    settlementTxHash: null,
+    settledAt: null,
+    error: params.requested ? 'No confirmed settlement recorded yet' : null,
+    router: {
+      attempted: false,
+      approved: null,
+      txHash: null,
+      error: null,
+    },
+    kraken: {
+      attempted: false,
+      orderId: null,
+      paperTrade: null,
+      executionMode: null,
+      error: null,
+    },
+  };
+}
+
+export function getCheckpointExecution(cp: Checkpoint): CheckpointExecution {
+  if (cp.execution) return cp.execution;
+
+  const requested = cp.riskDecision.approved && cp.strategyOutput.signal.direction !== 'NEUTRAL';
+  const notionalUsd = cp.riskDecision.finalPositionSize * cp.strategyOutput.currentPrice;
+
+  if (cp.onChainTxHash) {
+    return {
+      requested,
+      approved: cp.riskDecision.approved,
+      notionalUsd,
+      executionMode: 'arc_settled',
+      settlementStatus: 'confirmed',
+      settlementVenue: 'arc',
+      settlementTxHash: cp.onChainTxHash,
+      settledAt: cp.timestamp,
+      error: null,
+      router: {
+        attempted: true,
+        approved: true,
+        txHash: cp.onChainTxHash,
+        error: null,
+      },
+      kraken: {
+        attempted: false,
+        orderId: null,
+        paperTrade: null,
+        executionMode: null,
+        error: null,
+      },
+    };
+  }
+
+  return createCheckpointExecution({
+    requested,
+    approved: cp.riskDecision.approved,
+    notionalUsd,
+  });
 }
 
 const checkpoints: Checkpoint[] = [];
@@ -44,6 +154,11 @@ function persistCheckpointToDisk(cp: Checkpoint): void {
       approved: cp.riskDecision?.approved ?? null,
       ipfsCid: cp.ipfs?.cid ?? null,
       onChainTxHash: cp.onChainTxHash,
+      executionMode: cp.execution?.executionMode ?? null,
+      settlementStatus: cp.execution?.settlementStatus ?? null,
+      settlementTxHash: cp.execution?.settlementTxHash ?? null,
+      krakenOrderId: cp.execution?.kraken.orderId ?? null,
+      paperTrade: cp.execution?.kraken.paperTrade ?? null,
     }) + '\n';
     appendFileSync(CHECKPOINT_LOG_FILE, line, 'utf-8');
   } catch {
@@ -107,4 +222,8 @@ export function getTradeCheckpoints(limit: number = 20): Checkpoint[] {
 export function resetCheckpoints(): void {
   checkpoints.length = 0;
   checkpointId = 0;
+}
+
+export function flushCheckpoint(cp: Checkpoint): void {
+  persistCheckpointToDisk(cp);
 }

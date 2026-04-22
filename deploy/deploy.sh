@@ -10,7 +10,7 @@
 # ─────────────────────────────────────────────────────────
 set -euo pipefail
 
-VPS_HOST="root@api.kairos.nov-tia.com"
+VPS_HOST="${VPS_HOST:-root@kairos.nov-tia.com}"
 VPS_PATH="/opt/kairos"
 SSH_KEY="${SSH_KEY:-$HOME/.ssh/vultr_kairos}"
 SSH_OPTS="-i $SSH_KEY -o StrictHostKeyChecking=no"

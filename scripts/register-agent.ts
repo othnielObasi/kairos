@@ -52,9 +52,9 @@ async function main() {
   // Step 3: Build initial registration JSON (without agentId — set after registration)
   console.log('Step 3: Building registration JSON...');
   const registrationJson = buildRegistrationJson({
-    dashboardUrl: 'https://kairos.sovereignailab.com',
-    mcpEndpoint: 'https://kairos.sovereignailab.com/mcp',
-    a2aEndpoint: 'https://kairos.sovereignailab.com/.well-known/agent-card.json',
+    dashboardUrl: config.dashboardUrl,
+    mcpEndpoint: config.mcpEndpoint,
+    a2aEndpoint: config.a2aEndpoint,
     mandateCapitalUsd: 100000,
   });
   console.log('  ✅ Registration JSON built\n');

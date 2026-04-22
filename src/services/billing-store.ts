@@ -80,7 +80,7 @@ class BillingStore {
 
   addGovernanceEvent(receipt: NanopaymentReceipt, stageIndex: number) {
     receipt.source = STAGE_NAMES[stageIndex];
-    receipt.mode = 'nanopayment';
+    receipt.mode = receipt.mode || 'nanopayment';
     this.t1Events.unshift(receipt);
     if (this.t1Events.length > 100) this.t1Events.pop();
 
@@ -122,7 +122,7 @@ class BillingStore {
   }
 
   addComputeEvent(receipt: NanopaymentReceipt) {
-    receipt.mode = 'nanopayment';
+    receipt.mode = receipt.mode || 'nanopayment';
     this.t3Events.unshift(receipt);
     if (this.t3Events.length > 100) this.t3Events.pop();
 
