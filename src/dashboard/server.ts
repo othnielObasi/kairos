@@ -130,7 +130,7 @@ function buildTrack2Status() {
     note = 'AIsa x402 is not configured, so Track 2 is running on legacy data feeds only.';
   }
 
-  return {
+  const track2 = {
     state,
     label,
     note,
@@ -162,6 +162,8 @@ function buildTrack2Status() {
           prism: 'Strykr PRISM',
         },
   };
+  delete (track2 as { legacySubtitle?: string }).legacySubtitle;
+  return track2;
 }
 
 function buildMcpSummary() {
