@@ -68,6 +68,13 @@ function getPayingFetch(): typeof globalThis.fetch {
   return payingFetch;
 }
 
+function assertX402Ready(): void {
+  const status = getNormalisationStatus();
+  if (status.mode !== 'x402') {
+    throw new Error(status.reason || 'AIsa x402 signer is not ready');
+  }
+}
+
 // ─── helper ──────────────────────────────────────────────────────────────────
 async function aisaGet(path: string): Promise<any> {
   const res = await getPayingFetch()(`${AISA}${path}`, {
@@ -121,6 +128,7 @@ export interface PriceData {
 }
 
 export async function fetchPriceData(ticker = 'ETH'): Promise<PriceData> {
+  assertX402Ready();
   // Fetch twice with slightly different tickers for oracle cross-validation
   // ETH and WETH are independent data points — satisfies the two-source oracle check
   const [ethData, wethData] = await Promise.all([
@@ -225,17 +233,18 @@ function scoreNewsSentiment(articles: any[]): number {
 }
 
 export async function fetchSentimentData(asset = 'BTC'): Promise<SentimentData> {
+  assertX402Ready();
   const [twitterRaw, newsRaw] = await Promise.allSettled([
     aisaGet(`/twitter/tweet/advanced_search?query=${encodeURIComponent(asset + ' crypto price')}&count=20`),
     aisaGet(`/financial/news?ticker=${asset}`),
   ]);
 
-  const tweets   = twitterRaw.status === 'fulfilled'
-    ? (twitterRaw.value?.tweets || twitterRaw.value?.data || twitterRaw.value || [])
-    : [];
-  const articles = newsRaw.status === 'fulfilled'
-    ? (newsRaw.value?.news || newsRaw.value?.data || newsRaw.value || [])
-    : [];
+  if (twitterRaw.status !== 'fulfilled' || newsRaw.status !== 'fulfilled') {
+    throw new Error('AIsa sentiment endpoints unavailable');
+  }
+
+  const tweets = twitterRaw.value?.tweets || twitterRaw.value?.data || twitterRaw.value || [];
+  const articles = newsRaw.value?.news || newsRaw.value?.data || newsRaw.value || [];
 
   // Score each source
   const twitterScore = scoreTwitterSentiment(tweets);   // 0–100
@@ -398,6 +407,7 @@ export async function fetchPrismData(
   asset       = 'ETH',
   currentPrice = 0
 ): Promise<PrismData> {
+  assertX402Ready();
   let sonarText = '';
 
   try {
@@ -423,18 +433,8 @@ export async function fetchPrismData(
       '';
 
   } catch (err) {
-    logger.warn('[Kairos] PRISM/Sonar fetch failed, using neutral defaults:', err);
-    // Return neutral defaults — governance pipeline continues
-    return {
-      rsi: 50, macd: 0, macdSignal: 0, macdHistogram: 0,
-      bollingerUpper:  currentPrice * 1.022,
-      bollingerMiddle: currentPrice,
-      bollingerLower:  currentPrice * 0.978,
-      directionalBias: 'NEUTRAL',
-      confidenceBoost: 0,
-      volatilityFlag:  false,
-      source: 'aisa-perplexity-sonar-fallback',
-    };
+    logger.warn('[Kairos] PRISM/Sonar fetch failed:', err);
+    throw err;
   }
 
   const normalised = parseSonarToPrism(sonarText, currentPrice);
