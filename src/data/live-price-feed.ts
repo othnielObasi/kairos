@@ -9,6 +9,7 @@
 import type { MarketData } from '../strategy/momentum.js';
 import { createLogger } from '../agent/logger.js';
 import { fetchKrakenPrice, fetchKrakenOHLC } from './kraken-feed.js';
+import { recordTrack2Billing } from '../services/api-billing.js';
 
 const log = createLogger('LIVE-FEED');
 
@@ -21,7 +22,14 @@ if (USE_AISA) {
       const data = await m.fetchPriceData(ticker);
       return { price: data.price, source: data.source };
     };
-    log.info('AIsa x402 price feed enabled (Track 2 — Per-API Monetization on Arc)');
+    const normalisation = m.getNormalisationStatus();
+    if (normalisation.mode === 'x402') {
+      log.info('AIsa x402 price feed enabled (Track 2 — Per-API Monetization on Arc)');
+    } else {
+      log.warn('AIsa configured but x402 signer is not ready — legacy price feeds remain primary', {
+        reason: normalisation.reason,
+      });
+    }
   }).catch(e => log.warn('AIsa normalisation layer unavailable — using legacy feeds', { error: String(e) }));
 }
 
@@ -71,6 +79,9 @@ export async function fetchLivePrice(): Promise<{ price: number; source: string 
       lastFetchedPrice = krakenResult.price;
       lastFetchTime = Date.now();
       consecutiveFailures = 0;
+      void recordTrack2Billing('kraken', 'data-kraken', 'fallback', {
+        source: 'kraken-direct-feed',
+      });
       return krakenResult;
     }
     log.debug('Kraken fetch returned null — trying CoinGecko');
@@ -96,6 +107,9 @@ export async function fetchLivePrice(): Promise<{ price: number; source: string 
         lastFetchedPrice = price;
         lastFetchTime = Date.now();
         consecutiveFailures = 0;
+        void recordTrack2Billing('coingecko', 'data-coingecko', 'fallback', {
+          source: 'coingecko-market-data',
+        });
         return { price, source: 'coingecko' };
       }
     }
@@ -122,6 +136,9 @@ export async function fetchLivePrice(): Promise<{ price: number; source: string 
         lastFetchedPrice = price;
         lastFetchTime = Date.now();
         consecutiveFailures = 0;
+        void recordTrack2Billing('coingecko', 'data-coingecko', 'fallback', {
+          source: 'defillama-market-data',
+        });
         return { price, source: 'defillama' };
       }
     }

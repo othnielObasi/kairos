@@ -27,6 +27,10 @@ import { hasVerifiedTxHash } from '../services/nanopayments.js';
 import { getCliStatus, checkCliHealth } from '../data/kraken-cli.js';
 import { getKrakenAccountSnapshot, krakenPreflight } from '../data/kraken-bridge.js';
 import { generateAttestationSummary } from '../security/tee-attestation.js';
+import { ALL_TOOLS } from '../mcp/tools.js';
+import { ALL_RESOURCES } from '../mcp/resources.js';
+import { ALL_PROMPTS } from '../mcp/prompts.js';
+import { getNormalisationStatus } from '../services/normalisation.js';
 import { ethers } from 'ethers';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -47,6 +51,129 @@ function formatBillingMode(mode: string | undefined | null): string {
   return 'Unknown';
 }
 
+function parseModelList(raw: string | undefined, fallback: string): string[] {
+  const seen = new Set<string>();
+  return (raw || fallback)
+    .split(',')
+    .map((model) => model.trim())
+    .filter((model) => {
+      if (!model || seen.has(model)) return false;
+      seen.add(model);
+      return true;
+    });
+}
+
+function humanizeModelName(model: string): string {
+  const lower = model.toLowerCase();
+  if (lower.includes('gemini-3-flash')) return 'Gemini 3 Flash';
+  if (lower.includes('gemini-3-pro')) return 'Gemini 3 Pro';
+  if (lower.includes('gemini-2.5-flash')) return 'Gemini 2.5 Flash';
+  if (lower.includes('claude-sonnet-4')) return 'Claude Sonnet 4';
+  if (lower.includes('gpt-4o-mini')) return 'OpenAI GPT-4o mini';
+  return model;
+}
+
+function joinFlow(labels: string[]): string {
+  return labels.filter(Boolean).join(' → ');
+}
+
+function countByVisibility(items: Array<{ visibility: string }>) {
+  return items.reduce<Record<string, number>>((acc, item) => {
+    acc[item.visibility] = (acc[item.visibility] || 0) + 1;
+    return acc;
+  }, {});
+}
+
+function buildTrack2Status() {
+  const billing = billingStore.toJSON();
+  const latestEvent = billingStore.t2Events[0] ?? null;
+  const normalisation = getNormalisationStatus();
+
+  let state = 'idle';
+  let label = 'IDLE';
+  let note = 'Awaiting paid data fetches.';
+
+  if (normalisation.mode === 'x402') {
+    if (latestEvent) {
+      if (hasVerifiedTxHash(latestEvent)) {
+        state = 'live_api';
+        label = 'X402 LIVE';
+        note = 'AIsa x402 endpoints are being paid per query via Circle Gateway on Arc.';
+      } else if (latestEvent.referenceId) {
+        state = 'verifying';
+        label = 'VERIFYING';
+        note = 'AIsa x402 payment was submitted, but the Arc settlement hash is still resolving.';
+      } else {
+        state = 'fallback';
+        label = 'FALLBACK';
+        note = 'AIsa responded, but billing used a fallback receipt because no verified Arc settlement hash is available yet.';
+      }
+    } else {
+      state = 'verifying';
+      label = 'ARMED';
+      note = 'AIsa x402 is configured and ready for the next paid data request.';
+    }
+  } else if (normalisation.mode === 'fallback') {
+    state = 'fallback';
+    label = latestEvent ? 'FALLBACK' : 'SIGNER MISSING';
+    note = latestEvent
+      ? `AIsa is configured but ${normalisation.reason} Legacy feeds are live, and Kairos is recording fallback API billing receipts.`
+      : `AIsa is configured but ${normalisation.reason} Legacy feeds are live, so Track 2 will use fallback billing until the signer is added.`;
+  } else {
+    state = 'disabled';
+    label = 'DISABLED';
+    note = 'AIsa x402 is not configured, so Track 2 is running on legacy data feeds only.';
+  }
+
+  return {
+    state,
+    label,
+    note,
+    subtitle: normalisation.mode === 'x402'
+      ? 'Agent pays AIsa x402 endpoints per query · Circle Gateway settlement · USDC on Arc · 79 endpoints across financial, Twitter, and Perplexity'
+      : 'Agent queries live fallback feeds with Arc billing receipts · AIsa x402 standby · Kraken / CoinGecko / PRISM / Alpha Vantage',
+    endpoint: normalisation.endpoint,
+    mode: normalisation.mode,
+    reason: normalisation.reason,
+    realTxns: billing.t2RealTxns,
+    pendingTxns: billing.t2PendingTxns,
+    totalEvents: billing.t2Events.length,
+    sourceLabels: normalisation.mode === 'x402'
+      ? {
+          coingecko: 'AIsa Fin. Prices',
+          kraken: 'AIsa Fin. Prices',
+          feargreed: 'AIsa Twitter',
+          alphavantage: 'AIsa Fin. News',
+          prism: 'AIsa Perplexity',
+        }
+      : {
+          coingecko: 'CoinGecko / DeFiLlama',
+          kraken: 'Kraken Direct',
+          feargreed: 'Fear & Greed',
+          alphavantage: 'Alpha Vantage / PRISM News',
+          prism: 'Strykr PRISM',
+        },
+  };
+}
+
+function buildMcpSummary() {
+  return {
+    endpoint: config.mcpEndpoint,
+    tools: ALL_TOOLS.length,
+    resources: ALL_RESOURCES.length,
+    prompts: ALL_PROMPTS.length,
+    links: {
+      root: '/mcp',
+      info: '/mcp/info',
+      agentCard: '/.well-known/agent-card.json',
+    },
+    toolVisibility: countByVisibility(ALL_TOOLS),
+    resourceVisibility: countByVisibility(ALL_RESOURCES),
+    promptVisibility: countByVisibility(ALL_PROMPTS),
+    note: 'Governed surface for agents, operators, and audit clients.',
+  };
+}
+
 function buildTrack3Status() {
   const billing = billingStore.toJSON();
   const latestEvent = billingStore.t3Events[0] ?? null;
@@ -57,6 +184,35 @@ function buildTrack3Status() {
     { id: 'openai', label: 'OpenAI', configured: Boolean(process.env.OPENAI_API_KEY) },
   ];
   const configuredCount = providers.filter((provider) => provider.configured).length;
+  const geminiConfigured = providers.find((provider) => provider.id === 'gemini')?.configured ?? false;
+  const openaiConfigured = providers.find((provider) => provider.id === 'openai')?.configured ?? false;
+  const anthropicConfigured = providers.find((provider) => provider.id === 'anthropic')?.configured ?? false;
+  const runtimeModels = parseModelList(
+    process.env.GEMINI_RUNTIME_MODELS,
+    process.env.GEMINI_RUNTIME_MODEL || 'gemini-3-flash-preview',
+  );
+  const reflectionModels = parseModelList(
+    process.env.GEMINI_REFLECTION_MODELS,
+    process.env.GEMINI_REFLECTION_MODEL || process.env.GEMINI_RUNTIME_MODEL || 'gemini-3-pro-preview',
+  );
+  const primaryRuntime = geminiConfigured
+    ? humanizeModelName(runtimeModels[0] || 'gemini-3-flash-preview')
+    : openaiConfigured
+      ? humanizeModelName('gpt-4o-mini')
+      : anthropicConfigured
+        ? humanizeModelName('claude-sonnet-4-20250514')
+        : 'Deterministic fallback';
+  const primaryReflection = geminiConfigured
+    ? humanizeModelName(reflectionModels[0] || 'gemini-3-pro-preview')
+    : 'SAGE standby';
+  const runtimeFailover: string[] = [];
+
+  if (geminiConfigured) {
+    if (openaiConfigured) runtimeFailover.push('OpenAI');
+    if (anthropicConfigured) runtimeFailover.push('Claude');
+  } else if (openaiConfigured && anthropicConfigured) {
+    runtimeFailover.push('Claude');
+  }
 
   let state = 'idle';
   let label = 'IDLE';
@@ -89,8 +245,11 @@ function buildTrack3Status() {
     state,
     label,
     note,
+    subtitle: `Agent pays per LLM inference and SAGE reflection · Circle Nanopayments · ${primaryRuntime} runtime · ${geminiConfigured ? `${primaryReflection} SAGE reflection` : primaryReflection}${runtimeFailover.length ? ` · ${joinFlow(runtimeFailover)} failover` : ''}`,
     providers,
     apiKeysConfigured: configuredCount > 0,
+    runtimeModels,
+    reflectionModels,
     lastComputeAt: latestEvent ? new Date(latestEvent.confirmedAt).toISOString() : null,
     lastComputeModel: latestEvent?.model ?? null,
     lastComputeType: latestEvent?.type ?? null,
@@ -344,8 +503,10 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
       .pop() ?? null;
     const effectiveTrustScore = getLastTrustScore(state.agentId) ?? 95;
     const trustTier = resolveTrustTier(effectiveTrustScore).tier;
+    const track2 = buildTrack2Status();
     const track3 = buildTrack3Status();
     const track4 = buildTrack4Status(state);
+    const mcp = buildMcpSummary();
 
     res.json({
       agent: {
@@ -377,7 +538,9 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
         totalTrades: state.risk.totalTrades,
       },
       sentiment: state.sentiment ?? null,
+      mcp,
       tracks: {
+        track2,
         track3,
         track4,
       },

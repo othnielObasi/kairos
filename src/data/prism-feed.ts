@@ -11,6 +11,7 @@
  */
 
 import { createLogger } from '../agent/logger.js';
+import { recordTrack2Billing } from '../services/api-billing.js';
 
 const log = createLogger('PRISM');
 
@@ -43,7 +44,14 @@ if (USE_AISA) {
         timestamp: new Date().toISOString(),
       };
     };
-    log.info('AIsa x402 PRISM feed enabled (Track 2 — Per-API Monetization on Arc)');
+    const normalisation = m.getNormalisationStatus();
+    if (normalisation.mode === 'x402') {
+      log.info('AIsa x402 PRISM feed enabled (Track 2 — Per-API Monetization on Arc)');
+    } else {
+      log.warn('AIsa configured but x402 signer is not ready — legacy PRISM feeds remain primary', {
+        reason: normalisation.reason,
+      });
+    }
   }).catch(e => log.warn('AIsa normalisation layer unavailable — using Strykr PRISM', { error: String(e) }));
 }
 
@@ -247,6 +255,12 @@ export async function fetchPrismData(symbol: string = 'ETH'): Promise<PrismData>
   const sources: string[] = [];
   if (signal) sources.push('prism_signals');
   if (risk) sources.push('prism_risk');
+
+  if (signal) {
+    void recordTrack2Billing('prism', 'data-prism', 'fallback', {
+      source: 'strykr-prism-fallback',
+    });
+  }
 
   return { signal, risk, sources };
 }

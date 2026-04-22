@@ -84,6 +84,26 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
 .tx-req { font-size:9px; color:var(--text3); margin-top:3px; }
 
 /* ── MAIN GRID ── */
+.mcp-bar { padding:12px 24px; border-bottom:1px solid var(--border); background:rgba(255,255,255,.02); }
+.mcp-card {
+  display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  border:1px solid var(--border); background:linear-gradient(90deg, rgba(39,117,202,.08), rgba(108,99,255,.06));
+  padding:12px 14px; border-radius:4px;
+}
+.mcp-copy { min-width:240px; }
+.mcp-kicker { font-size:9px; letter-spacing:.16em; color:var(--text3); margin-bottom:4px; }
+.mcp-title { font-family:var(--sans); font-size:13px; font-weight:600; color:var(--text); }
+.mcp-note-line { font-size:10px; color:var(--text2); margin-top:4px; line-height:1.5; }
+.mcp-metrics { display:flex; gap:10px; flex-wrap:wrap; }
+.mcp-metric {
+  min-width:72px; padding:8px 10px; border:1px solid rgba(255,255,255,.06);
+  background:rgba(5,5,8,.35); border-radius:3px;
+}
+.mcp-metric-val { font-size:16px; font-weight:600; color:var(--blue); font-variant-numeric:tabular-nums; }
+.mcp-metric-lbl { font-size:9px; color:var(--text3); margin-top:2px; letter-spacing:.1em; text-transform:uppercase; }
+.mcp-links { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.mcp-meta { font-size:10px; color:var(--text2); }
+
 .main { flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--border); }
 
 /* ── TRACK ── */
@@ -212,6 +232,7 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
       <span id="gw-warn" style="display:none;font-size:10px;color:var(--amber);letter-spacing:.06em;">⚠ Gateway low</span>
       <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener" style="color:var(--teal);border:1px solid rgba(0,229,160,.2);padding:3px 10px;border-radius:2px;">Arc Explorer ↗</a>
       <a class="back-lnk" href="https://app.circle.com" target="_blank" rel="noopener" style="color:var(--blue);border:1px solid rgba(39,117,202,.2);padding:3px 10px;border-radius:2px;">Circle Console ↗</a>
+      <a class="back-lnk" href="/mcp" target="_blank" rel="noopener" style="color:var(--blue);border:1px solid rgba(39,117,202,.2);padding:3px 10px;border-radius:2px;">MCP ↗</a>
       <a class="back-lnk" href="/">← Dashboard</a>
     </div>
   </header>
@@ -258,6 +279,36 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
     </div>
   </div>
 
+  <div class="mcp-bar">
+    <div class="mcp-card">
+      <div class="mcp-copy">
+        <div class="mcp-kicker">MCP SURFACE</div>
+        <div class="mcp-title">Kairos agent interface on the root domain</div>
+        <div class="mcp-note-line" id="mcp-note">Governed surface for agents, operators, and audit clients.</div>
+      </div>
+      <div class="mcp-metrics">
+        <div class="mcp-metric">
+          <div class="mcp-metric-val" id="mcp-tools">0</div>
+          <div class="mcp-metric-lbl">tools</div>
+        </div>
+        <div class="mcp-metric">
+          <div class="mcp-metric-val" id="mcp-resources">0</div>
+          <div class="mcp-metric-lbl">resources</div>
+        </div>
+        <div class="mcp-metric">
+          <div class="mcp-metric-val" id="mcp-prompts">0</div>
+          <div class="mcp-metric-lbl">prompts</div>
+        </div>
+      </div>
+      <div class="mcp-links">
+        <span class="mcp-meta" id="mcp-vis">0 public · 0 restricted · 0 operator tools</span>
+        <a class="back-lnk" id="mcp-root" href="/mcp" target="_blank" rel="noopener">/mcp</a>
+        <a class="back-lnk" id="mcp-info" href="/mcp/info" target="_blank" rel="noopener">/mcp/info</a>
+        <a class="back-lnk" id="agent-card" href="/.well-known/agent-card.json" target="_blank" rel="noopener">agent-card</a>
+      </div>
+    </div>
+  </div>
+
   <!-- FOUR TRACKS -->
   <div class="main">
 
@@ -284,7 +335,11 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
       <div class="trk-hdr">
         <div class="trk-num">TRACK 02</div>
         <div class="trk-title">Per-API Monetisation</div>
-        <div class="trk-sub">Agent pays AIsa x402 endpoints per query · Circle Gateway settlement · USDC on Arc · 79 endpoints across financial, Twitter, Perplexity</div>
+        <div class="trk-sub" id="t2-sub">Agent pays AIsa x402 endpoints per query · Circle Gateway settlement · USDC on Arc · 79 endpoints across financial, Twitter, Perplexity</div>
+        <div class="trk-status">
+          <span class="trk-pill idle" id="t2-pill">IDLE</span>
+          <div class="trk-note" id="t2-note">Awaiting paid data fetches.</div>
+        </div>
         <div class="trk-total-row">
           <span class="trk-total-lbl">Session spend</span>
           <span class="trk-total-val c2" id="t2-total">$0.000 USDC</span>
@@ -302,7 +357,7 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
       <div class="trk-hdr">
         <div class="trk-num">TRACK 03</div>
         <div class="trk-title">Usage-Based Compute</div>
-        <div class="trk-sub">Agent pays per LLM inference and SAGE reflection · Circle Nanopayments · Claude → Gemini → OpenAI · Gemini 2.5 Pro SAGE</div>
+        <div class="trk-sub" id="t3-sub">Agent pays per LLM inference and SAGE reflection · Circle Nanopayments · Gemini 3 Flash runtime · Gemini 3 Pro SAGE reflection</div>
         <div class="trk-status">
           <span class="trk-pill idle" id="t3-pill">IDLE</span>
           <div class="trk-note" id="t3-note">LLM providers are configured, but no billed inference or reflection has run yet.</div>
@@ -405,6 +460,7 @@ function statusClass(state) {
   if (state === "live_api" || state === "kraken_live") return "live";
   if (state === "verifying") return "warn";
   if (state === "no_keys") return "warn";
+  if (state === "fallback") return "warn";
   if (state === "kraken_paper") return "paper";
   if (state === "arc_settled") return "arc";
   if (state === "local_only") return "local";
@@ -418,6 +474,21 @@ function setTrackStatus(prefix, track) {
   pill.className = "trk-pill " + statusClass(track.state);
   pill.textContent = track.label || "IDLE";
   note.textContent = track.note || "";
+}
+
+function renderMcp(mcp) {
+  if (!mcp) return;
+  el("mcp-tools").textContent = mcp.tools ?? 0;
+  el("mcp-resources").textContent = mcp.resources ?? 0;
+  el("mcp-prompts").textContent = mcp.prompts ?? 0;
+  el("mcp-note").textContent = mcp.note || "Governed surface for agents, operators, and audit clients.";
+  const vis = mcp.toolVisibility || {};
+  el("mcp-vis").textContent = `${vis.public || 0} public · ${vis.restricted || 0} restricted · ${vis.operator || 0} operator tools`;
+  if (mcp.links) {
+    el("mcp-root").href = mcp.links.root || "/mcp";
+    el("mcp-info").href = mcp.links.info || "/mcp/info";
+    el("agent-card").href = mcp.links.agentCard || "/.well-known/agent-card.json";
+  }
 }
 
 function formatSettlementMode(mode) {
@@ -516,9 +587,14 @@ function renderT1(data) {
 }
 
 // ── T2 ──────────────────────────────────────────────────────────────────────
-function renderT2(data) {
+function renderT2(data, track) {
   const breakdown = data.apiBreakdown || {};
+  setTrackStatus("t2", track);
+  if (track && track.subtitle) {
+    el("t2-sub").textContent = track.subtitle;
+  }
   const sc = el("t2-sources"); sc.innerHTML = "";
+  const labels = track && track.sourceLabels ? track.sourceLabels : {};
   API_SOURCES.forEach(s => {
     const info = breakdown[s.key] || { calls:0, spend:0 };
     // Determine mode from billing store or default
@@ -527,10 +603,10 @@ function renderT2(data) {
     row.className = "api-src";
     row.innerHTML = `
       <div class="api-dot" style="background:${s.color}"></div>
-      <span class="api-name">${s.name}</span>
+      <span class="api-name">${labels[s.key] || s.name}</span>
       <span class="api-calls">${info.calls} calls</span>
       <span class="api-amt">${fU(info.spend)}</span>
-      <span class="api-mode ${mode==="x402"?"live":"fb"}">${mode==="x402"?"x402":"API key"}</span>
+      <span class="api-mode ${mode==="x402"?"live":"fb"}">${mode==="x402"?"x402":"fallback"}</span>
     `;
     sc.appendChild(row);
   });
@@ -538,15 +614,17 @@ function renderT2(data) {
   // x402 mode explanation
   const noteEl = document.createElement("div");
   noteEl.style.cssText = "font-size:9px;color:#3D3B5A;padding:8px 0 4px;line-height:1.6;border-bottom:1px solid var(--border);margin-bottom:4px;";
-  noteEl.textContent = "x402: Circle facilitator handles payment. Fallback: API key used — billing event still recorded on Arc.";
+  noteEl.textContent = track && track.mode === "x402"
+    ? "x402 live: Circle Gateway handles paid AIsa queries on Arc."
+    : "Fallback mode: legacy feeds are live and Kairos records fallback API billing receipts until the x402 signer is armed.";
   sc.appendChild(noteEl);
 
   const events = data.t2Events || [];
+  el("t2-fhdr").textContent = track && track.mode === "x402" ? "RECENT x402 PAYMENTS" : "RECENT API BILLING";
   el("t2-fhdr").style.display = events.length ? "block" : "none";
   const fc = el("t2-feed"); fc.innerHTML = "";
   events.slice(0,6).forEach(e => {
-    const isX402 = e.mode === "x402" || e.source === "coingecko" || e.source === "kraken";
-    const badge = isX402
+    const badge = e.mode === "x402"
       ? '<span class="ev-badge x402">x402</span>'
       : receiptVerificationBadge(e, "API");
     const row = document.createElement("div");
@@ -568,6 +646,9 @@ function renderT3(data, track) {
   const events = data.t3Events || [];
   const body = el("t3-body");
   setTrackStatus("t3", track);
+  if (track && track.subtitle) {
+    el("t3-sub").textContent = track.subtitle;
+  }
 
   if (!events.length) {
     const emptyCopy = track && track.state === "no_keys"
@@ -707,9 +788,10 @@ async function poll() {
     el("poll-t").textContent = "Updated " + new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 
     renderT1(billing);
-    renderT2(billing);
+    renderT2(billing, status.tracks?.track2 || null);
     renderT3(billing, status.tracks?.track3 || null);
     renderT4(checkpoints.checkpoints || checkpoints, status.tracks?.track4 || null);
+    renderMcp(status.mcp || null);
     updateBars(billing, status);
 
     // Gateway balance

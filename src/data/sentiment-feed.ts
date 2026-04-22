@@ -12,6 +12,7 @@
 import { createLogger } from '../agent/logger.js';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { recordTrack2Billing } from '../services/api-billing.js';
 
 const log = createLogger('SENTIMENT');
 
@@ -35,7 +36,14 @@ if (USE_AISA) {
         fetchedAt: new Date().toISOString(),
       };
     };
-    log.info('AIsa x402 sentiment feed enabled (Track 2 — Per-API Monetization on Arc)');
+    const normalisation = m.getNormalisationStatus();
+    if (normalisation.mode === 'x402') {
+      log.info('AIsa x402 sentiment feed enabled (Track 2 — Per-API Monetization on Arc)');
+    } else {
+      log.warn('AIsa configured but x402 signer is not ready — legacy sentiment feeds remain primary', {
+        reason: normalisation.reason,
+      });
+    }
   }).catch(e => log.warn('AIsa normalisation layer unavailable — using legacy feeds', { error: String(e) }));
 }
 
@@ -806,6 +814,17 @@ export async function fetchSentiment(): Promise<SentimentResult> {
 
   if (totalWeight === 0) {
     log.warn('All sentiment sources returned null — composite forced to 0 (neutral). Check API keys and network.');
+  }
+
+  if (fg !== null) {
+    void recordTrack2Billing('feargreed', 'data-feargreed', 'fallback', {
+      source: 'fear-greed-fallback',
+    });
+  }
+  if (news !== null) {
+    void recordTrack2Billing('alphavantage', 'data-alphavantage', 'fallback', {
+      source: fundingSource === 'prism_funding' ? 'prism-and-news-fallback' : 'legacy-news-fallback',
+    });
   }
 
   return {

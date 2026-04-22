@@ -13,11 +13,64 @@ import { createLogger }       from '../agent/logger.js';
 const logger = createLogger('NORMALISATION');
 
 const AISA   = process.env.AISA_BASE_URL || 'https://api.aisa.one/apis/v2';
-const { fetch: payingFetch } = createPayingFetch(process.env.OWS_MNEMONIC!);
+let payingFetch: typeof globalThis.fetch | null = null;
+
+export interface NormalisationStatus {
+  enabled: boolean;
+  mode: 'x402' | 'fallback' | 'disabled';
+  endpoint: string;
+  mnemonicConfigured: boolean;
+  reason: string | null;
+}
+
+export function getNormalisationStatus(): NormalisationStatus {
+  const enabled = Boolean(process.env.AISA_BASE_URL);
+  const mnemonicConfigured = Boolean(process.env.OWS_MNEMONIC || process.env.X402_MNEMONIC);
+
+  if (!enabled) {
+    return {
+      enabled: false,
+      mode: 'disabled',
+      endpoint: AISA,
+      mnemonicConfigured,
+      reason: 'AISA_BASE_URL is not configured.',
+    };
+  }
+
+  if (!mnemonicConfigured) {
+    return {
+      enabled: true,
+      mode: 'fallback',
+      endpoint: AISA,
+      mnemonicConfigured: false,
+      reason: 'OWS_MNEMONIC or X402_MNEMONIC is missing for the x402 signer.',
+    };
+  }
+
+  return {
+    enabled: true,
+    mode: 'x402',
+    endpoint: AISA,
+    mnemonicConfigured: true,
+    reason: null,
+  };
+}
+
+function getPayingFetch(): typeof globalThis.fetch {
+  if (payingFetch) return payingFetch;
+
+  const mnemonic = process.env.OWS_MNEMONIC || process.env.X402_MNEMONIC;
+  if (!mnemonic) {
+    throw new Error('OWS_MNEMONIC or X402_MNEMONIC not set for AIsa x402 access');
+  }
+
+  payingFetch = createPayingFetch(mnemonic).fetch;
+  return payingFetch;
+}
 
 // ─── helper ──────────────────────────────────────────────────────────────────
 async function aisaGet(path: string): Promise<any> {
-  const res = await payingFetch(`${AISA}${path}`, {
+  const res = await getPayingFetch()(`${AISA}${path}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
   });
@@ -26,7 +79,7 @@ async function aisaGet(path: string): Promise<any> {
 }
 
 async function aisaPost(path: string, body: object): Promise<any> {
-  const res = await payingFetch(`${AISA}${path}`, {
+  const res = await getPayingFetch()(`${AISA}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
