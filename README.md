@@ -69,12 +69,15 @@ PINATA_JWT=
 
 ```bash
 npm install
+npm run circle:bootstrap
 npm run build
 npm test
 npm run start:arc
 npm run dashboard
 npm run mcp
 ```
+
+`npm run circle:bootstrap` generates and registers a local `CIRCLE_ENTITY_SECRET`, then creates or derives an `ARC-TESTNET` wallet and writes `CIRCLE_WALLET_SET_ID`, `CIRCLE_WALLET_ID`, `AGENT_WALLET_ADDRESS`, and `CIRCLE_WALLET_BLOCKCHAIN` to `.env`.
 
 ## Important Paths
 

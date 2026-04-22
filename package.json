@@ -10,6 +10,7 @@
     "start": "node dist/agent/index.js",
     "start:arc": "tsx src/agent/index.ts",
     "register": "tsx scripts/register-agent.ts",
+    "circle:bootstrap": "tsx scripts/bootstrap-circle-wallet.ts",
     "generate:registration": "tsx scripts/generate-registration.ts",
     "test": "tsx test/run-tests.ts",
     "test:strategy": "tsx test/test-strategy.ts",
