@@ -799,7 +799,7 @@ async function poll() {
       const bal = parseFloat(gateway.formatted || gateway.depositBalance || gateway.balance || 0);
       el("mb-gw").textContent = "$" + bal.toFixed(3);
       el("mb-gw").style.color = bal < 0.5 ? "var(--amber)" : bal < 0.1 ? "var(--red)" : "var(--blue)";
-      el("mb-gw-sub").textContent = bal < 0.5 ? "⚠ top up soon" : "x402 wallet deposit";
+      el("mb-gw-sub").textContent = bal < 0.5 ? "top up soon" : "Circle wallet USDC";
       el("gw-warn").style.display = bal < 0.5 ? "inline" : "none";
       if (gateway.warning) {
         el("mb-gw-sub").textContent = gateway.warning;
