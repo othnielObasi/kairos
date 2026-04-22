@@ -44,9 +44,21 @@ export const NANO_AMOUNT = parseFloat(
   process.env.NANOPAYMENT_AMOUNT_USDC || '0.001'
 );
 
+export const TRACK4_SETTLEMENT_AMOUNT = parseFloat(
+  process.env.TRACK4_SETTLEMENT_AMOUNT_USDC || '0.009'
+);
+
 /** Governance billing address — receives nanopayment USDC on each stage */
 const BILLING_ADDRESS = getAddress(
   process.env.GOVERNANCE_BILLING_ADDRESS || process.env.AGENT_WALLET_ADDRESS || '0x0000000000000000000000000000000000000001'
+);
+
+/** Track 4 settlement address — receives Arc USDC micro-commerce receipts */
+const TRACK4_SETTLEMENT_ADDRESS = getAddress(
+  process.env.MICRO_COMMERCE_SETTLEMENT_ADDRESS
+  || process.env.GOVERNANCE_BILLING_ADDRESS
+  || process.env.AGENT_WALLET_ADDRESS
+  || '0x0000000000000000000000000000000000000001'
 );
 
 // ── Receipt type ─────────────────────────────────────────────────────────────
@@ -220,6 +232,46 @@ async function sendUSDCTransfer(to: string, amountUsdc: number): Promise<Transfe
   };
 }
 
+async function createSettlementReceipt(
+  eventName: string,
+  to: string,
+  amountUsdc: number,
+  meta: {
+    source?: string;
+    model?: string;
+    type?: string;
+    mode?: string;
+  } = {},
+  waitForVerifiedHash = false,
+): Promise<NanopaymentReceipt> {
+  const ready = await ensureSigner();
+  if (!ready) throw new Error('no signer');
+
+  const transfer = await sendUSDCTransfer(to, amountUsdc);
+  let txHash = transfer.txHash;
+
+  if (waitForVerifiedHash && circleWalletMode && transfer.referenceId && !txHash) {
+    txHash = await resolveCircleTransactionHash(transfer.referenceId);
+  }
+
+  const receipt: NanopaymentReceipt = {
+    eventName,
+    ...meta,
+    mode: meta.mode || (circleWalletMode ? 'circle-wallets' : 'nanopayment'),
+    txHash: txHash ?? `pending_${transfer.referenceId ?? Date.now()}`,
+    referenceId: transfer.referenceId ?? undefined,
+    verificationState: txHash ? 'confirmed' : 'pending',
+    amount: amountUsdc,
+    confirmedAt: Date.now(),
+  };
+
+  if (circleWalletMode && transfer.referenceId && !txHash) {
+    void hydrateCircleReceipt(receipt);
+  }
+
+  return receipt;
+}
+
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /**
@@ -237,26 +289,7 @@ export async function billEvent(
   } = {}
 ): Promise<NanopaymentReceipt> {
   try {
-    const ready = await ensureSigner();
-    if (!ready) throw new Error('no signer');
-
-    const transfer = await sendUSDCTransfer(BILLING_ADDRESS, NANO_AMOUNT);
-    const receipt: NanopaymentReceipt = {
-      eventName,
-      ...meta,
-      mode:        circleWalletMode ? 'circle-wallets' : 'nanopayment',
-      txHash:      transfer.txHash ?? `pending_${transfer.referenceId ?? Date.now()}`,
-      referenceId: transfer.referenceId ?? undefined,
-      verificationState: transfer.txHash ? 'confirmed' : 'pending',
-      amount:      NANO_AMOUNT,
-      confirmedAt: Date.now(),
-    };
-
-    if (circleWalletMode && transfer.referenceId && !transfer.txHash) {
-      void hydrateCircleReceipt(receipt);
-    }
-
-    return receipt;
+    return await createSettlementReceipt(eventName, BILLING_ADDRESS, NANO_AMOUNT, meta);
   } catch (err) {
     // Log but never block — return pending receipt
     console.warn(`[NANO] billEvent failed (${eventName}):`, (err as Error).message || err);
@@ -267,6 +300,40 @@ export async function billEvent(
       txHash:      'pending_' + Date.now(),
       verificationState: 'fallback',
       amount:      NANO_AMOUNT,
+      confirmedAt: Date.now(),
+    };
+  }
+}
+
+export async function settleMicroCommerceEvent(
+  eventName: string,
+  meta: {
+    source?: string;
+    model?: string;
+    type?: string;
+  } = {},
+): Promise<NanopaymentReceipt> {
+  try {
+    return await createSettlementReceipt(
+      eventName,
+      TRACK4_SETTLEMENT_ADDRESS,
+      TRACK4_SETTLEMENT_AMOUNT,
+      {
+        ...meta,
+        type: meta.type || 'micro-commerce',
+      },
+      true,
+    );
+  } catch (err) {
+    console.warn(`[NANO] settleMicroCommerceEvent failed (${eventName}):`, (err as Error).message || err);
+    return {
+      eventName,
+      ...meta,
+      type: meta.type || 'micro-commerce',
+      mode: 'fallback',
+      txHash: 'pending_' + Date.now(),
+      verificationState: 'fallback',
+      amount: TRACK4_SETTLEMENT_AMOUNT,
       confirmedAt: Date.now(),
     };
   }

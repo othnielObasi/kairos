@@ -55,12 +55,18 @@ import { executeKrakenTrade, closeKrakenPosition, getKrakenAccountSnapshot, krak
 import { getCliStatus } from '../data/kraken-cli.js';
 import { getOperatorControlState, getLatestOperatorAction } from './operator-control.js';
 import { recordClosedTrade, getRecentTrades, getTradeStats, loadClosedTrades, type ClosedTrade } from './trade-log.js';
+import { hasVerifiedTxHash, settleMicroCommerceEvent } from '../services/nanopayments.js';
 import { pathToFileURL } from 'url';
 
 const log = createLogger('AGENT');
 
 const MODE = process.env.MODE || 'simulation';
 const DATA_SOURCE = process.env.DATA_SOURCE || 'live'; // 'live' | 'simulated'
+const MICRO_COMMERCE_SETTLEMENT_ADDRESS =
+  process.env.MICRO_COMMERCE_SETTLEMENT_ADDRESS
+  || process.env.GOVERNANCE_BILLING_ADDRESS
+  || process.env.AGENT_WALLET_ADDRESS
+  || null;
 
 // ──── Agent State ────
 const INITIAL_CAPITAL = 10000;
@@ -879,6 +885,46 @@ async function runCycle(): Promise<void> {
       }
     }
 
+    if (MODE === 'live' && checkpoint.execution.executionMode !== 'arc_settled') {
+      const settlement = await settleMicroCommerceEvent('track4-approved-action', {
+        source: 'track4-real-time-micro-commerce',
+        model: strategyOutput.signal.direction,
+      });
+
+      checkpoint.execution.microSettlement.attempted = true;
+      checkpoint.execution.microSettlement.recipient = MICRO_COMMERCE_SETTLEMENT_ADDRESS;
+      checkpoint.execution.microSettlement.amountUsdc = settlement.amount;
+      checkpoint.execution.microSettlement.referenceId = settlement.referenceId ?? null;
+      checkpoint.execution.microSettlement.mode = settlement.mode ?? null;
+
+      if (hasVerifiedTxHash(settlement)) {
+        checkpoint.onChainTxHash = settlement.txHash;
+        checkpoint.execution.executionMode = 'arc_settled';
+        checkpoint.execution.settlementStatus = 'confirmed';
+        checkpoint.execution.settlementVenue = 'arc';
+        checkpoint.execution.settlementTxHash = settlement.txHash;
+        checkpoint.execution.settledAt = new Date().toISOString();
+        checkpoint.execution.error = null;
+        checkpoint.execution.microSettlement.error = null;
+
+        log.info('Track 4 settled on Arc via Circle Wallet micro-commerce receipt', {
+          txHash: settlement.txHash,
+          amountUsdc: settlement.amount,
+          recipient: checkpoint.execution.microSettlement.recipient,
+        });
+      } else {
+        checkpoint.execution.microSettlement.error =
+          settlement.verificationState === 'fallback'
+            ? 'Track 4 micro-commerce settlement fell back without a verified Arc tx hash'
+            : 'Track 4 micro-commerce settlement did not return a verified Arc tx hash in time';
+        log.warn('Track 4 micro-commerce settlement did not verify', {
+          referenceId: settlement.referenceId ?? null,
+          txHash: settlement.txHash,
+          verificationState: settlement.verificationState ?? null,
+        });
+      }
+    }
+
     // Step 8b: Kraken CLI execution
     // Paper trading doesn't need API keys — just the CLI binary with local simulation
     const krakenPaperEnabled = process.env.KRAKEN_PAPER_TRADING !== 'false';
@@ -926,6 +972,7 @@ async function runCycle(): Promise<void> {
       const executionErrors = [
         checkpoint.execution.router.error,
         checkpoint.execution.kraken.error,
+        checkpoint.execution.microSettlement.error,
       ].filter((value): value is string => Boolean(value));
 
       if (executionErrors.length > 0) {

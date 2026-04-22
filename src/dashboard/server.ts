@@ -300,12 +300,16 @@ function buildTrack4Status(agentState: ReturnType<typeof getAgentState>) {
     skipped: 0,
   };
   let settledVolumeUsd = 0;
+  let arcMicroCommerceCount = 0;
 
   for (const action of actions) {
     switch (action.execution.executionMode) {
       case 'arc_settled':
         counts.arcSettled += 1;
         settledVolumeUsd += action.notionalUsd;
+        if (action.execution.microSettlement?.attempted) {
+          arcMicroCommerceCount += 1;
+        }
         break;
       case 'kraken_live':
         counts.krakenLive += 1;
@@ -330,7 +334,9 @@ function buildTrack4Status(agentState: ReturnType<typeof getAgentState>) {
   if (counts.arcSettled > 0) {
     state = 'arc_settled';
     label = 'ARC SETTLED';
-    note = `${counts.arcSettled} approved action(s) settled on Arc with USDC.`;
+    note = arcMicroCommerceCount > 0
+      ? `${counts.arcSettled} approved action(s) settled on Arc with USDC via Circle Wallet micro-commerce receipts.`
+      : `${counts.arcSettled} approved action(s) settled on Arc with USDC.`;
   } else if (counts.krakenLive > 0) {
     state = 'kraken_live';
     label = 'KRAKEN LIVE';

@@ -64,6 +64,14 @@ export interface CheckpointExecution {
     executionMode: 'cli' | 'mcp' | 'rest-fallback' | null;
     error: string | null;
   };
+  microSettlement: {
+    attempted: boolean;
+    recipient: string | null;
+    amountUsdc: number | null;
+    referenceId: string | null;
+    mode: string | null;
+    error: string | null;
+  };
 }
 
 export function createCheckpointExecution(params: {
@@ -92,6 +100,14 @@ export function createCheckpointExecution(params: {
       orderId: null,
       paperTrade: null,
       executionMode: null,
+      error: null,
+    },
+    microSettlement: {
+      attempted: false,
+      recipient: null,
+      amountUsdc: null,
+      referenceId: null,
+      mode: null,
       error: null,
     },
   };
@@ -127,6 +143,14 @@ export function getCheckpointExecution(cp: Checkpoint): CheckpointExecution {
         executionMode: null,
         error: null,
       },
+      microSettlement: {
+        attempted: false,
+        recipient: null,
+        amountUsdc: null,
+        referenceId: null,
+        mode: null,
+        error: null,
+      },
     };
   }
 
@@ -159,6 +183,8 @@ function persistCheckpointToDisk(cp: Checkpoint): void {
       settlementTxHash: cp.execution?.settlementTxHash ?? null,
       krakenOrderId: cp.execution?.kraken.orderId ?? null,
       paperTrade: cp.execution?.kraken.paperTrade ?? null,
+      microSettlementReferenceId: cp.execution?.microSettlement.referenceId ?? null,
+      microSettlementMode: cp.execution?.microSettlement.mode ?? null,
     }) + '\n';
     appendFileSync(CHECKPOINT_LOG_FILE, line, 'utf-8');
   } catch {
