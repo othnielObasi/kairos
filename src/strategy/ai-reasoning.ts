@@ -24,7 +24,7 @@ const log = createLogger('AI-REASON');
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_MODEL = 'claude-sonnet-4-20250514';
 
-const GEMINI_RUNTIME_MODEL = process.env.GEMINI_RUNTIME_MODEL || 'gemini-2.5-pro';
+const GEMINI_RUNTIME_MODEL = process.env.GEMINI_RUNTIME_MODEL || 'gemini-3-flash-preview';
 
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_MODEL = 'gpt-4o-mini';
@@ -66,6 +66,19 @@ function getGeminiKeys(): string[] {
     });
 }
 
+function getGeminiRuntimeModels(): string[] {
+  const raw = process.env.GEMINI_RUNTIME_MODELS || GEMINI_RUNTIME_MODEL;
+  const seen = new Set<string>();
+  return raw
+    .split(',')
+    .map((model) => model.trim())
+    .filter((model) => {
+      if (!model || seen.has(model)) return false;
+      seen.add(model);
+      return true;
+    });
+}
+
 /**
  * Generate AI reasoning for an execution decision.
  * Cascade: Gemini primary -> Gemini secondary -> OpenAI -> Claude -> deterministic fallback.
@@ -80,20 +93,23 @@ export async function generateReasoning(
 ): Promise<AIReasoning> {
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const geminiKeys = getGeminiKeys();
+  const geminiModels = getGeminiRuntimeModels();
   const openaiKey = process.env.OPENAI_API_KEY;
 
-  for (const [index, geminiKey] of geminiKeys.entries()) {
-    const attemptLabel = index === 0 ? 'primary' : index === 1 ? 'secondary' : `fallback-${index + 1}`;
+  for (const model of geminiModels) {
+    for (const [index, geminiKey] of geminiKeys.entries()) {
+      const attemptLabel = index === 0 ? 'primary' : index === 1 ? 'secondary' : `fallback-${index + 1}`;
 
-    try {
-      const result = await retry(
-        () => callGeminiAPI(geminiKey, GEMINI_RUNTIME_MODEL, strategyOutput, riskDecision, recentPrices, capitalUsd, openPositionCount, sentiment),
-        { maxRetries: 1, baseDelayMs: 500, label: `Gemini reasoning (${attemptLabel})` }
-      );
-      try { billingStore.addComputeEvent(await billEvent('compute-llm', { model: GEMINI_RUNTIME_MODEL, type: 'inference' })); } catch (_) {}
-      return result;
-    } catch (error) {
-      log.warn(`Gemini ${attemptLabel} API failed`, { error: String(error) });
+      try {
+        const result = await retry(
+          () => callGeminiAPI(geminiKey, model, strategyOutput, riskDecision, recentPrices, capitalUsd, openPositionCount, sentiment),
+          { maxRetries: 1, baseDelayMs: 500, label: `Gemini reasoning (${model}, ${attemptLabel})` }
+        );
+        try { billingStore.addComputeEvent(await billEvent('compute-llm', { model, type: 'inference' })); } catch (_) {}
+        return result;
+      } catch (error) {
+        log.warn(`Gemini ${attemptLabel} API failed for ${model}`, { error: String(error) });
+      }
     }
   }
 

@@ -38,7 +38,7 @@ const SAGE_MAX_PENALTY_STACK = -0.3; // floor for cumulative REDUCE_CONFIDENCE
 const SAGE_MIN_BLOCK_EVIDENCE = 3; // minimum trades to justify a BLOCK rule
 const SAGE_PERSIST_SEED = process.env.SAGE_PERSIST_SEED === 'true';
 
-const GEMINI_REFLECTION_MODEL = process.env.GEMINI_REFLECTION_MODEL || process.env.GEMINI_RUNTIME_MODEL || 'gemini-2.5-pro';
+const GEMINI_REFLECTION_MODEL = process.env.GEMINI_REFLECTION_MODEL || process.env.GEMINI_RUNTIME_MODEL || 'gemini-3-pro-preview';
 
 function buildGeminiApiUrl(model: string): string {
   return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
@@ -55,6 +55,19 @@ function getGeminiKeys(): string[] {
     .filter((key) => {
       if (!key || seen.has(key)) return false;
       seen.add(key);
+      return true;
+    });
+}
+
+function getGeminiReflectionModels(): string[] {
+  const raw = process.env.GEMINI_REFLECTION_MODELS || GEMINI_REFLECTION_MODEL;
+  const seen = new Set<string>();
+  return raw
+    .split(',')
+    .map((model) => model.trim())
+    .filter((model) => {
+      if (!model || seen.has(model)) return false;
+      seen.add(model);
       return true;
     });
 }
@@ -234,6 +247,7 @@ export async function runSAGEReflection(cycleNumber: number): Promise<SAGEReflec
   if (pendingOutcomes.length < SAGE_MIN_OUTCOMES) return null;
 
   const geminiKeys = getGeminiKeys();
+  const reflectionModels = getGeminiReflectionModels();
   if (geminiKeys.length === 0) {
     log.warn('No Gemini API key configured for SAGE reflection');
     return null;
@@ -265,15 +279,22 @@ export async function runSAGEReflection(cycleNumber: number): Promise<SAGEReflec
 
     // Call Gemini with training set only (holdout not shown to the model)
     let reflection: SAGEReflection | null = null;
-    const reflectionModelLabel = `SAGE (${GEMINI_REFLECTION_MODEL})`;
+    let reflectionModelLabel = `SAGE (${GEMINI_REFLECTION_MODEL})`;
 
-    for (const [index, geminiKey] of geminiKeys.entries()) {
-      const attemptLabel = index === 0 ? 'primary' : index === 1 ? 'secondary' : `fallback-${index + 1}`;
-      try {
-        reflection = await callReflectionLLM(geminiKey, GEMINI_REFLECTION_MODEL, trainSet, cycleNumber);
+    for (const model of reflectionModels) {
+      reflectionModelLabel = `SAGE (${model})`;
+      for (const [index, geminiKey] of geminiKeys.entries()) {
+        const attemptLabel = index === 0 ? 'primary' : index === 1 ? 'secondary' : `fallback-${index + 1}`;
+        try {
+          reflection = await callReflectionLLM(geminiKey, model, trainSet, cycleNumber);
+          break;
+        } catch (error) {
+          log.warn(`SAGE Gemini ${attemptLabel} reflection failed for ${model}`, { error: String(error) });
+        }
+      }
+
+      if (reflection) {
         break;
-      } catch (error) {
-        log.warn(`SAGE Gemini ${attemptLabel} reflection failed`, { error: String(error) });
       }
     }
 
