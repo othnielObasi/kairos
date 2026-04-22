@@ -17,7 +17,6 @@
 
 import fs from "fs";
 import path from "path";
-import { pathToFileURL } from "url";
 import { wrapFetchWithPayment, x402Client } from "@x402/fetch";
 import { toClientEvmSigner } from "@x402/evm";
 import { createWalletClient, createPublicClient, http, getAddress } from "viem";
@@ -170,7 +169,7 @@ export function createPayingFetch(mnemonic, options = {}) {
 // CLI
 // ---------------------------------------------------------------------------
 
-async function main() {
+export async function runX402ClientCli() {
   const args = process.argv.slice(2);
 
   if (args.length < 2 || args.includes("--help") || args.includes("-h")) {
@@ -251,13 +250,3 @@ Environment:
   process.exit(res.ok ? 0 : 1);
 }
 
-const isEntryPoint =
-  Boolean(process.argv[1]) &&
-  pathToFileURL(process.argv[1]).href === import.meta.url;
-
-if (isEntryPoint) {
-  main().catch((err) => {
-    console.error(`Fatal: ${err.message}`);
-    process.exit(1);
-  });
-}
