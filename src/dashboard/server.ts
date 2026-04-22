@@ -53,7 +53,7 @@ function buildTrack3Status() {
   const sage = getSAGEStatus();
   const providers = [
     { id: 'anthropic', label: 'Claude', configured: Boolean(process.env.ANTHROPIC_API_KEY) },
-    { id: 'gemini', label: 'Gemini', configured: Boolean(process.env.GEMINI_API_KEY) },
+    { id: 'gemini', label: 'Gemini', configured: Boolean(process.env.GEMINI_API_KEY_PRIMARY || process.env.GEMINI_API_KEY_SECONDARY || process.env.GEMINI_API_KEY) },
     { id: 'openai', label: 'OpenAI', configured: Boolean(process.env.OPENAI_API_KEY) },
   ];
   const configuredCount = providers.filter((provider) => provider.configured).length;

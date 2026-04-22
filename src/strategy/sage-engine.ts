@@ -38,7 +38,26 @@ const SAGE_MAX_PENALTY_STACK = -0.3; // floor for cumulative REDUCE_CONFIDENCE
 const SAGE_MIN_BLOCK_EVIDENCE = 3; // minimum trades to justify a BLOCK rule
 const SAGE_PERSIST_SEED = process.env.SAGE_PERSIST_SEED === 'true';
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent';
+const GEMINI_REFLECTION_MODEL = process.env.GEMINI_REFLECTION_MODEL || process.env.GEMINI_RUNTIME_MODEL || 'gemini-2.5-pro';
+
+function buildGeminiApiUrl(model: string): string {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+}
+
+function getGeminiKeys(): string[] {
+  const seen = new Set<string>();
+  return [
+    process.env.GEMINI_API_KEY_PRIMARY,
+    process.env.GEMINI_API_KEY_SECONDARY,
+    process.env.GEMINI_API_KEY,
+  ]
+    .map((key) => key?.trim() || '')
+    .filter((key) => {
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
 
 // ── Weight CAGE (immutable bounds) ──
 
@@ -214,9 +233,9 @@ export async function runSAGEReflection(cycleNumber: number): Promise<SAGEReflec
   if (cyclesSinceReflection < SAGE_REFLECTION_COOLDOWN) return null;
   if (pendingOutcomes.length < SAGE_MIN_OUTCOMES) return null;
 
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) {
-    log.warn('No GEMINI_API_KEY — skipping SAGE reflection');
+  const geminiKeys = getGeminiKeys();
+  if (geminiKeys.length === 0) {
+    log.warn('No Gemini API key configured for SAGE reflection');
     return null;
   }
 
@@ -244,8 +263,23 @@ export async function runSAGEReflection(cycleNumber: number): Promise<SAGEReflec
     // Expire stale playbook rules
     expireStaleRules();
 
-    // Call LLM with training set only (holdout not shown to LLM)
-    const reflection = await callReflectionLLM(geminiKey, trainSet, cycleNumber);
+    // Call Gemini with training set only (holdout not shown to the model)
+    let reflection: SAGEReflection | null = null;
+    const reflectionModelLabel = `SAGE (${GEMINI_REFLECTION_MODEL})`;
+
+    for (const [index, geminiKey] of geminiKeys.entries()) {
+      const attemptLabel = index === 0 ? 'primary' : index === 1 ? 'secondary' : `fallback-${index + 1}`;
+      try {
+        reflection = await callReflectionLLM(geminiKey, GEMINI_REFLECTION_MODEL, trainSet, cycleNumber);
+        break;
+      } catch (error) {
+        log.warn(`SAGE Gemini ${attemptLabel} reflection failed`, { error: String(error) });
+      }
+    }
+
+    if (!reflection) {
+      throw new Error('All Gemini reflection attempts failed');
+    }
 
     // Overfitting guard 3: validate weight changes against holdout set
     if (reflection.weightChanges.length > 0 && holdoutSet.length > 0) {
@@ -280,7 +314,7 @@ export async function runSAGEReflection(cycleNumber: number): Promise<SAGEReflec
     cyclesSinceReflection = 0;
 
     log.info(`SAGE reflection complete: ${reflection.insights.length} insights, ${reflection.newRules.length} new rules, ${reflection.weightChanges.length} weight changes`);
-    try { billingStore.addComputeEvent(await billEvent('compute-sage', { model: 'SAGE (Gemini 2.5 Pro)', type: 'reflection' })); } catch (_) {}
+    try { billingStore.addComputeEvent(await billEvent('compute-sage', { model: reflectionModelLabel, type: 'reflection' })); } catch (_) {}
     return reflection;
   } catch (error) {
     log.error('SAGE reflection failed — no changes applied', { error: String(error) });
@@ -400,12 +434,13 @@ export function loadSAGEState(): void {
 
 async function callReflectionLLM(
   apiKey: string,
+  model: string,
   outcomes: SAGEOutcome[],
   cycleNumber: number,
 ): Promise<SAGEReflection> {
   const prompt = buildReflectionPrompt(outcomes);
 
-  const url = `${GEMINI_API_URL}?key=${apiKey}`;
+  const url = `${buildGeminiApiUrl(model)}?key=${apiKey}`;
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -421,7 +456,7 @@ async function callReflectionLLM(
 
   if (!response.ok) {
     const body = await response.text().catch(() => '');
-    throw new Error(`Gemini SAGE reflection returned ${response.status}: ${body.slice(0, 200)}`);
+    throw new Error(`Gemini SAGE reflection (${model}) returned ${response.status}: ${body.slice(0, 200)}`);
   }
 
   const data = await response.json() as {
