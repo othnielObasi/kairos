@@ -273,9 +273,9 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
       <div class="mi-sub">Powered by the Kairos governed runtime · 890+ baseline cycles</div>
     </div>
     <div class="mi">
-      <div class="mi-lbl">Gateway balance</div>
+      <div class="mi-lbl">x402 wallet</div>
       <div class="mi-val b" id="mb-gw">—</div>
-      <div class="mi-sub" id="mb-gw-sub">x402 wallet deposit</div>
+      <div class="mi-sub" id="mb-gw-sub">Circle wallet USDC</div>
     </div>
   </div>
 
@@ -796,11 +796,16 @@ async function poll() {
 
     // Gateway balance
     if (gateway) {
-      const bal = parseFloat(gateway.depositBalance || gateway.balance || 0);
+      const bal = parseFloat(gateway.formatted || gateway.depositBalance || gateway.balance || 0);
       el("mb-gw").textContent = "$" + bal.toFixed(3);
       el("mb-gw").style.color = bal < 0.5 ? "var(--amber)" : bal < 0.1 ? "var(--red)" : "var(--blue)";
       el("mb-gw-sub").textContent = bal < 0.5 ? "⚠ top up soon" : "x402 wallet deposit";
       el("gw-warn").style.display = bal < 0.5 ? "inline" : "none";
+      if (gateway.warning) {
+        el("mb-gw-sub").textContent = gateway.warning;
+      } else if (bal >= 0.5) {
+        el("mb-gw-sub").textContent = "Circle wallet USDC";
+      }
     }
 
     polls++;

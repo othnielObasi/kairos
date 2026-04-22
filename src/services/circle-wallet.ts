@@ -36,6 +36,14 @@ export async function getCircleSigner(provider: ethers.Provider) {
   );
 }
 
+function serializeTypedDataForCircle(
+  domain: ethers.TypedDataDomain,
+  types: Record<string, ethers.TypedDataField[]>,
+  value: Record<string, unknown>,
+): string {
+  return JSON.stringify(ethers.TypedDataEncoder.getPayload(domain, types, value));
+}
+
 // Minimal signer wrapper — delegates to Circle Wallets API
 class CircleWalletSigner extends ethers.AbstractSigner {
   constructor(
@@ -80,10 +88,7 @@ class CircleWalletSigner extends ethers.AbstractSigner {
   ): Promise<string> {
     const { data } = await circleClient.signTypedData({
       walletId: this.walletId,
-      domain,
-      types,
-      primaryType: Object.keys(types)[0],
-      message: value,
+      data: serializeTypedDataForCircle(domain, types, value),
     } as any);
     return (data as any).signature;
   }

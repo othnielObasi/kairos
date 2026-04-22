@@ -1,11 +1,18 @@
 #!/usr/bin/env node
 /**
- * One-time setup: Approve + deposit USDC into Circle Gateway for x402 data payments.
- * Run before first use:  node src/services/setup-gateway.mjs
+ * One-time setup: approve + deposit USDC into Circle Gateway for x402 data payments.
+ * Supports either the existing Circle Wallets configuration or a mnemonic fallback.
+ *
+ * Usage:
+ *   node src/services/setup-gateway.mjs
+ *
+ * Optional env:
+ *   GATEWAY_DEPOSIT_AMOUNT_USDC=5
  */
 
 import fs from 'fs';
 import path from 'path';
+import { CircleDeveloperControlledWalletsClient } from '@circle-fin/developer-controlled-wallets';
 import { createWalletClient, createPublicClient, http, parseUnits, formatUnits } from 'viem';
 import { mnemonicToAccount } from 'viem/accounts';
 
@@ -23,16 +30,18 @@ for (const file of ['.env.arc', '.env']) {
   }
 }
 
-const MNEMONIC        = process.env.OWS_MNEMONIC;
-const RPC_URL         = process.env.OWS_RPC_URL || 'https://rpc.testnet.arc.network';
-const USDC_ADDRESS    = '0x3600000000000000000000000000000000000000';
+const MNEMONIC = process.env.OWS_MNEMONIC;
+const RPC_URL = process.env.OWS_RPC_URL || 'https://rpc.testnet.arc.network';
+const USDC_ADDRESS = '0x3600000000000000000000000000000000000000';
 const GATEWAY_ADDRESS = '0x0077777d7eba4688bdef3e311b846f25870a19b9';
-const CHAIN_ID        = 5042002;
-
-if (!MNEMONIC) {
-  console.error('Error: OWS_MNEMONIC not set in environment, .env.arc, or .env file');
-  process.exit(1);
-}
+const CHAIN_ID = 5042002;
+const BLOCKCHAIN = 'ARC-TESTNET';
+const DEPOSIT_USDC = process.env.GATEWAY_DEPOSIT_AMOUNT_USDC || '5';
+const USE_CIRCLE = Boolean(
+  process.env.CIRCLE_API_KEY &&
+  process.env.CIRCLE_ENTITY_SECRET &&
+  process.env.CIRCLE_WALLET_ID,
+);
 
 const arcTestnet = {
   id: CHAIN_ID,
@@ -41,54 +50,176 @@ const arcTestnet = {
   rpcUrls: { default: { http: [RPC_URL] } },
 };
 
-const account      = mnemonicToAccount(MNEMONIC);
-const walletClient = createWalletClient({ account, chain: arcTestnet, transport: http(RPC_URL) });
 const publicClient = createPublicClient({ chain: arcTestnet, transport: http(RPC_URL) });
-
-console.log('x402 wallet address:', account.address);
-
+const amountRaw = parseUnits(DEPOSIT_USDC, 6);
 const erc20Abi = [
-  { name: 'approve', type: 'function', inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] },
-  { name: 'balanceOf', type: 'function', inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view' },
+  {
+    name: 'approve',
+    type: 'function',
+    inputs: [
+      { name: 'spender', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ name: '', type: 'bool' }],
+  },
+  {
+    name: 'balanceOf',
+    type: 'function',
+    inputs: [{ name: 'account', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
 ];
-
 const gatewayAbi = [
-  { name: 'deposit', type: 'function', inputs: [{ name: 'asset', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [] },
-  { name: 'balanceOf', type: 'function', inputs: [{ name: 'asset', type: 'address' }, { name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view' },
+  {
+    name: 'deposit',
+    type: 'function',
+    inputs: [
+      { name: 'asset', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [],
+  },
 ];
 
-// Check USDC balance
-const usdcBalance = await publicClient.readContract({
-  address: USDC_ADDRESS, abi: erc20Abi, functionName: 'balanceOf', args: [account.address],
-});
-console.log('USDC balance:', formatUnits(usdcBalance, 6));
+async function waitForCircleTxHash(circleClient, transactionId, label) {
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const result = await circleClient.getTransaction({ id: transactionId });
+    const tx = result?.data?.transaction || result?.data || {};
+    const state = tx?.state || 'UNKNOWN';
+    const txHash = tx?.txHash || null;
 
-if (usdcBalance === 0n) {
-  console.error('No USDC balance. Fund from https://faucet.circle.com (select Arc Testnet)');
-  process.exit(1);
+    if (txHash && /^(0x)?[a-fA-F0-9]{64}$/.test(txHash)) {
+      console.log(`${label} tx:`, txHash);
+      return txHash;
+    }
+
+    if (state === 'FAILED' || state === 'DENIED' || state === 'CANCELLED') {
+      throw new Error(`${label} failed with Circle state ${state}`);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+
+  throw new Error(`${label} did not produce a tx hash before timeout`);
 }
 
-// Step 1: Approve Gateway to spend USDC (ERC-20, 6 decimals)
-console.log('Approving Gateway...');
-const approveTx = await walletClient.writeContract({
-  address: USDC_ADDRESS, abi: erc20Abi, functionName: 'approve',
-  args: [GATEWAY_ADDRESS, parseUnits('100', 6)],
-});
-console.log('Approve tx:', approveTx);
+async function runCirclePath() {
+  const circleClient = new CircleDeveloperControlledWalletsClient({
+    apiKey: process.env.CIRCLE_API_KEY,
+    entitySecret: process.env.CIRCLE_ENTITY_SECRET,
+  });
+  const walletId = process.env.CIRCLE_WALLET_ID;
+  const walletAddress = process.env.AGENT_WALLET_ADDRESS;
 
-// Step 2: Deposit 5 USDC into Gateway
-const depositAmount = parseUnits('5', 6);
-console.log('Depositing 5 USDC into Gateway...');
-const depositTx = await walletClient.writeContract({
-  address: GATEWAY_ADDRESS, abi: gatewayAbi, functionName: 'deposit',
-  args: [USDC_ADDRESS, depositAmount],
-});
-console.log('Deposit tx:', depositTx);
+  if (!walletId || !walletAddress) {
+    throw new Error('CIRCLE_WALLET_ID and AGENT_WALLET_ADDRESS are required for Circle Gateway setup');
+  }
 
-// Verify
-const gwBalance = await publicClient.readContract({
-  address: GATEWAY_ADDRESS, abi: gatewayAbi, functionName: 'balanceOf',
-  args: [USDC_ADDRESS, account.address],
-});
-console.log('Gateway deposit balance:', formatUnits(gwBalance, 6), 'USDC');
-console.log('✓ Gateway funded — Kairos x402 data payments ready.');
+  console.log('Signer: Circle Wallets');
+  console.log('x402 wallet address:', walletAddress);
+
+  const usdcBalance = await publicClient.readContract({
+    address: USDC_ADDRESS,
+    abi: erc20Abi,
+    functionName: 'balanceOf',
+    args: [walletAddress],
+  });
+  console.log('USDC balance:', formatUnits(usdcBalance, 6));
+
+  if (usdcBalance < amountRaw) {
+    throw new Error(`Insufficient USDC in Circle wallet for a ${DEPOSIT_USDC} USDC Gateway deposit`);
+  }
+
+  console.log(`Approving Gateway for ${DEPOSIT_USDC} USDC...`);
+  const approve = await circleClient.createContractExecutionTransaction({
+    walletId,
+    contractAddress: USDC_ADDRESS,
+    abiFunctionSignature: 'approve(address,uint256)',
+    abiParameters: [GATEWAY_ADDRESS, amountRaw.toString()],
+    fee: { type: 'level', config: { feeLevel: 'LOW' } },
+    blockchain: BLOCKCHAIN,
+  });
+  const approveId =
+    approve?.data?.id ||
+    approve?.data?.transaction?.id ||
+    approve?.data?.transactionId;
+  if (!approveId) {
+    throw new Error('Circle did not return an approval transaction id');
+  }
+  await waitForCircleTxHash(circleClient, approveId, 'USDC approve');
+
+  console.log(`Depositing ${DEPOSIT_USDC} USDC into Gateway...`);
+  const deposit = await circleClient.createContractExecutionTransaction({
+    walletId,
+    contractAddress: GATEWAY_ADDRESS,
+    abiFunctionSignature: 'deposit(address,uint256)',
+    abiParameters: [USDC_ADDRESS, amountRaw.toString()],
+    fee: { type: 'level', config: { feeLevel: 'LOW' } },
+    blockchain: BLOCKCHAIN,
+  });
+  const depositId =
+    deposit?.data?.id ||
+    deposit?.data?.transaction?.id ||
+    deposit?.data?.transactionId;
+  if (!depositId) {
+    throw new Error('Circle did not return a deposit transaction id');
+  }
+  await waitForCircleTxHash(circleClient, depositId, 'Gateway deposit');
+
+  console.log(`Gateway funded with ${DEPOSIT_USDC} USDC via Circle Wallets`);
+}
+
+async function runMnemonicPath() {
+  if (!MNEMONIC) {
+    throw new Error('OWS_MNEMONIC not set in environment, .env.arc, or .env file');
+  }
+
+  const account = mnemonicToAccount(MNEMONIC);
+  const walletClient = createWalletClient({ account, chain: arcTestnet, transport: http(RPC_URL) });
+
+  console.log('Signer: Mnemonic');
+  console.log('x402 wallet address:', account.address);
+
+  const usdcBalance = await publicClient.readContract({
+    address: USDC_ADDRESS,
+    abi: erc20Abi,
+    functionName: 'balanceOf',
+    args: [account.address],
+  });
+  console.log('USDC balance:', formatUnits(usdcBalance, 6));
+
+  if (usdcBalance < amountRaw) {
+    throw new Error(`Insufficient USDC in mnemonic wallet for a ${DEPOSIT_USDC} USDC Gateway deposit`);
+  }
+
+  console.log(`Approving Gateway for ${DEPOSIT_USDC} USDC...`);
+  const approveTx = await walletClient.writeContract({
+    address: USDC_ADDRESS,
+    abi: erc20Abi,
+    functionName: 'approve',
+    args: [GATEWAY_ADDRESS, amountRaw],
+  });
+  console.log('Approve tx:', approveTx);
+  await publicClient.waitForTransactionReceipt({ hash: approveTx });
+
+  console.log(`Depositing ${DEPOSIT_USDC} USDC into Gateway...`);
+  const depositTx = await walletClient.writeContract({
+    address: GATEWAY_ADDRESS,
+    abi: gatewayAbi,
+    functionName: 'deposit',
+    args: [USDC_ADDRESS, amountRaw],
+  });
+  console.log('Deposit tx:', depositTx);
+  await publicClient.waitForTransactionReceipt({ hash: depositTx });
+
+  console.log(`Gateway funded with ${DEPOSIT_USDC} USDC via mnemonic wallet`);
+}
+
+if (USE_CIRCLE) {
+  await runCirclePath();
+} else {
+  await runMnemonicPath();
+}
+
+console.log('Kairos x402 data payments ready.');

@@ -19,31 +19,46 @@ export interface NormalisationStatus {
   enabled: boolean;
   mode: 'x402' | 'fallback' | 'disabled';
   endpoint: string;
-  mnemonicConfigured: boolean;
+  signerConfigured: boolean;
+  signerKind: 'circle-wallet' | 'mnemonic' | null;
   reason: string | null;
 }
 
 export function getNormalisationStatus(): NormalisationStatus {
   const enabled = Boolean(process.env.AISA_BASE_URL);
-  const mnemonicConfigured = Boolean(process.env.OWS_MNEMONIC || process.env.X402_MNEMONIC);
+  const hasCircleWalletSigner = Boolean(
+    process.env.CIRCLE_API_KEY &&
+    process.env.CIRCLE_ENTITY_SECRET &&
+    process.env.CIRCLE_WALLET_ID &&
+    process.env.AGENT_WALLET_ADDRESS,
+  );
+  const hasMnemonicSigner = Boolean(process.env.OWS_MNEMONIC || process.env.X402_MNEMONIC);
+  const signerKind = hasCircleWalletSigner
+    ? 'circle-wallet'
+    : hasMnemonicSigner
+      ? 'mnemonic'
+      : null;
+  const signerConfigured = Boolean(signerKind);
 
   if (!enabled) {
     return {
       enabled: false,
       mode: 'disabled',
       endpoint: AISA,
-      mnemonicConfigured,
+      signerConfigured,
+      signerKind,
       reason: 'AISA_BASE_URL is not configured.',
     };
   }
 
-  if (!mnemonicConfigured) {
+  if (!signerConfigured) {
     return {
       enabled: true,
       mode: 'fallback',
       endpoint: AISA,
-      mnemonicConfigured: false,
-      reason: 'OWS_MNEMONIC or X402_MNEMONIC is missing for the x402 signer.',
+      signerConfigured: false,
+      signerKind: null,
+      reason: 'Neither Circle Wallets (CIRCLE_API_KEY / CIRCLE_ENTITY_SECRET / CIRCLE_WALLET_ID / AGENT_WALLET_ADDRESS) nor OWS_MNEMONIC / X402_MNEMONIC is configured for the x402 signer.',
     };
   }
 
@@ -51,7 +66,8 @@ export function getNormalisationStatus(): NormalisationStatus {
     enabled: true,
     mode: 'x402',
     endpoint: AISA,
-    mnemonicConfigured: true,
+    signerConfigured: true,
+    signerKind,
     reason: null,
   };
 }
@@ -59,12 +75,12 @@ export function getNormalisationStatus(): NormalisationStatus {
 function getPayingFetch(): typeof globalThis.fetch {
   if (payingFetch) return payingFetch;
 
-  const mnemonic = process.env.OWS_MNEMONIC || process.env.X402_MNEMONIC;
-  if (!mnemonic) {
-    throw new Error('OWS_MNEMONIC or X402_MNEMONIC not set for AIsa x402 access');
+  const status = getNormalisationStatus();
+  if (status.mode !== 'x402') {
+    throw new Error(status.reason || 'AIsa x402 signer is not ready');
   }
 
-  payingFetch = createPayingFetch(mnemonic).fetch;
+  payingFetch = createPayingFetch().fetch;
   return payingFetch;
 }
 
@@ -129,27 +145,37 @@ export interface PriceData {
 
 export async function fetchPriceData(ticker = 'ETH'): Promise<PriceData> {
   assertX402Ready();
-  // Fetch twice with slightly different tickers for oracle cross-validation
-  // ETH and WETH are independent data points — satisfies the two-source oracle check
+  // Fetch twice to preserve the downstream two-price shape. Some AIsa aliases
+  // diverge materially for wrapped assets, so we sanity-check the secondary
+  // quote and fall back to a near-identical synthetic secondary when needed.
   const [ethData, wethData] = await Promise.all([
     aisaGet(`/financial/prices/snapshot?ticker=${ticker}`),
     aisaGet(`/financial/prices/snapshot?ticker=W${ticker}`).catch(() => null),
   ]);
 
+  const primarySnapshot = ethData?.snapshot ?? ethData ?? {};
+  const secondarySnapshot = wethData?.snapshot ?? wethData ?? {};
+
   // AIsa /financial/prices/snapshot response shape:
-  // { price, open, high, low, close, volume, change_percent, timestamp, ticker }
-  const primary = ethData?.price ?? ethData?.close ?? 0;
-  const secondary = wethData?.price ?? wethData?.close ?? primary * 1.0001; // near-identical fallback
+  // { snapshot: { price, day_change, day_change_percent, ticker, time, time_milliseconds } }
+  const primary = primarySnapshot?.price ?? primarySnapshot?.close ?? 0;
+  const rawSecondary = secondarySnapshot?.price ?? secondarySnapshot?.close ?? 0;
+  const secondaryDeviation = primary > 0
+    ? Math.abs(rawSecondary - primary) / primary
+    : 0;
+  const secondary = rawSecondary > 0 && secondaryDeviation <= 0.10
+    ? rawSecondary
+    : primary * 1.0001;
 
   const normalised: PriceData = {
     price:     primary,
     priceA:    primary,                           // was CoinGecko
     priceB:    secondary,                         // was Kraken
-    high24h:   ethData?.high  ?? primary * 1.02,
-    low24h:    ethData?.low   ?? primary * 0.98,
-    volume24h: ethData?.volume ?? 0,
-    change24h: ethData?.change_percent ?? ethData?.change ?? 0,
-    timestamp: ethData?.timestamp ?? Date.now(),
+    high24h:   primarySnapshot?.high ?? primary * 1.02,
+    low24h:    primarySnapshot?.low ?? primary * 0.98,
+    volume24h: primarySnapshot?.volume ?? 0,
+    change24h: primarySnapshot?.change_percent ?? primarySnapshot?.day_change_percent ?? primarySnapshot?.change ?? 0,
+    timestamp: primarySnapshot?.timestamp ?? primarySnapshot?.time_milliseconds ?? Date.now(),
     source:    'aisa-financial-prices',
   };
 

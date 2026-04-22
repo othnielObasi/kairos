@@ -88,6 +88,11 @@ function buildTrack2Status() {
   const billing = billingStore.toJSON();
   const latestEvent = billingStore.t2Events[0] ?? null;
   const normalisation = getNormalisationStatus();
+  const signerLabel = normalisation.signerKind === 'circle-wallet'
+    ? 'Circle Wallets'
+    : normalisation.signerKind === 'mnemonic'
+      ? 'Mnemonic signer'
+      : 'No signer';
 
   let state = 'idle';
   let label = 'IDLE';
@@ -98,11 +103,11 @@ function buildTrack2Status() {
       if (hasVerifiedTxHash(latestEvent)) {
         state = 'live_api';
         label = 'X402 LIVE';
-        note = 'AIsa x402 endpoints are being paid per query via Circle Gateway on Arc.';
+        note = `AIsa x402 endpoints are being paid per query via Circle Gateway on Arc using ${signerLabel}.`;
       } else if (latestEvent.referenceId) {
         state = 'verifying';
         label = 'VERIFYING';
-        note = 'AIsa x402 payment was submitted, but the Arc settlement hash is still resolving.';
+        note = `AIsa x402 payment was submitted through ${signerLabel}, but the Arc settlement hash is still resolving.`;
       } else {
         state = 'fallback';
         label = 'FALLBACK';
@@ -111,7 +116,7 @@ function buildTrack2Status() {
     } else {
       state = 'verifying';
       label = 'ARMED';
-      note = 'AIsa x402 is configured and ready for the next paid data request.';
+      note = `AIsa x402 is configured through ${signerLabel} and ready for the next paid data request.`;
     }
   } else if (normalisation.mode === 'fallback') {
     state = 'fallback';
@@ -947,24 +952,56 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     }
   });
 
-  /** Gateway balance — reads Circle Gateway USDC deposit */
+  /** x402 wallet balance — uses Circle Wallets balance or the configured Arc address */
   app.get('/api/gateway-balance', async (_req, res) => {
     try {
-      const rpc = process.env.ARC_RPC_URL || 'https://rpc.testnet.arc.network';
-      const gateway = process.env.GATEWAY_CONTRACT || '0x0077777d7eba4688bdef3e311b846f25870a19b9';
-      const mnemonic = process.env.OWS_MNEMONIC;
-      if (!mnemonic) {
-        res.json({ balance: '0', formatted: '0.00', warning: 'OWS_MNEMONIC not set' });
+      const usdcAddress = (process.env.USDC_ADDRESS || '0x3600000000000000000000000000000000000000').toLowerCase();
+
+      if (process.env.CIRCLE_API_KEY && process.env.CIRCLE_ENTITY_SECRET && process.env.CIRCLE_WALLET_ID) {
+        const { CircleDeveloperControlledWalletsClient } = await import('@circle-fin/developer-controlled-wallets');
+        const circleClient = new CircleDeveloperControlledWalletsClient({
+          apiKey: process.env.CIRCLE_API_KEY,
+          entitySecret: process.env.CIRCLE_ENTITY_SECRET,
+        });
+        const response = await circleClient.getWalletTokenBalance({
+          id: process.env.CIRCLE_WALLET_ID,
+          includeAll: true,
+        } as any);
+        const balances = (response as any)?.data?.tokenBalances || [];
+        const usdcBalance = balances.find((entry: any) => {
+          const tokenAddress = entry?.token?.tokenAddress?.toLowerCase?.() || '';
+          const symbol = entry?.token?.symbol || '';
+          return tokenAddress === usdcAddress || symbol === 'USDC';
+        });
+        const formatted = usdcBalance?.amount || '0.00';
+        res.json({
+          balance: formatted,
+          formatted,
+          kind: 'circle-wallet-balance',
+          warning: null,
+        });
         return;
       }
-      const wallet = ethers.Wallet.fromPhrase(mnemonic).connect(new ethers.JsonRpcProvider(rpc));
+
+      const agentAddress = process.env.AGENT_WALLET_ADDRESS;
+      if (!agentAddress) {
+        res.json({ balance: '0', formatted: '0.00', kind: 'unconfigured', warning: 'x402 wallet not configured' });
+        return;
+      }
+
+      const rpc = process.env.ARC_RPC_URL || 'https://rpc.testnet.arc.network';
+      const provider = new ethers.JsonRpcProvider(rpc);
       const erc20Abi = ['function balanceOf(address) view returns (uint256)'];
-      const usdc = process.env.USDC_ADDRESS || '0x3600000000000000000000000000000000000000';
-      const token = new ethers.Contract(usdc, erc20Abi, wallet);
-      const bal = await token.balanceOf(gateway);
-      res.json({ balance: bal.toString(), formatted: ethers.formatUnits(bal, 6) });
+      const token = new ethers.Contract(usdcAddress, erc20Abi, provider);
+      const bal = await token.balanceOf(agentAddress);
+      res.json({
+        balance: bal.toString(),
+        formatted: ethers.formatUnits(bal, 6),
+        kind: 'onchain-wallet-balance',
+        warning: null,
+      });
     } catch (e: any) {
-      res.status(500).json({ error: e.message?.slice(0, 200) || 'Gateway balance check failed' });
+      res.status(500).json({ error: e.message?.slice(0, 200) || 'x402 wallet balance check failed' });
     }
   });
 

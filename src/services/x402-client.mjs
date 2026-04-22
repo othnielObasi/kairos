@@ -17,8 +17,10 @@
 
 import fs from "fs";
 import path from "path";
+import { CircleDeveloperControlledWalletsClient } from "@circle-fin/developer-controlled-wallets";
 import { wrapFetchWithPayment, x402Client } from "@x402/fetch";
 import { toClientEvmSigner } from "@x402/evm";
+import { TypedDataEncoder } from "ethers";
 import { createWalletClient, createPublicClient, http, getAddress } from "viem";
 import { mnemonicToAccount } from "viem/accounts";
 
@@ -48,6 +50,70 @@ const SUPPORTED_NETWORKS = [
   "eip155:421614", "eip155:14601", "eip155:4801", "eip155:1328",
   "eip155:998", "eip155:11155420", "eip155:80002", "eip155:1301",
 ];
+
+function hasCircleWalletEnv() {
+  return Boolean(
+    process.env.CIRCLE_API_KEY &&
+    process.env.CIRCLE_ENTITY_SECRET &&
+    process.env.CIRCLE_WALLET_ID &&
+    process.env.AGENT_WALLET_ADDRESS,
+  );
+}
+
+function getCircleSignerConfig(overrides = {}) {
+  const walletId = overrides.walletId || process.env.CIRCLE_WALLET_ID;
+  const walletAddress = overrides.walletAddress || process.env.AGENT_WALLET_ADDRESS;
+  const apiKey = overrides.apiKey || process.env.CIRCLE_API_KEY;
+  const entitySecret = overrides.entitySecret || process.env.CIRCLE_ENTITY_SECRET;
+
+  if (!walletId || !walletAddress || !apiKey || !entitySecret) {
+    return null;
+  }
+
+  return {
+    walletId,
+    walletAddress: getAddress(walletAddress),
+    apiKey,
+    entitySecret,
+  };
+}
+
+function serializeTypedData(payload) {
+  return JSON.stringify(
+    TypedDataEncoder.getPayload(
+      payload.domain,
+      payload.types,
+      payload.message,
+    ),
+  );
+}
+
+function createCircleSigner(config) {
+  const circleClient = new CircleDeveloperControlledWalletsClient({
+    apiKey: config.apiKey,
+    entitySecret: config.entitySecret,
+  });
+
+  return {
+    address: config.walletAddress,
+    async signTypedData(payload) {
+      const response = await circleClient.signTypedData({
+        walletId: config.walletId,
+        data: serializeTypedData(payload),
+      });
+      const signature =
+        response?.data?.signature ||
+        response?.data?.data?.signature ||
+        null;
+
+      if (!signature) {
+        throw new Error("Circle Wallets did not return an x402 signature");
+      }
+
+      return signature;
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // GatewayEvmScheme — signs x402 payments using Circle Gateway's EIP-712 domain
@@ -124,7 +190,10 @@ class GatewayEvmScheme {
 // Build paying fetch
 // ---------------------------------------------------------------------------
 
-export function createPayingFetch(mnemonic, options = {}) {
+export function createPayingFetch(config = {}, legacyOptions = {}) {
+  const options = typeof config === "string"
+    ? { ...legacyOptions, mnemonic: config }
+    : { ...config };
   const rpcUrl = options.rpcUrl || RPC_URL;
   const preferredChain = options.preferredChain || PREFERRED_CHAIN;
 
@@ -135,20 +204,58 @@ export function createPayingFetch(mnemonic, options = {}) {
     rpcUrls: { default: { http: [rpcUrl] } },
   };
 
-  const account = mnemonicToAccount(mnemonic);
-  const walletClient = createWalletClient({
-    account,
-    chain: arcTestnet,
-    transport: http(rpcUrl),
-  });
-  walletClient.address = walletClient.account.address;
-
   const publicClient = createPublicClient({
     chain: arcTestnet,
     transport: http(rpcUrl),
   });
 
-  const evmSigner = toClientEvmSigner(walletClient, publicClient);
+  const circleConfig = getCircleSignerConfig(options);
+  let account = null;
+  let walletClient = null;
+  let signerKind = "circle-wallet";
+
+  if (options.mnemonic) {
+    account = mnemonicToAccount(options.mnemonic);
+    walletClient = createWalletClient({
+      account,
+      chain: arcTestnet,
+      transport: http(rpcUrl),
+    });
+    walletClient.address = walletClient.account.address;
+    signerKind = "mnemonic";
+  } else if (!circleConfig) {
+    const envMnemonic = process.env.OWS_MNEMONIC || process.env.X402_MNEMONIC;
+    if (envMnemonic && !hasCircleWalletEnv()) {
+      account = mnemonicToAccount(envMnemonic);
+      walletClient = createWalletClient({
+        account,
+        chain: arcTestnet,
+        transport: http(rpcUrl),
+      });
+      walletClient.address = walletClient.account.address;
+      signerKind = "mnemonic";
+    }
+  }
+
+  let evmSigner;
+  let address;
+
+  if (walletClient) {
+    evmSigner = toClientEvmSigner(walletClient, publicClient);
+    address = account.address;
+  } else {
+    const resolvedCircleConfig = circleConfig || getCircleSignerConfig();
+    if (!resolvedCircleConfig) {
+      throw new Error(
+        "No x402 signer is configured. Add Circle Wallets env vars or OWS_MNEMONIC/X402_MNEMONIC.",
+      );
+    }
+    const circleSigner = createCircleSigner(resolvedCircleConfig);
+    evmSigner = toClientEvmSigner(circleSigner, publicClient);
+    address = resolvedCircleConfig.walletAddress;
+    signerKind = "circle-wallet";
+  }
+
   const scheme = new GatewayEvmScheme(evmSigner);
 
   const client = new x402Client((_, accepts) => {
@@ -159,7 +266,8 @@ export function createPayingFetch(mnemonic, options = {}) {
 
   return {
     fetch: wrapFetchWithPayment(fetch, client),
-    address: account.address,
+    address,
+    signerKind,
     walletClient,
     publicClient,
   };
@@ -181,6 +289,8 @@ Examples:
   node x402_client.mjs POST "https://api.aisa.one/apis/v2/scholar/search/scholar?query=bitcoin" --body '{}' --mnemonic-env OWS_MNEMONIC
 
 Environment:
+  CIRCLE_API_KEY / CIRCLE_ENTITY_SECRET / CIRCLE_WALLET_ID / AGENT_WALLET_ADDRESS
+               Circle Wallets signer for the existing Kairos agent wallet
   OWS_MNEMONIC  BIP-39 mnemonic for the paying wallet
   X402_MNEMONIC Alternate mnemonic env name
   OWS_RPC_URL   Arc testnet RPC (default: https://rpc.testnet.arc.network)
@@ -209,13 +319,16 @@ Environment:
     mnemonic = process.env[mnemonicEnvName];
   }
 
-  if (!mnemonic) {
-    console.error("Error: mnemonic not found. Set OWS_MNEMONIC or X402_MNEMONIC in the agent environment, or pass --mnemonic-env / --mnemonic.");
+  if (!mnemonic && !hasCircleWalletEnv()) {
+    console.error("Error: no x402 signer found. Set Circle Wallets env vars, OWS_MNEMONIC, or X402_MNEMONIC.");
     process.exit(1);
   }
 
-  const { fetch: payingFetch, address } = createPayingFetch(mnemonic);
+  const { fetch: payingFetch, address, signerKind } = createPayingFetch(
+    mnemonic ? { mnemonic } : {},
+  );
   console.error(`Wallet: ${address}`);
+  console.error(`Signer: ${signerKind}`);
   console.error(`Request: ${method} ${url}`);
 
   const opts = {
