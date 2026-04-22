@@ -17,6 +17,7 @@
 
 import fs from "fs";
 import path from "path";
+import { pathToFileURL } from "url";
 import { wrapFetchWithPayment, x402Client } from "@x402/fetch";
 import { toClientEvmSigner } from "@x402/evm";
 import { createWalletClient, createPublicClient, http, getAddress } from "viem";
@@ -250,7 +251,13 @@ Environment:
   process.exit(res.ok ? 0 : 1);
 }
 
-main().catch((err) => {
-  console.error(`Fatal: ${err.message}`);
-  process.exit(1);
-});
+const isEntryPoint =
+  Boolean(process.argv[1]) &&
+  pathToFileURL(process.argv[1]).href === import.meta.url;
+
+if (isEntryPoint) {
+  main().catch((err) => {
+    console.error(`Fatal: ${err.message}`);
+    process.exit(1);
+  });
+}
