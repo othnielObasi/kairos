@@ -614,13 +614,14 @@ function renderT2(data, track) {
   // x402 mode explanation
   const noteEl = document.createElement("div");
   noteEl.style.cssText = "font-size:9px;color:#3D3B5A;padding:8px 0 4px;line-height:1.6;border-bottom:1px solid var(--border);margin-bottom:4px;";
+  const events = data.t2Events || [];
+  const allTrack2X402 = events.length > 0 && events.every(e => e.mode === "x402");
   noteEl.textContent = track && track.mode === "x402"
-    ? "x402 live: Circle Gateway handles paid AIsa queries on Arc."
+    ? "x402 live: AIsa powers Twitter, news, and PRISM; spot price remains on Kraken/CoinGecko."
     : "Fallback mode: legacy feeds are live and Kairos records fallback API billing receipts until the x402 signer is armed.";
   sc.appendChild(noteEl);
 
-  const events = data.t2Events || [];
-  el("t2-fhdr").textContent = track && track.mode === "x402" ? "RECENT x402 PAYMENTS" : "RECENT API BILLING";
+  el("t2-fhdr").textContent = allTrack2X402 ? "RECENT x402 PAYMENTS" : "RECENT TRACK 2 BILLING";
   el("t2-fhdr").style.display = events.length ? "block" : "none";
   const fc = el("t2-feed"); fc.innerHTML = "";
   events.slice(0,6).forEach(e => {

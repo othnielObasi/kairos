@@ -1,9 +1,9 @@
 /**
- * Live Price Feed — AIsa x402 primary (Arc) + Kraken + CoinGecko/DeFiLlama fallback
+ * Live Price Feed — Kraken + CoinGecko/DeFiLlama
  *
- * When AISA_BASE_URL is set, fetches prices via AIsa x402 endpoints
- * (real USDC payments on Arc via Circle Gateway — Track 2).
- * Falls back to Kraken, CoinGecko, then DeFiLlama if AIsa is unavailable.
+ * Track 2 uses AIsa x402 for sentiment, news, and PRISM reasoning.
+ * We intentionally keep live WETH/USDC spot pricing on Kraken/CoinGecko
+ * because the AIsa financial price snapshot catalog is equity-ticker based.
  */
 
 import type { MarketData } from '../strategy/momentum.js';
@@ -13,18 +13,13 @@ import { recordTrack2Billing } from '../services/api-billing.js';
 
 const log = createLogger('LIVE-FEED');
 
-// AIsa x402 integration — Track 2 Per-API Monetization
+// AIsa x402 integration — truthfully limited to sentiment/news/PRISM for Kairos.
 const USE_AISA = !!process.env.AISA_BASE_URL;
-let fetchPriceDataAisa: ((ticker?: string) => Promise<{ price: number; source: string }>) | null = null;
 if (USE_AISA) {
   import('../services/normalisation.js').then(m => {
-    fetchPriceDataAisa = async (ticker = 'ETH') => {
-      const data = await m.fetchPriceData(ticker);
-      return { price: data.price, source: data.source };
-    };
     const normalisation = m.getNormalisationStatus();
     if (normalisation.mode === 'x402') {
-      log.info('AIsa x402 price feed enabled (Track 2 — Per-API Monetization on Arc)');
+      log.info('AIsa x402 is enabled for sentiment/news/PRISM; live spot pricing stays on Kraken/CoinGecko because AIsa financial price snapshots are equity tickers');
     } else {
       log.warn('AIsa configured but x402 signer is not ready — legacy price feeds remain primary', {
         reason: normalisation.reason,
@@ -56,23 +51,7 @@ const MAX_CONSECUTIVE_FAILURES = 5;
  * Returns null only if all sources fail.
  */
 export async function fetchLivePrice(): Promise<{ price: number; source: string } | null> {
-  // Try AIsa x402 (primary on Arc — real USDC payment per call)
-  if (fetchPriceDataAisa) {
-    try {
-      const result = await fetchPriceDataAisa('ETH');
-      if (result && result.price > 0) {
-        lastFetchedPrice = result.price;
-        lastFetchTime = Date.now();
-        consecutiveFailures = 0;
-        return result;
-      }
-      log.debug('AIsa x402 price returned null — trying Kraken');
-    } catch (e) {
-      log.debug('AIsa x402 price failed — trying Kraken', { error: String(e) });
-    }
-  }
-
-  // Try Kraken (fallback 1 — direct exchange data)
+  // Try Kraken first — direct exchange pricing for WETH/USDC.
   try {
     const krakenResult = await fetchKrakenPrice();
     if (krakenResult) {

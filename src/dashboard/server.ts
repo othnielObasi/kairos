@@ -134,8 +134,11 @@ function buildTrack2Status() {
     state,
     label,
     note,
-    subtitle: normalisation.mode === 'x402'
+    legacySubtitle: normalisation.mode === 'x402'
       ? 'Agent pays AIsa x402 endpoints per query · Circle Gateway settlement · USDC on Arc · 79 endpoints across financial, Twitter, and Perplexity'
+      : 'Agent queries live fallback feeds with Arc billing receipts · AIsa x402 standby · Kraken / CoinGecko / PRISM / Alpha Vantage',
+    subtitle: normalisation.mode === 'x402'
+      ? 'Agent pays AIsa x402 for Twitter, news, and PRISM reasoning · Circle Gateway settlement · USDC on Arc · live spot price stays on Kraken/CoinGecko'
       : 'Agent queries live fallback feeds with Arc billing receipts · AIsa x402 standby · Kraken / CoinGecko / PRISM / Alpha Vantage',
     endpoint: normalisation.endpoint,
     mode: normalisation.mode,
@@ -145,8 +148,8 @@ function buildTrack2Status() {
     totalEvents: billing.t2Events.length,
     sourceLabels: normalisation.mode === 'x402'
       ? {
-          coingecko: 'AIsa Fin. Prices',
-          kraken: 'AIsa Fin. Prices',
+          coingecko: 'CoinGecko / DeFiLlama',
+          kraken: 'Kraken Direct',
           feargreed: 'AIsa Twitter',
           alphavantage: 'AIsa Fin. News',
           prism: 'AIsa Perplexity',
