@@ -218,7 +218,8 @@
     </section>
 
     <section class="stats">
-      <div class="stat"><div class="stat-label">Bundles</div><div class="stat-value good" id="s-total">-</div><div class="stat-sub">visible document bundles</div></div>
+      <div class="stat"><div class="stat-label">Bundles</div><div class="stat-value good" id="s-total">-</div><div class="stat-sub">visible document bundles, not Arc txns</div></div>
+      <div class="stat"><div class="stat-label">Confirmed Arc</div><div class="stat-value good" id="s-confirmed">-</div><div class="stat-sub">bundles with verified Arc receipts</div></div>
       <div class="stat"><div class="stat-label">Track 01</div><div class="stat-value blue" id="s-t1">-</div><div class="stat-sub">governance invoices and receipts</div></div>
       <div class="stat"><div class="stat-label">Track 02</div><div class="stat-value good" id="s-t2">-</div><div class="stat-sub">paid API usage documents</div></div>
       <div class="stat"><div class="stat-label">Track 03</div><div class="stat-value warn" id="s-t3">-</div><div class="stat-sub">compute invoices and worklogs</div></div>
@@ -349,6 +350,7 @@
         const data = await res.json();
         state.bundles = data.bundles || [];
         el("s-total").textContent = String(data.count || 0);
+        el("s-confirmed").textContent = String((data.summary && data.summary.byStatus && data.summary.byStatus.confirmed) || 0);
         el("s-t1").textContent = String((data.summary && data.summary.byTrack && data.summary.byTrack.t1) || 0);
         el("s-t2").textContent = String((data.summary && data.summary.byTrack && data.summary.byTrack.t2) || 0);
         el("s-t3").textContent = String((data.summary && data.summary.byTrack && data.summary.byTrack.t3) || 0);

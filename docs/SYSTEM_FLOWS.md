@@ -383,7 +383,7 @@ Reconciliation checks stale stops and resets daily breaker state
 
 Important operational note:
 
-The billing counters in `billingStore` are in-memory proof counters for the current runtime session. A PM2 restart resets the live dashboard count, and the loop rebuilds the 50+ transaction proof as new receipts are produced.
+The billing counters in `billingStore` are persisted to `.kairos/billing-store.json` and reloaded on boot. A PM2 restart should preserve the live dashboard count for Track 1 to 3 Arc receipts instead of forcing the proof counter to rebuild from zero.
 
 ## Flow 12: Failure And Fallback Handling
 

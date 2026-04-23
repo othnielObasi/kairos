@@ -76,7 +76,7 @@ The dashboard is intentionally compact. These are the terms that matter:
 
 | Term | Meaning |
 | --- | --- |
-| `Real Arc txns` | Verified Arc receipts counted as live proof |
+| `Real Arc txns` | Verified Arc receipts across all four tracks counted as live proof |
 | `Pending hash` | A receipt exists but the final Arc hash has not yet been hydrated |
 | `Fallback` | The runtime recorded the event without a verifiable on-chain receipt |
 | `Runtime cycles` | Decision loops completed by the agent, not on-chain transactions |
@@ -537,8 +537,8 @@ Current production shape:
 Operational notes:
 
 - `.kairos/` stores runtime state, price history, SAGE state, and micro-commerce records.
-- Restarting PM2 does not delete `.kairos/`, but it does reset the in-memory billing counters for the live session.
-- The loop then rebuilds fresh proof over time as new receipts are emitted.
+- Restarting PM2 does not delete `.kairos/`, and the billing snapshot now reloads the persisted Arc receipt counters on boot.
+- The live dashboard keeps recent Track 1 to 3 receipt feeds in sync from that persisted snapshot instead of starting again from zero after deploys.
 
 ### Kraken CLI status
 

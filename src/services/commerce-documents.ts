@@ -246,6 +246,17 @@ export function listCommerceDocumentBundles(limit = 20): CommerceDocumentBundle[
     .slice(0, Math.max(0, Math.min(limit, MAX_BUNDLES)));
 }
 
+export function listAllCommerceDocumentBundles(): CommerceDocumentBundle[] {
+  ensureDocDir();
+  const files = readdirSync(DOC_DIR)
+    .filter((file) => file.endsWith('.json'));
+
+  return files
+    .map((file) => loadBundle(file.replace(/\.json$/i, '')))
+    .filter((bundle): bundle is CommerceDocumentBundle => Boolean(bundle))
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+}
+
 export function findCommerceDocumentBundle(lookup: CommerceDocumentLookup): CommerceDocumentBundle | null {
   if (lookup.eventId) {
     const direct = loadBundle(lookup.eventId);

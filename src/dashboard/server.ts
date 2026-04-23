@@ -711,6 +711,71 @@ function buildTransactionLedger(limit: number) {
   };
 }
 
+function roundUsdc(value: number): number {
+  return Math.round(value * 1_000_000) / 1_000_000;
+}
+
+function buildTrack4ProofLedger(limit: number) {
+  const cappedLimit = Math.min(Math.max(limit, 1), 1000);
+  const checkpointEntries = checkpointLedgerEntries(cappedLimit);
+  const settlementRefs = new Set(
+    checkpointEntries
+      .map((entry) => entry.txHash || entry.referenceId || null)
+      .filter((value): value is string => Boolean(value)),
+  );
+
+  const microEntries = microCommerceLedgerEntries(cappedLimit)
+    .filter((entry) => {
+      const ref = entry.txHash || entry.referenceId || '';
+      return ref ? !settlementRefs.has(ref) : true;
+    });
+
+  return [...microEntries, ...checkpointEntries]
+    .sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+}
+
+function buildUnifiedArcProofSummary(limit = 1000) {
+  const billing = billingStore.toJSON();
+  const track4Entries = buildTrack4ProofLedger(limit);
+  const track4Summary = track4Entries.reduce(
+    (acc, entry) => {
+      acc.total += 1;
+      acc.totalSpendUsdc += entry.amountUsdc || 0;
+      if (entry.status === 'confirmed') acc.confirmed += 1;
+      if (entry.status === 'pending') acc.pending += 1;
+      if (entry.status === 'fallback') acc.fallback += 1;
+      return acc;
+    },
+    {
+      total: 0,
+      confirmed: 0,
+      pending: 0,
+      fallback: 0,
+      totalSpendUsdc: 0,
+    },
+  );
+
+  const realTxns = billing.realTxns + track4Summary.confirmed;
+  const pendingTxns = billing.pendingTxns + track4Summary.pending;
+  const totalEvents = billing.totalEvents + track4Summary.total;
+  const totalSpend = roundUsdc(billing.totalSpend + track4Summary.totalSpendUsdc);
+
+  return {
+    ...billing,
+    t4Events: track4Entries.slice(0, 20),
+    t4RealTxns: track4Summary.confirmed,
+    t4PendingTxns: track4Summary.pending,
+    t4FallbackTxns: track4Summary.fallback,
+    t4Spend: roundUsdc(track4Summary.totalSpendUsdc),
+    totalTxns: realTxns,
+    realTxns,
+    pendingTxns,
+    totalEvents,
+    totalSpend,
+    meetsTxnRequirement: realTxns >= (billing.txnRequirementTarget || 50),
+  };
+}
+
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_WINDOW_MS = 60_000;
@@ -1381,7 +1446,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
   /** Billing summary (all 4 tracks) */
   app.get('/api/billing', (_req, res) => {
     try {
-      res.json(billingStore.toJSON());
+      res.json(buildUnifiedArcProofSummary());
     } catch (e) {
       res.status(500).json({ error: 'Failed to get billing data' });
     }
@@ -1389,7 +1454,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
 
   app.get('/api/commerce/status', async (_req, res) => {
     try {
-      const billing = billingStore.toJSON();
+      const billing = buildUnifiedArcProofSummary();
       const state = getAgentState();
       const track4 = buildTrack4Status(state);
       const geminiConfigured = Boolean(
@@ -1491,7 +1556,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
 
       const allowSettlementActions = req.body?.allowSettlementActions === true;
       const state = getAgentState();
-      const billing = billingStore.toJSON();
+      const billing = buildUnifiedArcProofSummary();
       const track4 = buildTrack4Status(state);
 
       const tools: GeminiCommerceTool[] = [
@@ -1512,20 +1577,33 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
             properties: {},
           },
           handler: async () => {
-            const latestTrack4Confirmed = getMicroCommerceEvents(10)
-              .find((event) => event.txHash && /^0x[a-fA-F0-9]{64}$/.test(event.txHash));
             const latestConfirmed = [
-              ...(billing.t1Events || []),
-              ...(billing.t2Events || []),
-              ...(billing.t3Events || []),
-            ].find((receipt) => hasVerifiedTxHash(receipt));
+              ...(billing.t1Events || []).map((receipt) => ({
+                txHash: receipt.txHash,
+                timestamp: receipt.confirmedAt || 0,
+              })),
+              ...(billing.t2Events || []).map((receipt) => ({
+                txHash: receipt.txHash,
+                timestamp: receipt.confirmedAt || 0,
+              })),
+              ...(billing.t3Events || []).map((receipt) => ({
+                txHash: receipt.txHash,
+                timestamp: receipt.confirmedAt || 0,
+              })),
+              ...(billing.t4Events || []).map((event: any) => ({
+                txHash: event.txHash,
+                timestamp: Date.parse(event.timestamp || '') || 0,
+              })),
+            ]
+              .filter((receipt) => receipt.txHash && /^0x[a-fA-F0-9]{64}$/.test(receipt.txHash))
+              .sort((a, b) => b.timestamp - a.timestamp)[0] || null;
 
             return {
               realTxns: billing.realTxns,
               pendingTxns: billing.pendingTxns,
               totalSpend: billing.totalSpend,
               meetsTxnRequirement: billing.meetsTxnRequirement,
-              latestConfirmedTxHash: latestConfirmed?.txHash || latestTrack4Confirmed?.txHash || null,
+              latestConfirmedTxHash: latestConfirmed?.txHash || null,
             };
           },
         },
