@@ -60,7 +60,10 @@ export async function fetchLivePrice(): Promise<{ price: number; source: string 
         lastFetchedPrice = aisaResult.price;
         lastFetchTime = Date.now();
         consecutiveFailures = 0;
-        return { price: aisaResult.price, source: 'aisa-financial-prices-x402' };
+        const source = aisaResult.source === 'aisa-perplexity-spot-price'
+          ? 'aisa-perplexity-spot-price-x402'
+          : 'aisa-financial-prices-x402';
+        return { price: aisaResult.price, source };
       }
       log.warn('AIsa price snapshot returned an implausible ETH price — using safety feeds', {
         price: aisaResult.price,
