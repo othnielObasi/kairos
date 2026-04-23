@@ -156,6 +156,9 @@
     function ipfsLink(cid) {
       if (!cid) return '<span style="color:var(--fg3)">-</span>';
       var short = cid.length > 12 ? cid.slice(0, 6) + '...' + cid.slice(-4) : cid;
+      if (/^QmMock/i.test(cid)) {
+        return '<a href="/artifacts/' + encodeURIComponent(cid) + '" target="_blank" rel="noopener" style="color:var(--warn);text-decoration:none" title="Local artifact backup for mock CID ' + cid + '">LOCAL ' + short + '</a>';
+      }
       return '<a href="https://ipfs.io/ipfs/' + encodeURIComponent(cid) + '" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none" title="' + cid + '">DOC ' + short + '</a>';
     }
     function txLink(hash) {

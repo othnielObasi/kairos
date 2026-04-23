@@ -1093,10 +1093,20 @@ export function renderCommerceDocumentHtml(bundle: CommerceDocumentBundle, kind:
       .sheet { border-radius: 20px; }
       .doc-tab { min-width: 0; flex: 1 1 140px; }
     }
+    @page {
+      size: A4 portrait;
+      margin: 10mm;
+    }
     @media print {
+      html {
+        font-size: 90%;
+      }
       body {
         background: #fff;
         padding: 0;
+        color: #111;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
       .sheet {
         box-shadow: none;
@@ -1106,6 +1116,59 @@ export function renderCommerceDocumentHtml(bundle: CommerceDocumentBundle, kind:
       }
       .hero {
         background: #fff;
+        padding: 14px 16px 12px;
+      }
+      .body {
+        padding: 12px 16px 14px;
+        gap: 12px;
+      }
+      .hero-grid,
+      .section-grid,
+      .appendix-grid,
+      .metric-grid {
+        gap: 10px;
+      }
+      .badge-row {
+        margin-top: 10px;
+      }
+      .badge {
+        padding: 5px 8px;
+        font-size: 9px;
+      }
+      h1 {
+        font-size: 28px;
+      }
+      .subtitle,
+      .section-copy,
+      .summary-value,
+      .narrative p,
+      .footer,
+      .metric-detail {
+        font-size: 10px;
+        line-height: 1.55;
+      }
+      .narrative h2,
+      .section h2,
+      .appendix h2 {
+        font-size: 18px;
+      }
+      .metric-value {
+        font-size: 16px;
+      }
+      .narrative,
+      .section,
+      .appendix,
+      .footer,
+      .metric-card {
+        padding: 12px;
+        border-radius: 14px;
+      }
+      .narrative-note,
+      .summary-row {
+        padding-top: 8px;
+      }
+      .metric-card {
+        min-height: 0;
       }
       .screen-only {
         display: none !important;

@@ -1023,6 +1023,39 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     }
   });
 
+  app.get(['/api/artifacts/:cid', '/artifacts/:cid'], (req, res) => {
+    const cid = decodeURIComponent(req.params.cid || '').trim();
+    if (!cid) {
+      res.status(400).json({ error: 'Artifact CID is required' });
+      return;
+    }
+
+    try {
+      const dir = path.join(process.cwd(), 'artifacts');
+      if (!fs.existsSync(dir)) {
+        res.status(404).json({ error: 'Artifact backup directory not found' });
+        return;
+      }
+
+      const file = fs.readdirSync(dir).find((entry: string) => entry.endsWith(`-${cid}.json`));
+      if (!file) {
+        res.status(404).json({ error: 'Artifact backup not found' });
+        return;
+      }
+
+      const wantsDownload = ['1', 'true', 'yes'].includes(String(req.query.download || '').toLowerCase());
+      const filePath = path.join(dir, file);
+      const content = fs.readFileSync(filePath, 'utf-8');
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      if (wantsDownload) {
+        res.setHeader('Content-Disposition', `attachment; filename="${file}"`);
+      }
+      res.send(content);
+    } catch (error) {
+      res.status(500).json({ error: String(error) });
+    }
+  });
+
   /** Positions */
   app.get('/api/positions', (_req, res) => {
     const state = getAgentState();
