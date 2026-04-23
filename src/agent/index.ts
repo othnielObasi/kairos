@@ -914,12 +914,6 @@ async function runCycle(): Promise<void> {
       checkpoint.execution.microSettlement.amountUsdc = settlement.amount;
       checkpoint.execution.microSettlement.referenceId = settlement.referenceId ?? null;
       checkpoint.execution.microSettlement.mode = settlement.mode ?? null;
-      recordMicroCommerceEvent(settlement, {
-        item: 'Approved action settlement',
-        trigger: 'governed trade approval',
-        checkpointId: checkpoint.id,
-        description: `Kairos settled an approved ${strategyOutput.signal.direction} action as real-time micro-commerce on Arc.`,
-      });
 
       if (hasVerifiedTxHash(settlement)) {
         checkpoint.onChainTxHash = settlement.txHash;

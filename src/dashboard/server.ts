@@ -24,7 +24,7 @@ import { getKrakenFeedStatus, fetchKrakenTicker, fetchKrakenBalance, fetchKraken
 import { fetchPrismData } from '../data/prism-feed.js';
 import { billingStore } from '../services/billing-store.js';
 import { hasVerifiedTxHash, type NanopaymentReceipt } from '../services/nanopayments.js';
-import { getMicroCommerceEvents, getMicroCommerceStats, type MicroCommerceEvent } from '../services/micro-commerce-store.js';
+import { getMicroCommerceEvents, type MicroCommerceEvent } from '../services/micro-commerce-store.js';
 import { getCliStatus, checkCliHealth } from '../data/kraken-cli.js';
 import { getKrakenAccountSnapshot, krakenPreflight } from '../data/kraken-bridge.js';
 import { generateAttestationSummary } from '../security/tee-attestation.js';
@@ -305,8 +305,6 @@ function buildTrack3Status() {
 
 function buildTrack4Status(agentState: ReturnType<typeof getAgentState>) {
   const cliStatus = getCliStatus();
-  const microStats = getMicroCommerceStats();
-  const recentEvents = getMicroCommerceEvents(8);
   const actions = getTradeCheckpoints(50)
     .map((checkpoint) => {
       const execution = getCheckpointExecution(checkpoint);
@@ -319,6 +317,28 @@ function buildTrack4Status(agentState: ReturnType<typeof getAgentState>) {
       };
     })
     .filter((entry) => entry.execution.requested && entry.direction !== 'NEUTRAL');
+
+  const settlementRefs = new Set(
+    actions
+      .map((action) => action.execution.settlementTxHash || action.execution.microSettlement.referenceId || null)
+      .filter((value): value is string => Boolean(value)),
+  );
+  const recentEvents = getMicroCommerceEvents(50)
+    .filter((event) => {
+      const ref = event.txHash || event.referenceId || '';
+      return ref ? !settlementRefs.has(ref) : true;
+    });
+  const microStats = {
+    total: recentEvents.length,
+    confirmed: recentEvents.filter((event) => event.status === 'confirmed').length,
+    pending: recentEvents.filter((event) => event.status === 'pending').length,
+    fallback: recentEvents.filter((event) => event.status === 'fallback').length,
+    totalVolumeUsdc: recentEvents.reduce((sum, event) => sum + event.amountUsdc, 0),
+    confirmedVolumeUsdc: recentEvents
+      .filter((event) => event.status === 'confirmed')
+      .reduce((sum, event) => sum + event.amountUsdc, 0),
+    latest: recentEvents[0] ?? null,
+  };
 
   const counts = {
     arcSettled: 0,
@@ -408,7 +428,7 @@ function buildTrack4Status(agentState: ReturnType<typeof getAgentState>) {
     settledVolumeUsd,
     lastSettlementAt: commerceIsLatest ? latestCommerceTime : (latestAction?.execution.settledAt ?? null),
     latestMode: commerceIsLatest ? latestCommerce?.settlementMode ?? null : latestAction?.execution.executionMode ?? null,
-    recentEvents,
+    recentEvents: recentEvents.slice(0, 8),
     microCommerce: microStats,
     routerReady: Boolean((process.env.MODE || 'simulation') === 'live' && agentState.agentId && config.riskRouterAddress),
     kraken: {
@@ -567,12 +587,23 @@ function operatorLedgerEntries(limit: number): LedgerTransaction[] {
 
 function buildTransactionLedger(limit: number) {
   const cappedLimit = Math.min(Math.max(limit, 1), 1000);
+  const checkpointEntries = checkpointLedgerEntries(cappedLimit);
+  const settlementRefs = new Set(
+    checkpointEntries
+      .map((entry) => entry.txHash || entry.referenceId || null)
+      .filter((value): value is string => Boolean(value)),
+  );
+  const microEntries = microCommerceLedgerEntries(cappedLimit)
+    .filter((entry) => {
+      const ref = entry.txHash || entry.referenceId || '';
+      return ref ? !settlementRefs.has(ref) : true;
+    });
   const records: LedgerTransaction[] = [
     ...billingStore.t1Events.map((receipt, index) => receiptLedgerEntry(receipt, index, 't1', 'Track 01', 'Governance nanopayment')),
     ...billingStore.t2Events.map((receipt, index) => receiptLedgerEntry(receipt, index, 't2', 'Track 02', 'Paid data access')),
     ...billingStore.t3Events.map((receipt, index) => receiptLedgerEntry(receipt, index, 't3', 'Track 03', 'Usage-based compute')),
-    ...microCommerceLedgerEntries(cappedLimit),
-    ...checkpointLedgerEntries(cappedLimit),
+    ...microEntries,
+    ...checkpointEntries,
     ...operatorLedgerEntries(Math.min(cappedLimit, 200)),
   ].sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
 
