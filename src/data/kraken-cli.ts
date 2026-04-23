@@ -15,7 +15,7 @@
  *   1. CLI subprocess — invoke `kraken-cli` directly for order placement
  *   2. MCP server — connect to the CLI's built-in MCP server over stdio/HTTP
  *
- * Docs: https://github.com/cryptolake-io/kraken-cli
+ * Docs: https://github.com/krakenfx/kraken-cli
  */
 
 import { createLogger } from '../agent/logger.js';
