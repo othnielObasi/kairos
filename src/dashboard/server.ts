@@ -43,6 +43,7 @@ import { getGatewayBalanceInfo } from '../services/gateway-balance.js';
 import {
   buildReceiptDocumentEventId,
   ensureReceiptDocumentBundle,
+  buildCommerceDocumentFilename,
   getCommerceDocumentBundle,
   getCommerceDocumentLinks,
   listCommerceDocumentBundles,
@@ -809,7 +810,11 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
       return;
     }
 
+    const wantsDownload = ['1', 'true', 'yes'].includes(String(req.query.download || '').toLowerCase());
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    if (wantsDownload) {
+      res.setHeader('Content-Disposition', `attachment; filename="${buildCommerceDocumentFilename(bundle, kind)}"`);
+    }
     res.send(renderCommerceDocumentHtml(bundle, kind));
   });
 

@@ -254,7 +254,7 @@ commerce.html loads /api/commerce/status
         |
         +--> Gemini multimodal analysis can review an uploaded receipt or invoice image
         |
-        +--> Recent native Track 4 document bundles load from /api/commerce/documents
+        +--> Settlement results link directly to generated invoice, receipt, proof, and the full /documents vault
         |
         v
 Preview distinguishes document total from proof-settlement amount
