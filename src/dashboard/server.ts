@@ -57,6 +57,15 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DASHBOARD_PORT = parseInt(process.env.PORT || '3000', 10);
+const TRACK1_STAGE_NAMES = [
+  'Mandate',
+  'Oracle',
+  'Simulator',
+  'Supervisory',
+  'Risk Router',
+  'LLM Reasoning',
+  'SAGE',
+];
 
 function getRuntimeConfig() {
   return {
@@ -115,6 +124,68 @@ function countByVisibility(items: Array<{ visibility: string }>) {
     acc[item.visibility] = (acc[item.visibility] || 0) + 1;
     return acc;
   }, {});
+}
+
+function buildTrack1Status() {
+  const billing = billingStore.toJSON();
+  const latestEvent = billingStore.t1Events[0] ?? null;
+  const stageCounts = (billing.stageCounts || []).slice(0, TRACK1_STAGE_NAMES.length);
+  const stageRealCounts = (billing.stageRealCounts || []).slice(0, TRACK1_STAGE_NAMES.length);
+  const stagePendingCounts = (billing.stagePendingCounts || []).slice(0, TRACK1_STAGE_NAMES.length);
+  const stageSpend = (billing.stageSpend || []).slice(0, TRACK1_STAGE_NAMES.length);
+  const activeStageCount = TRACK1_STAGE_NAMES.filter((_, index) => (
+    Number(stageCounts[index] || 0) > 0
+    || Number(stageRealCounts[index] || 0) > 0
+    || Number(stagePendingCounts[index] || 0) > 0
+  )).length;
+
+  let state = 'idle';
+  let label = 'IDLE';
+  let note = 'Awaiting governance-stage receipts.';
+
+  if (latestEvent) {
+    if (hasVerifiedTxHash(latestEvent)) {
+      state = 'live';
+      label = 'LIVE';
+      note = 'Governance stages are producing verifiable Arc receipts.';
+    } else if (latestEvent.referenceId) {
+      state = 'verifying';
+      label = 'VERIFYING';
+      note = 'A governance receipt was submitted and is waiting for its Arc hash.';
+    } else {
+      state = 'fallback';
+      label = 'FALLBACK';
+      note = 'Governance stayed safe, but the latest billing proof is fallback-only.';
+    }
+  }
+
+  return {
+    state,
+    label,
+    note,
+    subtitle: 'Mandate, oracle, simulation, supervision, risk routing, reasoning, and SAGE billed per action.',
+    realTxns: billing.t1RealTxns,
+    pendingTxns: billing.t1PendingTxns,
+    totalEvents: billing.t1Events.length,
+    activeStageCount,
+    spend: billing.t1Spend,
+    stages: TRACK1_STAGE_NAMES.map((name, index) => ({
+      name,
+      count: Number(stageCounts[index] || 0),
+      realTxns: Number(stageRealCounts[index] || 0),
+      pendingTxns: Number(stagePendingCounts[index] || 0),
+      spend: Number(stageSpend[index] || 0),
+    })),
+    latestEvent: latestEvent ? {
+      source: latestEvent.source || latestEvent.eventName || 'Governance',
+      eventName: latestEvent.eventName,
+      amount: latestEvent.amount,
+      mode: latestEvent.mode || 'nanopayment',
+      txHash: hasVerifiedTxHash(latestEvent) ? latestEvent.txHash : null,
+      referenceId: latestEvent.referenceId || null,
+      confirmedAt: latestEvent.confirmedAt,
+    } : null,
+  };
 }
 
 function buildTrack2Status() {
@@ -307,7 +378,7 @@ function buildTrack3Status() {
     apiKeysConfigured: configuredCount > 0,
     runtimeModels,
     reflectionModels,
-    lastComputeAt: latestEvent ? new Date(latestEvent.confirmedAt).toISOString() : null,
+    lastComputeAt: safeIsoDate(latestEvent?.confirmedAt),
     lastComputeModel: latestEvent?.model ?? null,
     lastComputeType: latestEvent?.type ?? null,
     lastSettlementMode: latestEvent?.mode ?? null,
@@ -499,6 +570,12 @@ function receiptTimestamp(receipt: NanopaymentReceipt): string {
 
 function explorerUrl(txHash: string | null): string | null {
   return txHash ? `https://testnet.arcscan.app/tx/${txHash}` : null;
+}
+
+function safeIsoDate(value: string | number | Date | null | undefined): string | null {
+  if (value === null || value === undefined || value === '') return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : null;
 }
 
 function backfillBillingDocumentBundles(): void {
@@ -819,6 +896,263 @@ function buildUnifiedArcProofSummary(limit = 1000) {
   };
 }
 
+function buildExperienceSummary() {
+  const safeSection = <T>(label: string, builder: () => T, fallback: T): T => {
+    try {
+      return builder();
+    } catch (error) {
+      console.warn(`[DASHBOARD] Failed to build ${label}:`, error);
+      return fallback;
+    }
+  };
+
+  const state = safeSection<any>('agent state', () => getAgentState(), {
+    running: false,
+    cycleCount: 0,
+    risk: {
+      capital: 0,
+      openPositions: [] as any[],
+    },
+    agentId: 0,
+  });
+
+  const unifiedProof = safeSection<any>('unified proof summary', () => buildUnifiedArcProofSummary(), {
+    realTxns: 0,
+    pendingTxns: 0,
+    totalSpend: 0,
+    totalEvents: 0,
+    meetsTxnRequirement: false,
+  });
+
+  const riskState = state.risk || {};
+  const runtimeStatus = {
+    mode: getRuntimeConfig(),
+    running: Boolean(state.running),
+    pair: config.tradingPair,
+    totalCycles: Number(state.cycleCount || 0),
+    trustScore: getLastTrustScore(state.agentId) ?? 95,
+    capital: Number(riskState.capital || 0),
+    openPositions: Array.isArray(riskState.openPositions) ? riskState.openPositions.length : 0,
+    mcp: safeSection<any>('MCP summary', () => buildMcpSummary(), {
+      endpoint: config.mcpEndpoint,
+      tools: 0,
+      resources: 0,
+      prompts: 0,
+      links: {
+        root: '/mcp',
+        info: '/mcp/info',
+        agentCard: '/.well-known/agent-card.json',
+      },
+      toolVisibility: {},
+      resourceVisibility: {},
+      promptVisibility: {},
+      note: 'Governed surface for agents, operators, and audit clients.',
+    }),
+  };
+
+  const track1 = safeSection<any>('Track 1 summary', () => buildTrack1Status(), {
+    state: 'idle',
+    label: 'IDLE',
+    note: 'Track 1 summary unavailable.',
+    subtitle: '',
+    realTxns: 0,
+    pendingTxns: 0,
+    totalEvents: 0,
+    activeStageCount: 0,
+    spend: 0,
+    stages: [] as Array<{ name: string; count: number; realTxns: number; pendingTxns: number; spend: number }>,
+    latestEvent: null as any,
+  });
+
+  const track2 = safeSection<any>('Track 2 summary', () => buildTrack2Status(), {
+    state: 'idle',
+    label: 'IDLE',
+    note: 'Track 2 summary unavailable.',
+    subtitle: '',
+    endpoint: null as string | null,
+    mode: 'unknown',
+    reason: null as string | null,
+    realTxns: 0,
+    pendingTxns: 0,
+    totalEvents: 0,
+    sourceLabels: {} as Record<string, string>,
+  });
+
+  const track3 = safeSection<any>('Track 3 summary', () => buildTrack3Status(), {
+    state: 'idle',
+    label: 'IDLE',
+    note: 'Track 3 summary unavailable.',
+    subtitle: '',
+    providers: [] as Array<{ id: string; label: string; configured: boolean }>,
+    providerErrorHints: [] as string[],
+    apiKeysConfigured: false,
+    runtimeModels: [] as string[],
+    reflectionModels: [] as string[],
+    lastComputeAt: null as string | null,
+    lastComputeModel: null as string | null,
+    lastComputeType: null as string | null,
+    lastSettlementMode: null as string | null,
+    realTxns: 0,
+    pendingTxns: 0,
+    totalEvents: 0,
+    fallbackReason: null as string | null,
+    sage: {
+      enabled: false,
+      lastReflection: null as string | null,
+      pendingOutcomes: 0,
+      reflectionCount: 0,
+    },
+  });
+
+  const track4 = safeSection<any>('Track 4 summary', () => buildTrack4Status(state), {
+    state: 'idle',
+    label: 'IDLE',
+    note: 'Track 4 summary unavailable.',
+    counts: {
+      arcSettled: 0,
+      krakenLive: 0,
+      krakenPaper: 0,
+      localOnly: 0,
+      skipped: 0,
+    },
+    actionsRecorded: 0,
+    settledVolumeUsd: 0,
+    lastSettlementAt: null as string | null,
+    latestMode: null as string | null,
+    recentEvents: [] as MicroCommerceEvent[],
+    microCommerce: {
+      total: 0,
+      confirmed: 0,
+      pending: 0,
+      fallback: 0,
+      totalVolumeUsdc: 0,
+      confirmedVolumeUsdc: 0,
+      latest: null as MicroCommerceEvent | null,
+    },
+    routerReady: false,
+    kraken: {
+      cliInstalled: false,
+      apiKeyConfigured: false,
+      paperTrading: true,
+    },
+  });
+
+  const transactions = safeSection<any>('transaction ledger', () => {
+    const ledger = buildTransactionLedger(1000);
+    const recentConfirmedProofs = ledger.transactions
+      .filter((entry) => entry.status === 'confirmed' && Boolean(entry.txHash))
+      .slice(0, 8);
+    const recentPendingProofs = ledger.transactions
+      .filter((entry) => entry.status === 'pending')
+      .slice(0, 6);
+    return {
+      summary: ledger.summary,
+      total: ledger.summary.total,
+      visibleCount: ledger.visibleCount,
+      recentConfirmedProofs,
+      recentPendingProofs,
+    };
+  }, {
+    summary: {
+      total: 0,
+      confirmed: 0,
+      pending: 0,
+      fallback: 0,
+      totalSpendUsdc: 0,
+      byStatus: {} as Record<string, number>,
+      byTrack: {} as Record<string, number>,
+    },
+    total: 0,
+    visibleCount: 0,
+    recentConfirmedProofs: [] as LedgerTransaction[],
+    recentPendingProofs: [] as LedgerTransaction[],
+  });
+
+  const documents = safeSection<any>('document vault', () => {
+    const vault = buildDocumentVault(500);
+    return {
+      summary: vault.summary,
+      total: vault.count,
+      visibleCount: vault.visibleCount,
+      recent: vault.bundles.slice(0, 8),
+    };
+  }, {
+    summary: {
+      total: 0,
+      byTrack: {} as Record<DocumentTrackKey, number>,
+      byStatus: {} as Record<string, number>,
+    },
+    total: 0,
+    visibleCount: 0,
+    recent: [] as CommerceDocumentBundle[],
+  });
+
+  const executionStats = safeSection<any>('execution stats', () => getTradeStats(), {
+    totalTrades: 0,
+    totalPnl: 0,
+    wins: 0,
+    losses: 0,
+    winRate: 0,
+    avgWin: 0,
+    avgLoss: 0,
+    bestTrade: 0,
+    worstTrade: 0,
+    avgDurationMs: 0,
+  });
+
+  const recentExecutions = safeSection<any>('recent executions', () => (
+    getRecentTrades(6).map((trade) => ({
+      ...trade,
+      commerceDocuments: getCommerceDocumentLinks({
+        txHash: trade.txHash || null,
+      }),
+    }))
+  ), [] as any[]);
+
+  const trackCoverage = [
+    track1.totalEvents > 0 || track1.realTxns > 0 || track1.pendingTxns > 0,
+    track2.totalEvents > 0 || track2.realTxns > 0 || track2.pendingTxns > 0,
+    track3.totalEvents > 0 || track3.realTxns > 0 || track3.pendingTxns > 0,
+    track4.actionsRecorded > 0 || track4.counts.arcSettled > 0,
+  ].filter(Boolean).length;
+  const latestConfirmedProof = transactions.recentConfirmedProofs[0] ?? null;
+
+  return {
+    generatedAt: new Date().toISOString(),
+    runtime: runtimeStatus,
+    northStar: {
+      realTxns: unifiedProof.realTxns,
+      pendingTxns: unifiedProof.pendingTxns,
+      totalSpend: unifiedProof.totalSpend,
+      totalEvents: unifiedProof.totalEvents,
+      latestConfirmedTxHash: latestConfirmedProof?.txHash || null,
+      latestConfirmedAt: latestConfirmedProof?.timestamp || null,
+      trackCoverage,
+      trackCoverageLabel: `${trackCoverage}/4 tracks represented`,
+      meetsTxnRequirement: unifiedProof.meetsTxnRequirement,
+    },
+    tracks: {
+      track1,
+      track2,
+      track3,
+      track4,
+    },
+    transactions,
+    documents,
+    executions: {
+      stats: executionStats,
+      recent: recentExecutions,
+    },
+    attention: {
+      pending: unifiedProof.pendingTxns,
+      fallback: Number(transactions.summary.fallback || 0),
+      localOnly: Number(transactions.summary.byStatus.local || 0),
+      paper: Number(transactions.summary.byStatus.paper || 0),
+      audit: Number(transactions.summary.byStatus.audit || 0),
+    },
+  };
+}
+
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_WINDOW_MS = 60_000;
@@ -892,6 +1226,19 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
   // Economic proof walkthrough
   app.get('/judge', (_req, res) => {
     res.redirect('/kairos');
+  });
+
+  // Reviewable preview routes - additive only, existing UIs stay in place
+  app.get(['/review-ui', '/preview-ui'], (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'review-ui.html'));
+  });
+
+  app.get('/judge-preview', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'judge-preview.html'));
+  });
+
+  app.get('/console-preview', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'console-preview.html'));
   });
 
   // Gemini commerce studio
@@ -1048,6 +1395,15 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
         track4,
       },
     });
+  });
+
+  app.get('/api/experience/summary', (_req, res) => {
+    try {
+      res.json(buildExperienceSummary());
+    } catch (error) {
+      console.error('[DASHBOARD] Experience summary failed:', error);
+      res.status(500).json({ error: 'Failed to build experience summary' });
+    }
   });
 
   /** Recent checkpoints */

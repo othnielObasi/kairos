@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kairos - Judge Preview</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/review-preview.css" />
+  <style>
+    .track-card .link-row,
+    .surface-card .link-row {
+      margin-top: 14px;
+    }
+
+    .track-card .meta-grid {
+      margin-top: 16px;
+    }
+
+    .table-card {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .table-card .section-head {
+      padding: 18px 18px 0;
+      margin-bottom: 14px;
+    }
+
+    .table-card .table-wrap {
+      padding: 0 18px 18px;
+    }
+  </style>
+</head>
+<body>
+  <header class="preview-header">
+    <div class="mark">K</div>
+    <div>
+      <div class="brand">KAIROS</div>
+      <div class="brand-sub">Judge Preview - story first, evidence close behind</div>
+    </div>
+    <nav class="header-nav">
+      <a href="/review-ui">Review Hub</a>
+      <a href="/judge-preview" class="active">Judge Preview</a>
+      <a href="/console-preview">Console Preview</a>
+      <a href="/kairos">Current Kairos</a>
+      <a href="/transactions">Transactions</a>
+      <a href="/documents">Documents</a>
+    </nav>
+  </header>
+
+  <main class="preview-main">
+    <div class="review-banner">
+      Preview only. `/judge` still routes to the current economic proof dashboard until you approve this redesigned judge flow.
+    </div>
+
+    <section class="hero-grid section">
+      <article class="hero-card">
+        <div class="kicker">Judge Mode Preview</div>
+        <h1 class="hero-title">Four tracks, one verifiable proof story.</h1>
+        <p class="hero-copy">
+          Kairos is an Arc-native runtime that meters governance, paid data, usage-based AI, and real-time proof settlement inside one product. This page is designed to help judges understand that story quickly, then jump directly into the evidence.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/transactions">Open Transactions</a>
+          <a class="btn btn-secondary" href="/documents">Open Document Vault</a>
+          <button class="btn btn-secondary" type="button" onclick="window.print()">Print / Save PDF</button>
+        </div>
+      </article>
+
+      <aside class="hero-rail">
+        <div class="rail-item">
+          <div class="rail-label">Verified Arc Proofs</div>
+          <div class="rail-value" id="hero-real">Loading...</div>
+        </div>
+        <div class="rail-item">
+          <div class="rail-label">Track Coverage</div>
+          <div class="rail-value" id="hero-coverage">Loading...</div>
+        </div>
+        <div class="rail-item">
+          <div class="rail-label">Latest Verifier</div>
+          <div class="rail-value" id="hero-latest">Loading...</div>
+        </div>
+        <div class="rail-item">
+          <div class="rail-label">Proof Packet</div>
+          <div class="rail-value">Transactions for settlements, Documents for artifacts, Execution History for outcomes.</div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="stats-grid">
+      <article class="metric-card">
+        <div class="metric-label">Verified Arc Txns</div>
+        <div class="metric-value good" id="metric-real">-</div>
+        <div class="metric-sub">Confirmed Arc settlements judges can verify directly.</div>
+      </article>
+      <article class="metric-card">
+        <div class="metric-label">Pending Proofs</div>
+        <div class="metric-value warn" id="metric-pending">-</div>
+        <div class="metric-sub">Receipts waiting for an Arc hash or settlement resolution.</div>
+      </article>
+      <article class="metric-card">
+        <div class="metric-label">All Proof Events</div>
+        <div class="metric-value blue" id="metric-events">-</div>
+        <div class="metric-sub">All-time proof and settlement events visible in the runtime summary.</div>
+      </article>
+      <article class="metric-card">
+        <div class="metric-label">Total Metered Spend</div>
+        <div class="metric-value" id="metric-spend">-</div>
+        <div class="metric-sub">USDC metering across the proof surfaces in this summary.</div>
+      </article>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">How To Read Kairos In 30 Seconds</div>
+          <div class="section-copy">
+            The preview reduces the opening cognitive load to three questions: what the product does, how the tracks map to that story, and where the verifiable evidence lives.
+          </div>
+        </div>
+      </div>
+
+      <div class="story-grid">
+        <article class="section-card">
+          <div class="pill-row">
+            <span class="pill blue">1. Understand</span>
+          </div>
+          <div class="card-title">One runtime, four monetized proof loops</div>
+          <div class="card-copy">
+            Governance, paid data, metered AI, and real-time proof settlement all run inside one product. The track cards below show what each loop is proving right now.
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="pill-row">
+            <span class="pill good">2. Verify</span>
+          </div>
+          <div class="card-title">The north-star metric is real Arc transactions</div>
+          <div class="card-copy">
+            Verified Arc receipts are the fastest signal that Kairos is not just simulating a story. The evidence table links directly to those verifiers when they exist.
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="pill-row">
+            <span class="pill warn">3. Inspect</span>
+          </div>
+          <div class="card-title">Documents and execution stay one click away</div>
+          <div class="card-copy">
+            Once the high-level story lands, judges can open supporting invoices, receipts, delivery proofs, and execution outcomes without leaving the proof loop.
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Track Coverage</div>
+          <div class="section-copy">
+            Each card answers one plain-language question so the four-track structure reads like a product story instead of four unrelated dashboards.
+          </div>
+        </div>
+      </div>
+      <div class="track-grid" id="track-cards">
+        <div class="empty-state">Loading track coverage...</div>
+      </div>
+    </section>
+
+    <section class="section table-card panel">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Recent Verifiable Proofs</div>
+          <div class="section-copy">
+            This table highlights the most recent confirmed proof events and links directly into the verifier and supporting documents when they are available.
+          </div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="evidence-table">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Track</th>
+              <th>What Happened</th>
+              <th>Amount</th>
+              <th>Verifier</th>
+            </tr>
+          </thead>
+          <tbody id="proof-rows">
+            <tr><td colspan="5" class="empty-state">Loading proof rows...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Supporting Surfaces</div>
+          <div class="section-copy">
+            The preview does not replace the specialist pages. It makes them easier to understand by giving them clearer jobs in the overall proof narrative.
+          </div>
+        </div>
+      </div>
+
+      <div class="surface-grid">
+        <article class="surface-card">
+          <div class="pill-row">
+            <span class="pill good">Settlement Ledger</span>
+          </div>
+          <div class="surface-title">Transactions</div>
+          <div class="surface-copy">
+            Answers: what got paid, what settled on Arc, and which receipt or reference proves it.
+          </div>
+          <div class="link-row">
+            <a class="link-chip green" href="/transactions">Open Transactions</a>
+          </div>
+        </article>
+
+        <article class="surface-card">
+          <div class="pill-row">
+            <span class="pill blue">Artifact Surface</span>
+          </div>
+          <div class="surface-title">Document Vault</div>
+          <div class="surface-copy">
+            Answers: where are the invoice, receipt, and delivery-proof files for a given proof event.
+          </div>
+          <div class="link-row">
+            <a class="link-chip blue" href="/documents">Open Documents</a>
+          </div>
+        </article>
+
+        <article class="surface-card">
+          <div class="pill-row">
+            <span class="pill warn">Outcome Log</span>
+          </div>
+          <div class="surface-title">Execution History</div>
+          <div class="surface-copy">
+            Answers: what Kairos actually executed, when it closed, and what the resulting outcome was.
+          </div>
+          <div class="link-row">
+            <a class="link-chip blue" href="/execution">Open Execution History</a>
+          </div>
+        </article>
+
+        <article class="surface-card">
+          <div class="pill-row">
+            <span class="pill good">Commerce Studio</span>
+          </div>
+          <div class="surface-title">Gemini Commerce</div>
+          <div class="surface-copy">
+            Answers: how document understanding, proof settlement, and downloadable proof packets come together in the live workflow.
+          </div>
+          <div class="link-row">
+            <a class="link-chip green" href="/commerce">Open Commerce</a>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const TRACK_META = {
+      track1: {
+        title: "Track 01 - Governed Decisions",
+        question: "Is Kairos charging for its governance work?",
+        tone: "blue",
+        primaryLink: "/transactions",
+        primaryLabel: "Open Transactions"
+      },
+      track2: {
+        title: "Track 02 - Paid Data",
+        question: "Is Kairos proving paid market and context retrieval?",
+        tone: "good",
+        primaryLink: "/transactions",
+        primaryLabel: "Open Transactions"
+      },
+      track3: {
+        title: "Track 03 - Metered AI",
+        question: "Is Kairos billing inference and reflection work?",
+        tone: "warn",
+        primaryLink: "/transactions",
+        primaryLabel: "Open Transactions"
+      },
+      track4: {
+        title: "Track 04 - Proof Settlement",
+        question: "Is Kairos turning actions into verifiable proof and docs?",
+        tone: "good",
+        primaryLink: "/commerce",
+        primaryLabel: "Open Commerce"
+      }
+    };
+
+    function el(id) {
+      return document.getElementById(id);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, function(ch) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+      });
+    }
+
+    function fmtNumber(value) {
+      return new Intl.NumberFormat("en-US").format(Number(value || 0));
+    }
+
+    function fmtUsdc(value) {
+      const amount = Number(value || 0);
+      if (!amount) return "$0";
+      if (amount < 0.01) return "$" + amount.toFixed(4);
+      return "$" + amount.toFixed(3);
+    }
+
+    function fmtTime(value) {
+      if (!value) return "No timestamp";
+      const date = new Date(value);
+      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " +
+        date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+    }
+
+    function shortHash(value) {
+      if (!value) return "-";
+      return value.length > 18 ? value.slice(0, 8) + "..." + value.slice(-6) : value;
+    }
+
+    function pillTone(state) {
+      if (!state) return "blue";
+      const lower = String(state).toLowerCase();
+      if (lower.includes("fallback") || lower.includes("local")) return "bad";
+      if (lower.includes("pending") || lower.includes("verifying") || lower.includes("paper")) return "warn";
+      return "good";
+    }
+
+    function trackCard(key, track) {
+      const meta = TRACK_META[key];
+      const pills = '<div class="pill-row">' +
+        '<span class="pill ' + meta.tone + '">' + escapeHtml(meta.title) + '</span>' +
+        '<span class="pill ' + pillTone(track.state || track.label) + '">' + escapeHtml(track.label || track.state || "Live") + '</span>' +
+      '</div>';
+
+      const detailLines = [];
+      if (key === "track4") {
+        detailLines.push(
+          '<div class="meta-item"><div class="meta-label">Confirmed Arc</div><div class="meta-value">' + escapeHtml(fmtNumber(track.counts.arcSettled || 0)) + '</div></div>',
+          '<div class="meta-item"><div class="meta-label">Pending / skipped</div><div class="meta-value">' + escapeHtml(fmtNumber((track.microCommerce && track.microCommerce.pending) || track.counts.skipped || 0)) + '</div></div>',
+          '<div class="meta-item"><div class="meta-label">Actions recorded</div><div class="meta-value">' + escapeHtml(fmtNumber(track.actionsRecorded || 0)) + '</div></div>',
+          '<div class="meta-item"><div class="meta-label">Settled volume</div><div class="meta-value">' + escapeHtml(fmtUsdc(track.settledVolumeUsd || 0)) + '</div></div>'
+        );
+      } else {
+        detailLines.push(
+          '<div class="meta-item"><div class="meta-label">Confirmed Arc</div><div class="meta-value">' + escapeHtml(fmtNumber(track.realTxns || 0)) + '</div></div>',
+          '<div class="meta-item"><div class="meta-label">Pending</div><div class="meta-value">' + escapeHtml(fmtNumber(track.pendingTxns || 0)) + '</div></div>',
+          '<div class="meta-item"><div class="meta-label">Events</div><div class="meta-value">' + escapeHtml(fmtNumber(track.totalEvents || 0)) + '</div></div>',
+          '<div class="meta-item"><div class="meta-label">Latest activity</div><div class="meta-value">' + escapeHtml(fmtTime(track.lastComputeAt || track.lastSettlementAt || (track.latestEvent && track.latestEvent.confirmedAt) || null)) + '</div></div>'
+        );
+      }
+
+      let extraNote = '';
+      if (key === "track1") extraNote = 'Governance stages, reasoning, and SAGE are billed as proof-bearing actions.';
+      if (key === "track2") extraNote = 'Paid market and context retrieval is visible as metered data access, not just free feed usage.';
+      if (key === "track3") extraNote = 'Inference and reflection are surfaced as billable work instead of hidden operational cost.';
+      if (key === "track4") extraNote = 'Execution and settlement stay close to invoice, receipt, and proof documents.';
+
+      return '' +
+        '<article class="track-card">' +
+          pills +
+          '<div class="track-title">' + escapeHtml(meta.question) + '</div>' +
+          '<div class="track-copy">' + escapeHtml(track.note || extraNote) + '</div>' +
+          '<div class="meta-grid">' + detailLines.join("") + '</div>' +
+          '<div class="link-row">' +
+            '<a class="link-chip ' + meta.tone + '" href="' + escapeHtml(meta.primaryLink) + '">' + escapeHtml(meta.primaryLabel) + '</a>' +
+            '<a class="link-chip blue" href="/documents">Open Documents</a>' +
+          '</div>' +
+        '</article>';
+    }
+
+    function renderProofRows(items) {
+      if (!items || !items.length) {
+        return '<tr><td colspan="5" class="empty-state">No confirmed proof rows available.</td></tr>';
+      }
+      return items.slice(0, 8).map(function(item) {
+        const links = [];
+        if (item.explorerUrl) {
+          links.push('<a class="link-chip blue" href="' + escapeHtml(item.explorerUrl) + '" target="_blank" rel="noopener">Arcscan ' + escapeHtml(shortHash(item.txHash)) + '</a>');
+        }
+        const docs = item.documentLinks || {};
+        if (docs.invoiceUrl) links.push('<a class="link-chip green" href="' + escapeHtml(docs.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a>');
+        if (docs.receiptUrl) links.push('<a class="link-chip green" href="' + escapeHtml(docs.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a>');
+        if (docs.deliveryProofUrl) links.push('<a class="link-chip green" href="' + escapeHtml(docs.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a>');
+        return '' +
+          '<tr>' +
+            '<td class="mono">' + escapeHtml(fmtTime(item.timestamp)) + '</td>' +
+            '<td><span class="pill good">' + escapeHtml(item.track || "Track") + '</span></td>' +
+            '<td>' +
+              '<div class="timeline-name">' + escapeHtml(item.eventName || item.category || "Proof") + '</div>' +
+              '<div class="timeline-copy">' + escapeHtml(item.description || (item.source + " proof event")) + '</div>' +
+            '</td>' +
+            '<td class="mono">' + escapeHtml(fmtUsdc(item.amountUsdc)) + '</td>' +
+            '<td><div class="link-row">' + links.join("") + '</div></td>' +
+          '</tr>';
+      }).join("");
+    }
+
+    function renderSummary(summary) {
+      el("hero-real").textContent = fmtNumber(summary.northStar.realTxns) + " confirmed Arc txns";
+      el("hero-coverage").textContent = summary.northStar.trackCoverageLabel;
+      el("hero-latest").textContent = summary.northStar.latestConfirmedTxHash
+        ? shortHash(summary.northStar.latestConfirmedTxHash) + " at " + fmtTime(summary.northStar.latestConfirmedAt)
+        : "Awaiting first confirmed proof";
+      el("metric-real").textContent = fmtNumber(summary.northStar.realTxns);
+      el("metric-pending").textContent = fmtNumber(summary.northStar.pendingTxns);
+      el("metric-events").textContent = fmtNumber(summary.northStar.totalEvents);
+      el("metric-spend").textContent = fmtUsdc(summary.northStar.totalSpend);
+      el("track-cards").innerHTML = [
+        trackCard("track1", summary.tracks.track1),
+        trackCard("track2", summary.tracks.track2),
+        trackCard("track3", summary.tracks.track3),
+        trackCard("track4", summary.tracks.track4)
+      ].join("");
+      el("proof-rows").innerHTML = renderProofRows(summary.transactions.recentConfirmedProofs);
+    }
+
+    async function loadSummary() {
+      try {
+        const response = await fetch("/api/experience/summary");
+        if (!response.ok) throw new Error("Summary request failed");
+        const summary = await response.json();
+        renderSummary(summary);
+      } catch (error) {
+        el("hero-real").textContent = "Summary unavailable";
+        el("hero-coverage").textContent = "Check runtime";
+        el("hero-latest").textContent = "Fetch failed";
+        el("track-cards").innerHTML = '<div class="empty-state">Judge preview could not load the live runtime summary.</div>';
+        el("proof-rows").innerHTML = '<tr><td colspan="5" class="empty-state">Recent proof rows unavailable.</td></tr>';
+      }
+    }
+
+    loadSummary();
+    setInterval(loadSummary, 15000);
+  </script>
+</body>
+</html>

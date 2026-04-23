@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kairos - UI Review Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/review-preview.css" />
+  <style>
+    .page-note {
+      margin-top: 12px;
+      color: var(--muted);
+      line-height: 1.75;
+      max-width: 760px;
+    }
+
+    .hero-rail .rail-value strong {
+      color: var(--green);
+    }
+
+    .surface-card .link-row,
+    .section-card .link-row {
+      margin-top: 14px;
+    }
+
+    .feed-card .card-title {
+      margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header class="preview-header">
+    <div class="mark">K</div>
+    <div>
+      <div class="brand">KAIROS</div>
+      <div class="brand-sub">Preview Layer - review before replacement</div>
+    </div>
+    <nav class="header-nav">
+      <a href="/review-ui" class="active">Review Hub</a>
+      <a href="/judge-preview">Judge Preview</a>
+      <a href="/console-preview">Console Preview</a>
+      <a href="/kairos">Current Kairos</a>
+      <a href="/transactions">Transactions</a>
+      <a href="/documents">Documents</a>
+    </nav>
+  </header>
+
+  <main class="preview-main">
+    <div class="review-banner">
+      Preview routes are additive only. The current Kairos dashboards remain the default experience until you approve the redesign.
+    </div>
+
+    <section class="hero-grid section">
+      <article class="hero-card">
+        <div class="kicker">Additive UX Review</div>
+        <h1 class="hero-title">Review the next Kairos experience without retiring the current one.</h1>
+        <p class="hero-copy">
+          This review layer isolates the redesign work into dedicated preview routes. The goal is to make Kairos easier for judges to understand, reduce first-run cognitive load, and give operators a cleaner path into proof, documents, and execution surfaces.
+        </p>
+        <p class="page-note">
+          The redesign focuses on three things: a true judge-facing narrative, a calmer operator console with progressive disclosure, and a clearer distinction between proof surfaces so the product feels like one system instead of several adjacent dashboards.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/judge-preview">Open Judge Preview</a>
+          <a class="btn btn-secondary" href="/console-preview">Open Console Preview</a>
+          <a class="btn btn-secondary" href="/kairos">Open Current Kairos</a>
+        </div>
+      </article>
+
+      <aside class="hero-rail">
+        <div class="rail-item">
+          <div class="rail-label">Route Status</div>
+          <div class="rail-value" id="route-status">Current routes unchanged. Preview routes added only.</div>
+        </div>
+        <div class="rail-item">
+          <div class="rail-label">Preview Routes</div>
+          <div class="rail-value"><strong>/review-ui</strong>, <strong>/judge-preview</strong>, <strong>/console-preview</strong></div>
+        </div>
+        <div class="rail-item">
+          <div class="rail-label">Live Proof Pulse</div>
+          <div class="rail-value" id="live-pulse">Loading live summary...</div>
+        </div>
+        <div class="rail-item">
+          <div class="rail-label">Last Refresh</div>
+          <div class="rail-value" id="last-refresh">Waiting for runtime data...</div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="stats-grid">
+      <article class="metric-card">
+        <div class="metric-label">Verified Arc Txns</div>
+        <div class="metric-value good" id="metric-real">-</div>
+        <div class="metric-sub">North-star proof count across all represented tracks.</div>
+      </article>
+      <article class="metric-card">
+        <div class="metric-label">Track Coverage</div>
+        <div class="metric-value blue" id="metric-coverage">-</div>
+        <div class="metric-sub">How many of the four challenge tracks are visibly represented right now.</div>
+      </article>
+      <article class="metric-card">
+        <div class="metric-label">Document Bundles</div>
+        <div class="metric-value" id="metric-docs">-</div>
+        <div class="metric-sub">Invoices, receipts, and proof files reachable from one vault.</div>
+      </article>
+      <article class="metric-card">
+        <div class="metric-label">Execution History</div>
+        <div class="metric-value warn" id="metric-execs">-</div>
+        <div class="metric-sub">Closed execution outcomes available for audit and comparison.</div>
+      </article>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">What The Preview Fixes</div>
+          <div class="section-copy">
+            The current product already proves a lot. The redesign work is about making that proof easier to read in projector conditions and easier to remember after a short demo.
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <article class="section-card">
+          <div class="pill-row">
+            <span class="pill blue">Judge Story</span>
+          </div>
+          <div class="card-title">A real narrative surface for judges</div>
+          <div class="card-copy">
+            The new judge mode leads with one story: four tracks, one runtime, one verifiable proof loop. It reduces the feeling of entering an operator wall first.
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="pill-row">
+            <span class="pill good">Progressive Disclosure</span>
+          </div>
+          <div class="card-title">A calmer operator console</div>
+          <div class="card-copy">
+            The console preview keeps the specialist surfaces, but stops forcing every metric, label, and subsystem into the first screenful. Detail is still present, just not all at once.
+          </div>
+        </article>
+
+        <article class="section-card">
+          <div class="pill-row">
+            <span class="pill warn">Cognitive Load</span>
+          </div>
+          <div class="card-title">A cleaner separation of surfaces</div>
+          <div class="card-copy">
+            Judges should not need to decode the difference between payment proof, supporting documents, and execution outcomes on first contact. The preview organizes those jobs more plainly.
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Review Surfaces</div>
+          <div class="section-copy">
+            Open the current UI and the preview routes side by side. The current product remains live; the preview routes are for approval and comparison only.
+          </div>
+        </div>
+      </div>
+
+      <div class="surface-grid">
+        <article class="surface-card">
+          <div class="pill-row">
+            <span class="pill bad">Current Default</span>
+          </div>
+          <div class="surface-title">Economic Proof Dashboard</div>
+          <div class="surface-copy">
+            The current `/kairos` view is dense, credible, and information-rich, but it asks judges to parse too many concepts before they know the primary story.
+          </div>
+          <div class="link-row">
+            <a class="link-chip blue" href="/kairos">Open /kairos</a>
+          </div>
+        </article>
+
+        <article class="surface-card">
+          <div class="pill-row">
+            <span class="pill good">Preview</span>
+          </div>
+          <div class="surface-title">Judge Mode</div>
+          <div class="surface-copy">
+            A pitch-grade surface that leads with the core proof story, track coverage, evidence links, and the short path to verification.
+          </div>
+          <div class="link-row">
+            <a class="link-chip green" href="/judge-preview">Open /judge-preview</a>
+          </div>
+        </article>
+
+        <article class="surface-card">
+          <div class="pill-row">
+            <span class="pill good">Preview</span>
+          </div>
+          <div class="surface-title">Console Mode</div>
+          <div class="surface-copy">
+            A simplified operator view that keeps proof and runtime awareness high while moving deeper track telemetry behind calmer disclosure patterns.
+          </div>
+          <div class="link-row">
+            <a class="link-chip green" href="/console-preview">Open /console-preview</a>
+          </div>
+        </article>
+
+        <article class="surface-card">
+          <div class="pill-row">
+            <span class="pill blue">Current Specialists</span>
+          </div>
+          <div class="surface-title">Transactions, Documents, Execution, Commerce</div>
+          <div class="surface-copy">
+            These remain the strongest specialist pages in the current product and still do the detailed work once someone knows which question they want answered.
+          </div>
+          <div class="link-row">
+            <a class="link-chip blue" href="/transactions">Transactions</a>
+            <a class="link-chip blue" href="/documents">Documents</a>
+            <a class="link-chip blue" href="/execution">Execution</a>
+            <a class="link-chip blue" href="/commerce">Commerce</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <div class="section-title">Live Snapshot</div>
+          <div class="section-copy">
+            This section pulls from the runtime summary so you can review the redesign against the same live proof inventory the current product is using.
+          </div>
+        </div>
+      </div>
+
+      <div class="story-grid">
+        <article class="feed-card">
+          <div class="card-title">Recent Confirmed Proofs</div>
+          <div class="feed-list" id="recent-proofs">
+            <div class="empty-state">Loading recent confirmed proofs...</div>
+          </div>
+        </article>
+
+        <article class="feed-card">
+          <div class="card-title">Recent Document Bundles</div>
+          <div class="feed-list" id="recent-documents">
+            <div class="empty-state">Loading recent document bundles...</div>
+          </div>
+        </article>
+
+        <article class="feed-card">
+          <div class="card-title">Recent Executions</div>
+          <div class="feed-list" id="recent-executions">
+            <div class="empty-state">Loading recent executions...</div>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    function el(id) {
+      return document.getElementById(id);
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, function(ch) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
+      });
+    }
+
+    function fmtNumber(value) {
+      return new Intl.NumberFormat("en-US").format(Number(value || 0));
+    }
+
+    function fmtUsdc(value) {
+      const amount = Number(value || 0);
+      if (!amount) return "$0";
+      if (amount < 0.01) return "$" + amount.toFixed(4);
+      return "$" + amount.toFixed(3);
+    }
+
+    function fmtTime(value) {
+      if (!value) return "No timestamp";
+      const date = new Date(value);
+      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " +
+        date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+    }
+
+    function shortHash(value) {
+      if (!value) return "-";
+      return value.length > 18 ? value.slice(0, 8) + "..." + value.slice(-6) : value;
+    }
+
+    function renderProofs(items) {
+      if (!items || !items.length) {
+        return '<div class="empty-state">No confirmed proofs yet.</div>';
+      }
+      return items.slice(0, 6).map(function(item) {
+        const docs = item.documentLinks || {};
+        const links = [];
+        if (item.explorerUrl) links.push('<a class="link-chip blue" href="' + escapeHtml(item.explorerUrl) + '" target="_blank" rel="noopener">Arcscan ' + escapeHtml(shortHash(item.txHash)) + '</a>');
+        if (docs.invoiceUrl) links.push('<a class="link-chip green" href="' + escapeHtml(docs.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a>');
+        if (docs.receiptUrl) links.push('<a class="link-chip green" href="' + escapeHtml(docs.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a>');
+        if (docs.deliveryProofUrl) links.push('<a class="link-chip green" href="' + escapeHtml(docs.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a>');
+        return '' +
+          '<div class="feed-item">' +
+            '<div class="feed-top">' +
+              '<div class="feed-name">' + escapeHtml(item.eventName || item.category || "Proof event") + '</div>' +
+              '<span class="pill good">' + escapeHtml(item.track || "Track") + '</span>' +
+            '</div>' +
+            '<div class="feed-meta">' + escapeHtml(item.source || "Kairos") + ' paid ' + escapeHtml(fmtUsdc(item.amountUsdc)) + ' at ' + escapeHtml(fmtTime(item.timestamp)) + '.</div>' +
+            (links.length ? '<div class="link-row">' + links.join("") + '</div>' : '') +
+          '</div>';
+      }).join("");
+    }
+
+    function renderDocuments(items) {
+      if (!items || !items.length) {
+        return '<div class="empty-state">No document bundles available.</div>';
+      }
+      return items.slice(0, 6).map(function(bundle) {
+        const links = [];
+        if (bundle.documents && bundle.documents.invoiceUrl) links.push('<a class="link-chip green" href="' + escapeHtml(bundle.documents.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a>');
+        if (bundle.documents && bundle.documents.receiptUrl) links.push('<a class="link-chip green" href="' + escapeHtml(bundle.documents.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a>');
+        if (bundle.documents && bundle.documents.deliveryProofUrl) links.push('<a class="link-chip green" href="' + escapeHtml(bundle.documents.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a>');
+        if (bundle.settlement && bundle.settlement.explorerUrl) links.push('<a class="link-chip blue" href="' + escapeHtml(bundle.settlement.explorerUrl) + '" target="_blank" rel="noopener">Verifier</a>');
+        return '' +
+          '<div class="feed-item">' +
+            '<div class="feed-top">' +
+              '<div class="feed-name">' + escapeHtml(bundle.item || "Bundle") + '</div>' +
+              '<span class="pill blue">' + escapeHtml(bundle.trackLabel || "Track") + '</span>' +
+            '</div>' +
+            '<div class="feed-meta">' + escapeHtml(bundle.description || bundle.deliverySummary || "Supporting documents ready.") + '</div>' +
+            '<div class="link-row">' + links.join("") + '</div>' +
+          '</div>';
+      }).join("");
+    }
+
+    function renderExecutions(items) {
+      if (!items || !items.length) {
+        return '<div class="empty-state">No recent executions available.</div>';
+      }
+      return items.slice(0, 6).map(function(item) {
+        const links = [];
+        if (item.txHash) links.push('<a class="link-chip blue" href="https://testnet.arcscan.app/tx/' + encodeURIComponent(item.txHash) + '" target="_blank" rel="noopener">Settlement ' + escapeHtml(shortHash(item.txHash)) + '</a>');
+        const docs = item.commerceDocuments || {};
+        if (docs.invoiceUrl) links.push('<a class="link-chip green" href="' + escapeHtml(docs.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a>');
+        if (docs.receiptUrl) links.push('<a class="link-chip green" href="' + escapeHtml(docs.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a>');
+        if (docs.deliveryProofUrl) links.push('<a class="link-chip green" href="' + escapeHtml(docs.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a>');
+        return '' +
+          '<div class="feed-item">' +
+            '<div class="feed-top">' +
+              '<div class="feed-name">' + escapeHtml(item.asset || "Execution") + '</div>' +
+              '<span class="pill ' + (Number(item.pnl || 0) >= 0 ? 'good' : 'bad') + '">' + escapeHtml(item.side || "Action") + '</span>' +
+            '</div>' +
+            '<div class="feed-meta">Closed with ' + escapeHtml((Number(item.pnl || 0) >= 0 ? '+' : '') + "$" + Number(item.pnl || 0).toFixed(2)) + ' PnL at ' + escapeHtml(fmtTime(item.closedAt)) + '.</div>' +
+            (links.length ? '<div class="link-row">' + links.join("") + '</div>' : '') +
+          '</div>';
+      }).join("");
+    }
+
+    function renderSummary(summary) {
+      el("metric-real").textContent = fmtNumber(summary.northStar.realTxns);
+      el("metric-coverage").textContent = summary.northStar.trackCoverageLabel;
+      el("metric-docs").textContent = fmtNumber(summary.documents.total);
+      el("metric-execs").textContent = fmtNumber(summary.executions.stats.totalTrades || 0);
+      el("live-pulse").textContent = fmtNumber(summary.northStar.realTxns) + " verified Arc txns across " + summary.northStar.trackCoverageLabel + ".";
+      el("last-refresh").textContent = "Updated " + fmtTime(summary.generatedAt);
+      el("recent-proofs").innerHTML = renderProofs(summary.transactions.recentConfirmedProofs);
+      el("recent-documents").innerHTML = renderDocuments(summary.documents.recent);
+      el("recent-executions").innerHTML = renderExecutions(summary.executions.recent);
+    }
+
+    async function loadSummary() {
+      try {
+        const response = await fetch("/api/experience/summary");
+        if (!response.ok) throw new Error("Summary request failed");
+        const summary = await response.json();
+        renderSummary(summary);
+      } catch (error) {
+        el("route-status").textContent = "Preview routes are ready, but runtime summary could not be loaded.";
+        el("live-pulse").textContent = "Summary unavailable right now.";
+        el("last-refresh").textContent = "Fetch failed.";
+      }
+    }
+
+    loadSummary();
+    setInterval(loadSummary, 15000);
+  </script>
+</body>
+</html>
