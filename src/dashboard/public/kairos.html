@@ -119,6 +119,13 @@ html, body {
 .trk-num { font-size:9px; letter-spacing:.18em; color:var(--text3); margin-bottom:6px; }
 .trk-title { font-family:var(--sans); font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px; }
 .trk-sub { font-size:10px; color:var(--text2); line-height:1.5; }
+.trk-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:10px; }
+.tm { min-width:0; padding:7px 8px; border:1px solid rgba(255,255,255,.06); border-radius:3px; background:rgba(255,255,255,.025); }
+.tm-lbl { display:block; font-size:8px; color:var(--text3); letter-spacing:.1em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tm-val { display:block; margin-top:3px; font-size:12px; color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.tm.live .tm-val { color:var(--teal); }
+.tm.warn .tm-val { color:var(--amber); }
+.tm.proof .tm-val { color:var(--blue); }
 .trk-total-row { display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:8px; border-top:1px solid var(--border); }
 .trk-total-lbl { font-size:9px; color:var(--text3); letter-spacing:.1em; }
 .trk-total-val { font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; }
@@ -178,8 +185,8 @@ html, body {
 .cmp-amt  { font-size:10px; color:var(--amber); font-weight:500; flex-shrink:0; font-variant-numeric:tabular-nums; }
 
 /* ── T4 TRADES ── */
-.trade-item { padding:10px 0; border-bottom:1px solid rgba(255,255,255,.03); }
-.tr-row1 { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+.trade-item { padding:10px 0; border-bottom:1px solid rgba(255,255,255,.03); overflow:hidden; }
+.tr-row1 { display:flex; align-items:center; gap:8px; margin-bottom:5px; flex-wrap:wrap; }
 .tr-dir  { font-size:9px; font-weight:600; padding:2px 7px; border-radius:2px; letter-spacing:.08em; }
 .tr-dir.long  { background:rgba(0,229,160,.1); color:var(--teal); }
 .tr-dir.short { background:rgba(255,68,68,.1);  color:var(--red); }
@@ -220,6 +227,7 @@ html, body {
   .hdr { height:auto; min-height:52px; flex-wrap:wrap; padding:10px 14px; }
   .hdr-right { width:100%; flex-wrap:wrap; margin-left:0; gap:8px; }
   .mi { min-width:100%; }
+  .trk-metrics { grid-template-columns:1fr; }
   .main { grid-template-columns:1fr; }
   .pbar { grid-template-columns:1fr; }
 }
@@ -303,8 +311,8 @@ html, body {
     <div class="mcp-card">
       <div class="mcp-copy">
         <div class="mcp-kicker">MCP SURFACE</div>
-        <div class="mcp-title">Kairos agent interface on the root domain</div>
-        <div class="mcp-note-line" id="mcp-note">Governed surface for agents, operators, and audit clients.</div>
+        <div class="mcp-title">Agent interface</div>
+        <div class="mcp-note-line" id="mcp-note">Tools, resources, and agent card.</div>
       </div>
       <div class="mcp-metrics">
         <div class="mcp-metric">
@@ -337,7 +345,8 @@ html, body {
       <div class="trk-hdr">
         <div class="trk-num">TRACK 01 · PRIMARY</div>
         <div class="trk-title">Agent-to-Agent Loop</div>
-        <div class="trk-sub">Kairos pays per governance stage · Circle Nanopayments · $0.001 USDC · instant confirmation · Arc batch settlement</div>
+        <div class="trk-sub" title="Kairos pays each governance stage with Circle Nanopayments and batches verifiable settlement on Arc.">Governance stages paid as sub-cent USDC receipts.</div>
+        <div class="trk-metrics" id="t1-metrics"></div>
         <div class="trk-total-row">
           <span class="trk-total-lbl">Session spend</span>
           <span class="trk-total-val c1" id="t1-total">$0.000 USDC</span>
@@ -355,11 +364,12 @@ html, body {
       <div class="trk-hdr">
         <div class="trk-num">TRACK 02</div>
         <div class="trk-title">Per-API Monetisation</div>
-        <div class="trk-sub" id="t2-sub">Agent pays AIsa x402 endpoints per query · Circle Gateway settlement · USDC on Arc · 79 endpoints across financial, Twitter, Perplexity</div>
+        <div class="trk-sub" id="t2-sub" title="AIsa price, social, news, and PRISM calls are paid per request through x402 and Circle Gateway.">AIsa data calls paid per request through x402.</div>
         <div class="trk-status">
           <span class="trk-pill idle" id="t2-pill">IDLE</span>
           <div class="trk-note" id="t2-note">Awaiting paid data fetches.</div>
         </div>
+        <div class="trk-metrics" id="t2-metrics"></div>
         <div class="trk-total-row">
           <span class="trk-total-lbl">Session spend</span>
           <span class="trk-total-val c2" id="t2-total">$0.000 USDC</span>
@@ -377,11 +387,12 @@ html, body {
       <div class="trk-hdr">
         <div class="trk-num">TRACK 03</div>
         <div class="trk-title">Usage-Based Compute</div>
-        <div class="trk-sub" id="t3-sub">Agent pays per LLM inference and SAGE reflection · Circle Nanopayments · Gemini 3 Flash runtime · Gemini 3 Pro SAGE reflection</div>
+        <div class="trk-sub" id="t3-sub" title="Runtime inference prefers Gemini 3 Flash, SAGE reflection prefers Gemini 3 Pro, with OpenAI as fallback.">LLM inference and SAGE reflection billed per use.</div>
         <div class="trk-status">
           <span class="trk-pill idle" id="t3-pill">IDLE</span>
-          <div class="trk-note" id="t3-note">LLM providers are configured, but no billed inference or reflection has run yet.</div>
+          <div class="trk-note" id="t3-note">Awaiting billed inference.</div>
         </div>
+        <div class="trk-metrics" id="t3-metrics"></div>
         <div class="trk-total-row">
           <span class="trk-total-lbl">Session spend</span>
           <span class="trk-total-val c3" id="t3-total">$0.000 USDC</span>
@@ -397,11 +408,12 @@ html, body {
       <div class="trk-hdr">
         <div class="trk-num">TRACK 04</div>
         <div class="trk-title">Real-Time Micro-Commerce</div>
-        <div class="trk-sub">Approved actions settle in USDC on Arc · Circle Wallets · sub-second finality · per-interaction settlement · no human in the loop</div>
+        <div class="trk-sub" title="Approved governed actions settle in USDC on Arc through Circle Wallets.">Approved interactions settle as Arc USDC receipts.</div>
         <div class="trk-status">
           <span class="trk-pill idle" id="t4-pill">IDLE</span>
           <div class="trk-note" id="t4-note">Awaiting approved actions to settle.</div>
         </div>
+        <div class="trk-metrics" id="t4-metrics"></div>
         <div class="trk-total-row">
           <span class="trk-total-lbl">Settled volume</span>
           <span class="trk-total-val c4" id="t4-total">$0.00 USDC</span>
@@ -468,6 +480,27 @@ const el = (id) => document.getElementById(id);
 const fU  = (n) => "$" + Number(n||0).toFixed(3);
 const fU2 = (n) => "$" + Number(n||0).toFixed(2);
 const fTs = (ts) => ts ? new Date(ts).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "—";
+const clip = (text, max = 74) => {
+  const s = String(text || "");
+  return s.length > max ? s.slice(0, max - 1).trimEnd() + "..." : s;
+};
+const esc = (value) => String(value ?? "").replace(/[&<>"']/g, ch => ({
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&#39;",
+}[ch]));
+
+function metricHtml(label, value, tone = "") {
+  return `<div class="tm ${tone}"><span class="tm-lbl">${esc(label)}</span><span class="tm-val">${esc(value)}</span></div>`;
+}
+
+function setTrackMetrics(id, metrics) {
+  const target = el(id);
+  if (!target) return;
+  target.innerHTML = metrics.map(m => metricHtml(m.label, m.value, m.tone)).join("");
+}
 
 function setConn(s) {
   const d = el("conn-dot"), l = el("conn-lbl");
@@ -493,7 +526,8 @@ function setTrackStatus(prefix, track) {
   if (!pill || !note || !track) return;
   pill.className = "trk-pill " + statusClass(track.state);
   pill.textContent = track.label || "IDLE";
-  note.textContent = track.note || "";
+  note.title = track.note || "";
+  note.textContent = clip(track.note || "");
 }
 
 function renderMcp(mcp) {
@@ -501,7 +535,8 @@ function renderMcp(mcp) {
   el("mcp-tools").textContent = mcp.tools ?? 0;
   el("mcp-resources").textContent = mcp.resources ?? 0;
   el("mcp-prompts").textContent = mcp.prompts ?? 0;
-  el("mcp-note").textContent = mcp.note || "Governed surface for agents, operators, and audit clients.";
+  el("mcp-note").title = mcp.note || "Tools, resources, and agent card.";
+  el("mcp-note").textContent = clip(mcp.note || "Tools, resources, and agent card.", 60);
   const vis = mcp.toolVisibility || {};
   el("mcp-vis").textContent = `${vis.public || 0} public · ${vis.restricted || 0} restricted · ${vis.operator || 0} operator tools`;
   if (mcp.links) {
@@ -582,6 +617,16 @@ function renderT1(data, track3) {
   counts[6] = Math.max(counts[6] || 0, sageEvents.length);
   spends[6] = Math.max(spends[6] || 0, sageEvents.reduce((sum,e) => sum + Number(e.amount || e.amt || 0), 0));
   const sage = track3 && track3.sage ? track3.sage : null;
+  const events = data.t1Events || [];
+  const activeStages = STAGE_NAMES.reduce((sum, _name, i) => {
+    const sagePersisted = i === 6 && sage && Number(sage.reflectionCount || 0) > 0;
+    return sum + ((counts[i] > 0 || sagePersisted) ? 1 : 0);
+  }, 0);
+  setTrackMetrics("t1-metrics", [
+    { label:"Stages", value:activeStages + "/7", tone:activeStages >= 5 ? "live" : "warn" },
+    { label:"Receipts", value:events.length, tone:events.length ? "proof" : "" },
+    { label:"Spend", value:fU(data.t1Spend), tone:"live" },
+  ]);
   STAGE_NAMES.forEach((name,i) => {
     const sagePersisted = i === 6 && sage && Number(sage.reflectionCount || 0) > 0;
     const fired = counts[i] > 0 || sagePersisted;
@@ -600,7 +645,6 @@ function renderT1(data, track3) {
     sc.appendChild(row);
   });
 
-  const events = data.t1Events || [];
   el("t1-fhdr").style.display = events.length ? "block" : "none";
   const fc = el("t1-feed"); fc.innerHTML = "";
   events.slice(0,8).forEach(e => {
@@ -623,7 +667,7 @@ function renderT2(data, track) {
   const breakdown = data.apiBreakdown || {};
   setTrackStatus("t2", track);
   if (track && track.subtitle) {
-    el("t2-sub").textContent = track.subtitle;
+    el("t2-sub").title = track.subtitle;
   }
   const sc = el("t2-sources"); sc.innerHTML = "";
   const labels = track && track.sourceLabels ? track.sourceLabels : {};
@@ -647,10 +691,22 @@ function renderT2(data, track) {
   const noteEl = document.createElement("div");
   noteEl.style.cssText = "font-size:9px;color:#3D3B5A;padding:8px 0 4px;line-height:1.6;border-bottom:1px solid var(--border);margin-bottom:4px;";
   const events = data.t2Events || [];
+  const sourceRows = Object.values(breakdown);
+  const totalCalls = sourceRows.reduce((sum, info) => sum + Number(info.calls || 0), 0);
+  const liveSources = API_SOURCES.filter(s => (breakdown[s.key]?.mode || s.mode) === "x402").length;
+  const x402Events = events.filter(e => e.mode === "x402").length;
+  setTrackMetrics("t2-metrics", [
+    { label:"Sources", value:liveSources + "/" + API_SOURCES.length, tone:liveSources === API_SOURCES.length ? "live" : "warn" },
+    { label:"x402 txns", value:x402Events || totalCalls, tone:x402Events || totalCalls ? "proof" : "" },
+    { label:"Spend", value:fU(data.t2Spend), tone:"live" },
+  ]);
   const allTrack2X402 = events.length > 0 && events.every(e => e.mode === "x402");
+  noteEl.title = track && track.mode === "x402"
+    ? "AIsa powers price snapshots, Twitter, news, and PRISM. Source spend shows Kairos proof receipts; endpoint prices settle separately through Gateway."
+    : "Kairos keeps safety feeds live and records fallback API billing receipts until the x402 signer and Gateway balance are ready.";
   noteEl.textContent = track && track.mode === "x402"
-    ? "x402 live: AIsa powers price snapshots, Twitter, news, and PRISM. Source spend shows Kairos proof receipts; endpoint prices settle separately through Gateway."
-    : "Fallback mode: Kairos keeps safety feeds live and records fallback API billing receipts until the x402 signer and Gateway balance are ready.";
+    ? "x402 live - receipt spend shown - details in History."
+    : "Fallback active - details in History.";
   sc.appendChild(noteEl);
 
   el("t2-fhdr").textContent = allTrack2X402 ? "RECENT x402 PAYMENTS" : "RECENT TRACK 2 BILLING";
@@ -680,8 +736,15 @@ function renderT3(data, track) {
   const body = el("t3-body");
   setTrackStatus("t3", track);
   if (track && track.subtitle) {
-    el("t3-sub").textContent = track.subtitle;
+    el("t3-sub").title = track.subtitle;
   }
+  const sage = track && track.sage ? track.sage : null;
+  const geminiEvents = events.filter(e => /gemini/i.test(e.model || e.provider || e.eventName || "")).length;
+  setTrackMetrics("t3-metrics", [
+    { label:"Compute", value:events.length, tone:events.length ? "proof" : "" },
+    { label:"Model", value:geminiEvents ? "Gemini 3" : "Ready", tone:geminiEvents ? "live" : "warn" },
+    { label:"Spend", value:fU(data.t3Spend), tone:"live" },
+  ]);
 
   if (!events.length) {
     const emptyCopy = track && track.state === "no_keys"
@@ -708,8 +771,7 @@ function renderT3(data, track) {
     `;
     body.appendChild(div);
   });
-  if (track && track.sage) {
-    const sage = track.sage;
+  if (sage) {
     const div = document.createElement("div");
     div.className = "cmp-item";
     div.innerHTML = `
@@ -730,6 +792,13 @@ function renderT4(checkpoints, track) {
   const trades = (checkpoints || []).filter(c => c.execution && c.execution.requested && (c.direction || c.signal) !== "NEUTRAL");
   const body = el("t4-body");
   setTrackStatus("t4", track);
+  const settledTrades = trades.filter(t => t.execution && t.execution.executionMode === "arc_settled");
+  const settledVolume = settledTrades.reduce((sum, t) => sum + Number(t.positionSizeUsd || t.size || 0), 0);
+  setTrackMetrics("t4-metrics", [
+    { label:"Actions", value:trades.length, tone:trades.length ? "proof" : "" },
+    { label:"Arc settled", value:settledTrades.length, tone:settledTrades.length ? "live" : "warn" },
+    { label:"Volume", value:fU2(track?.settledVolumeUsd ?? settledVolume), tone:"live" },
+  ]);
 
   if (!trades.length) {
     const emptyCopy = track && track.state === "local_only"
