@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kairos - Document Vault</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #07100d;
+      --panel: #0c1713;
+      --panel2: #111f19;
+      --line: rgba(53,224,161,.16);
+      --line-strong: rgba(53,224,161,.28);
+      --text: #edf8f2;
+      --muted: #8aa698;
+      --soft: #4f6d61;
+      --green: #35e0a1;
+      --blue: #6fb7ff;
+      --amber: #ffcc66;
+      --red: #ff7d7d;
+      --ink: #020604;
+      --shadow: 0 18px 60px rgba(0,0,0,.26);
+    }
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: "JetBrains Mono", monospace; font-size: 12px; }
+    body {
+      background:
+        radial-gradient(circle at 15% 5%, rgba(53,224,161,.20), transparent 30%),
+        radial-gradient(circle at 88% 12%, rgba(111,183,255,.16), transparent 28%),
+        linear-gradient(135deg, #07100d 0%, #0a120f 45%, #050908 100%);
+    }
+    a { color: inherit; text-decoration: none; }
+    header {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; gap: 14px; padding: 12px 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(7,16,13,.86); backdrop-filter: blur(18px);
+    }
+    .mark {
+      width: 28px; height: 28px; border-radius: 9px;
+      display: grid; place-items: center; color: var(--ink); font-weight: 800;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      box-shadow: 0 0 24px rgba(53,224,161,.22);
+    }
+    .brand { font-family: "Space Grotesk", sans-serif; font-size: 16px; font-weight: 700; letter-spacing: .08em; }
+    .brand-sub { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .16em; }
+    nav { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    nav a {
+      color: var(--muted); border: 1px solid transparent; border-radius: 999px;
+      padding: 6px 10px; font-size: 10px; font-weight: 700;
+    }
+    nav a:hover, nav a.active { color: var(--green); border-color: var(--line-strong); background: rgba(53,224,161,.08); }
+
+    main { max-width: 1480px; margin: 0 auto; padding: 22px 18px 48px; }
+    .hero {
+      display: grid; grid-template-columns: 1.15fr .85fr; gap: 18px; align-items: stretch;
+      margin-bottom: 16px;
+    }
+    .hero-card, .proof-card, .stat, .panel {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(17,31,25,.92), rgba(9,18,15,.92));
+      box-shadow: var(--shadow);
+      border-radius: 20px;
+    }
+    .hero-card { padding: 24px; position: relative; overflow: hidden; }
+    .hero-card::after {
+      content: "";
+      position: absolute; inset: auto -80px -130px auto; width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(53,224,161,.22), transparent 62%);
+      pointer-events: none;
+    }
+    .kicker { color: var(--green); font-size: 10px; text-transform: uppercase; letter-spacing: .24em; margin-bottom: 10px; }
+    h1 { font-family: "Space Grotesk", sans-serif; font-size: clamp(28px, 4vw, 54px); line-height: .95; letter-spacing: -.04em; margin-bottom: 14px; }
+    .hero-copy { max-width: 760px; color: var(--muted); font-size: 13px; line-height: 1.8; }
+    .hero-note {
+      margin-top: 16px; display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 12px; border-radius: 999px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+      color: var(--muted); font-size: 10px; flex-wrap: wrap;
+    }
+    .proof-card { padding: 18px; display: grid; gap: 12px; }
+    .proof-line {
+      display: flex; justify-content: space-between; gap: 12px; padding: 12px;
+      border: 1px solid rgba(255,255,255,.06); border-radius: 14px; background: rgba(255,255,255,.025);
+    }
+    .proof-label { color: var(--soft); text-transform: uppercase; letter-spacing: .14em; font-size: 9px; }
+    .proof-val { color: var(--text); text-align: right; font-weight: 800; }
+
+    .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat { padding: 16px; min-height: 106px; }
+    .stat-label { color: var(--soft); text-transform: uppercase; letter-spacing: .14em; font-size: 9px; margin-bottom: 8px; }
+    .stat-value { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .stat-sub { color: var(--muted); margin-top: 6px; font-size: 10px; line-height: 1.6; }
+    .stat-value.good { color: var(--green); }
+    .stat-value.warn { color: var(--amber); }
+    .stat-value.blue { color: var(--blue); }
+
+    .toolbar {
+      display: grid; grid-template-columns: 1.2fr auto auto; gap: 12px;
+      margin-bottom: 16px;
+    }
+    .search, .panel {
+      width: 100%;
+    }
+    .search {
+      border-radius: 14px; border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03); color: var(--text);
+      padding: 13px 14px; outline: none;
+    }
+    .search::placeholder { color: #5c786d; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .chip {
+      border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); color: var(--muted);
+      border-radius: 999px; padding: 8px 11px; font-size: 10px; cursor: pointer;
+      transition: .18s ease;
+    }
+    .chip.active, .chip:hover { color: var(--green); border-color: var(--line-strong); background: rgba(53,224,161,.08); }
+
+    .panel { overflow: hidden; }
+    .panel-head {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex; justify-content: space-between; gap: 12px; align-items: flex-start;
+      background: rgba(255,255,255,.02);
+    }
+    .panel-title { font-family: "Space Grotesk", sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+    .panel-copy { margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.7; max-width: 620px; }
+    .refresh { color: var(--muted); font-size: 10px; white-space: nowrap; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 12px 14px; font-size: 9px; color: var(--soft); text-transform: uppercase; letter-spacing: .14em; border-bottom: 1px solid rgba(255,255,255,.06); }
+    td { padding: 13px 14px; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,.05); vertical-align: top; }
+    tr:hover { background: rgba(111,183,255,.05); }
+    .track-tag, .status-badge {
+      display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px; border-radius: 999px;
+      font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em;
+      border: 1px solid rgba(255,255,255,.08);
+    }
+    .track-tag.t1 { color: var(--blue); border-color: rgba(111,183,255,.25); background: rgba(111,183,255,.08); }
+    .track-tag.t2 { color: var(--green); border-color: rgba(53,224,161,.25); background: rgba(53,224,161,.08); }
+    .track-tag.t3 { color: var(--amber); border-color: rgba(255,204,102,.25); background: rgba(255,204,102,.08); }
+    .track-tag.t4 { color: #f3a6ff; border-color: rgba(243,166,255,.25); background: rgba(243,166,255,.08); }
+    .status-badge.confirmed { color: var(--green); background: rgba(53,224,161,.08); border-color: rgba(53,224,161,.24); }
+    .status-badge.pending { color: var(--amber); background: rgba(255,204,102,.08); border-color: rgba(255,204,102,.24); }
+    .status-badge.fallback { color: var(--red); background: rgba(255,125,125,.08); border-color: rgba(255,125,125,.24); }
+    .muted { color: var(--muted); }
+    .soft { color: var(--soft); }
+    .doc-title { font-weight: 800; font-size: 12px; margin-bottom: 6px; }
+    .doc-desc { color: var(--muted); line-height: 1.7; }
+    .meta-line { margin-top: 6px; color: var(--soft); font-size: 10px; line-height: 1.6; }
+    .doc-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .doc-link, .arc-link {
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px;
+      border-radius: 999px; border: 1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.03); font-size: 10px; font-weight: 700;
+    }
+    .doc-link { color: var(--green); }
+    .arc-link { color: var(--blue); }
+    .empty { padding: 40px 18px; text-align: center; color: var(--muted); }
+    .mobile-list { display: none; gap: 12px; padding: 14px; }
+    .mobile-card {
+      border: 1px solid rgba(255,255,255,.06); border-radius: 18px; background: rgba(255,255,255,.025);
+      padding: 14px; display: grid; gap: 10px;
+    }
+    .mobile-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .mobile-kv { display: grid; gap: 6px; color: var(--muted); }
+    .mobile-kv strong { color: var(--text); font-size: 11px; }
+    @media (max-width: 1120px) {
+      .hero, .toolbar { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 900px) {
+      table { display: none; }
+      .mobile-list { display: grid; }
+    }
+    @media (max-width: 560px) {
+      header { align-items: flex-start; }
+      nav { width: 100%; margin-left: 0; }
+      .stats { grid-template-columns: 1fr; }
+      .hero-card { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="mark">K</div>
+    <div>
+      <div class="brand">KAIROS</div>
+      <div class="brand-sub">Invoice, receipt, and proof vault</div>
+    </div>
+    <nav>
+      <a href="/kairos">Dashboard</a>
+      <a href="/transactions">Transactions</a>
+      <a href="/documents" class="active">Documents</a>
+      <a href="/execution">Execution History</a>
+      <a href="/commerce">Commerce</a>
+      <a href="/mcp" target="_blank" rel="noopener">MCP</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-card">
+        <div class="kicker">Unified Access</div>
+        <h1>Every invoice and receipt, one obvious place.</h1>
+        <p class="hero-copy">
+          This vault consolidates Kairos-generated invoice, receipt, and proof files across governance, paid APIs, usage-based compute, and real-time micro-commerce. It exists so judges and operators can open the supporting documents directly instead of hunting through track-specific pages.
+        </p>
+        <div class="hero-note">
+          <span>Track 1 to 3 bundles are generated from billed receipts.</span>
+          <span>Track 4 bundles are generated from native commerce events.</span>
+        </div>
+      </div>
+      <div class="proof-card">
+        <div class="proof-line"><span class="proof-label">Primary use</span><span class="proof-val">Direct doc access</span></div>
+        <div class="proof-line"><span class="proof-label">Proof model</span><span class="proof-val">Invoice + Receipt + Proof</span></div>
+        <div class="proof-line"><span class="proof-label">Verification</span><span class="proof-val">Arcscan links when confirmed</span></div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat"><div class="stat-label">Bundles</div><div class="stat-value good" id="s-total">-</div><div class="stat-sub">visible document bundles</div></div>
+      <div class="stat"><div class="stat-label">Track 01</div><div class="stat-value blue" id="s-t1">-</div><div class="stat-sub">governance invoices and receipts</div></div>
+      <div class="stat"><div class="stat-label">Track 02</div><div class="stat-value good" id="s-t2">-</div><div class="stat-sub">paid API usage documents</div></div>
+      <div class="stat"><div class="stat-label">Track 03</div><div class="stat-value warn" id="s-t3">-</div><div class="stat-sub">compute invoices and worklogs</div></div>
+      <div class="stat"><div class="stat-label">Track 04</div><div class="stat-value" id="s-t4">-</div><div class="stat-sub">native commerce bundles</div></div>
+    </section>
+
+    <section class="toolbar">
+      <input id="search" class="search" placeholder="Search by track, source, item, trigger, event id, or description" />
+      <div class="chips" id="track-chips"></div>
+      <div class="chips" id="status-chips"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Document Vault</div>
+          <div class="panel-copy">Open invoice, receipt, and proof files directly from here. Transactions still show the payment ledger, but this page is the fastest way to reach the supporting documents.</div>
+        </div>
+        <div class="refresh" id="refresh">Loading...</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Track</th>
+              <th>Bundle</th>
+              <th>Counterparty</th>
+              <th>Proof</th>
+              <th>Links</th>
+            </tr>
+          </thead>
+          <tbody id="rows"><tr><td colspan="6" class="empty">Loading document vault...</td></tr></tbody>
+        </table>
+      </div>
+      <div class="mobile-list" id="mobile-rows"></div>
+    </section>
+  </main>
+
+  <script>
+    const state = { bundles: [], track: "all", status: "all", query: "" };
+    const tracks = [["all", "All tracks"], ["t1", "Track 01"], ["t2", "Track 02"], ["t3", "Track 03"], ["t4", "Track 04"]];
+    const statuses = [["all", "All status"], ["confirmed", "Confirmed"], ["pending", "Pending"], ["fallback", "Fallback"]];
+
+    function el(id) { return document.getElementById(id); }
+    function esc(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+    function amt(value) {
+      const num = Number(value || 0);
+      return num.toFixed(num < 0.01 ? 3 : 2) + " USDC";
+    }
+    function ts(value) {
+      try {
+        return new Date(value).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      } catch {
+        return value || "-";
+      }
+    }
+    function renderChips(hostId, items, active, onPick) {
+      const host = el(hostId);
+      host.innerHTML = items.map(([value, label]) => {
+        const activeClass = active === value ? "active" : "";
+        return '<button class="chip ' + activeClass + '" data-value="' + value + '">' + esc(label) + '</button>';
+      }).join("");
+      host.querySelectorAll(".chip").forEach((node) => {
+        node.addEventListener("click", () => onPick(node.getAttribute("data-value")));
+      });
+    }
+    function docs(bundle) {
+      const items = [];
+      if (bundle.documents && bundle.documents.invoiceUrl) items.push('<a class="doc-link" href="' + esc(bundle.documents.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a>');
+      if (bundle.documents && bundle.documents.receiptUrl) items.push('<a class="doc-link" href="' + esc(bundle.documents.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a>');
+      if (bundle.documents && bundle.documents.deliveryProofUrl) items.push('<a class="doc-link" href="' + esc(bundle.documents.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a>');
+      if (bundle.settlement && bundle.settlement.explorerUrl) items.push('<a class="arc-link" href="' + esc(bundle.settlement.explorerUrl) + '" target="_blank" rel="noopener">Arcscan</a>');
+      return items.join("");
+    }
+    function matches(bundle) {
+      if (state.track !== "all" && bundle.trackKey !== state.track) return false;
+      if (state.status !== "all" && (bundle.settlement && bundle.settlement.status) !== state.status) return false;
+      if (!state.query) return true;
+      const hay = [
+        bundle.eventId,
+        bundle.trackLabel,
+        bundle.category,
+        bundle.item,
+        bundle.trigger,
+        bundle.description,
+        bundle.buyer,
+        bundle.seller,
+        bundle.settlement && bundle.settlement.referenceId,
+        bundle.settlement && bundle.settlement.txHash
+      ].join(" ").toLowerCase();
+      return hay.includes(state.query);
+    }
+    function renderRows() {
+      const rows = state.bundles.filter(matches);
+      el("rows").innerHTML = rows.length ? rows.map((bundle) => {
+        return '<tr>' +
+          '<td>' + esc(ts(bundle.createdAt)) + '</td>' +
+          '<td><span class="track-tag ' + esc(bundle.trackKey) + '">' + esc(bundle.trackLabel) + '</span></td>' +
+          '<td><div class="doc-title">' + esc(bundle.item) + '</div><div class="doc-desc">' + esc(bundle.description) + '</div><div class="meta-line">Event: ' + esc(bundle.eventId) + ' · ' + esc(bundle.category) + '</div></td>' +
+          '<td><div><strong>' + esc(bundle.seller) + '</strong></div><div class="muted">Buyer: ' + esc(bundle.buyer) + '</div><div class="meta-line">Trigger: ' + esc(bundle.trigger) + '</div></td>' +
+          '<td><div><span class="status-badge ' + esc(bundle.settlement.status) + '">' + esc(bundle.settlement.status) + '</span></div><div class="meta-line">Amount: ' + esc(amt(bundle.settlement.amountUsdc)) + ' · Mode: ' + esc(bundle.settlement.mode || "-") + '</div></td>' +
+          '<td><div class="doc-links">' + docs(bundle) + '</div></td>' +
+        '</tr>';
+      }).join("") : '<tr><td colspan="6" class="empty">No documents match the current filters.</td></tr>';
+
+      el("mobile-rows").innerHTML = rows.length ? rows.map((bundle) => {
+        return '<div class="mobile-card">' +
+          '<div class="mobile-top"><div><span class="track-tag ' + esc(bundle.trackKey) + '">' + esc(bundle.trackLabel) + '</span></div><span class="status-badge ' + esc(bundle.settlement.status) + '">' + esc(bundle.settlement.status) + '</span></div>' +
+          '<div class="doc-title">' + esc(bundle.item) + '</div>' +
+          '<div class="doc-desc">' + esc(bundle.description) + '</div>' +
+          '<div class="mobile-kv"><div><strong>Counterparty:</strong> ' + esc(bundle.seller) + '</div><div><strong>Amount:</strong> ' + esc(amt(bundle.settlement.amountUsdc)) + '</div><div><strong>Trigger:</strong> ' + esc(bundle.trigger) + '</div><div><strong>Event:</strong> ' + esc(bundle.eventId) + '</div></div>' +
+          '<div class="doc-links">' + docs(bundle) + '</div>' +
+        '</div>';
+      }).join("") : '<div class="empty">No documents match the current filters.</div>';
+    }
+    async function load() {
+      try {
+        const res = await fetch("/api/documents?limit=500");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        state.bundles = data.bundles || [];
+        el("s-total").textContent = String(data.count || 0);
+        el("s-t1").textContent = String((data.summary && data.summary.byTrack && data.summary.byTrack.t1) || 0);
+        el("s-t2").textContent = String((data.summary && data.summary.byTrack && data.summary.byTrack.t2) || 0);
+        el("s-t3").textContent = String((data.summary && data.summary.byTrack && data.summary.byTrack.t3) || 0);
+        el("s-t4").textContent = String((data.summary && data.summary.byTrack && data.summary.byTrack.t4) || 0);
+        el("refresh").textContent = "Updated " + ts(data.generatedAt);
+        renderRows();
+      } catch (error) {
+        el("rows").innerHTML = '<tr><td colspan="6" class="empty">Could not load document vault: ' + esc(error.message) + '</td></tr>';
+        el("mobile-rows").innerHTML = '<div class="empty">Could not load document vault: ' + esc(error.message) + '</div>';
+      }
+    }
+
+    function setTrack(value) {
+      state.track = value;
+      renderChips("track-chips", tracks, state.track, setTrack);
+      renderRows();
+    }
+    function setStatus(value) {
+      state.status = value;
+      renderChips("status-chips", statuses, state.status, setStatus);
+      renderRows();
+    }
+    renderChips("track-chips", tracks, state.track, setTrack);
+    renderChips("status-chips", statuses, state.status, setStatus);
+    el("search").addEventListener("input", (event) => {
+      state.query = event.target.value.trim().toLowerCase();
+      renderRows();
+    });
+
+    load();
+    setInterval(load, 30000);
+  </script>
+</body>
+</html>

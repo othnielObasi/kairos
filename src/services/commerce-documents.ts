@@ -1,11 +1,14 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { hasVerifiedTxHash, type NanopaymentReceipt } from './nanopayments.js';
 
 const STATE_DIR = join(process.cwd(), '.kairos');
 const DOC_DIR = join(STATE_DIR, 'commerce-documents');
 const MAX_BUNDLES = 500;
 
 export type CommerceDocumentKind = 'invoice' | 'receipt' | 'delivery-proof';
+export type DocumentTrackKey = 't1' | 't2' | 't3' | 't4';
+export type DocumentBundleType = 'governance' | 'api-usage' | 'compute' | 'micro-commerce';
 
 export interface CommerceDocumentLinks {
   invoiceUrl: string;
@@ -15,6 +18,10 @@ export interface CommerceDocumentLinks {
 
 export interface CommerceDocumentBundle {
   eventId: string;
+  trackKey: DocumentTrackKey;
+  trackLabel: string;
+  category: string;
+  bundleType: DocumentBundleType;
   checkpointId: number | null;
   createdAt: string;
   buyer: string;
@@ -38,6 +45,10 @@ export interface CommerceDocumentBundle {
 
 export interface CommerceDocumentSeed {
   eventId: string;
+  trackKey?: DocumentTrackKey | null;
+  trackLabel?: string | null;
+  category?: string | null;
+  bundleType?: DocumentBundleType | null;
   checkpointId?: number | null;
   createdAt?: string | null;
   buyer?: string | null;
@@ -77,15 +88,42 @@ function filePathForEvent(eventId: string): string {
 function buildDocumentLinks(eventId: string): CommerceDocumentLinks {
   const encoded = encodeURIComponent(eventId);
   return {
-    invoiceUrl: `/commerce/docs/${encoded}/invoice`,
-    receiptUrl: `/commerce/docs/${encoded}/receipt`,
-    deliveryProofUrl: `/commerce/docs/${encoded}/delivery-proof`,
+    invoiceUrl: `/documents/${encoded}/invoice`,
+    receiptUrl: `/documents/${encoded}/receipt`,
+    deliveryProofUrl: `/documents/${encoded}/delivery-proof`,
   };
 }
 
+function defaultTrackLabel(trackKey: DocumentTrackKey): string {
+  if (trackKey === 't1') return 'Track 01';
+  if (trackKey === 't2') return 'Track 02';
+  if (trackKey === 't3') return 'Track 03';
+  return 'Track 04';
+}
+
+function defaultBundleType(trackKey: DocumentTrackKey): DocumentBundleType {
+  if (trackKey === 't1') return 'governance';
+  if (trackKey === 't2') return 'api-usage';
+  if (trackKey === 't3') return 'compute';
+  return 'micro-commerce';
+}
+
+function defaultCategory(trackKey: DocumentTrackKey, bundleType: DocumentBundleType): string {
+  if (bundleType === 'governance') return 'Governance nanopayment';
+  if (bundleType === 'api-usage') return 'Paid API access';
+  if (bundleType === 'compute') return 'Usage-based compute';
+  return trackKey === 't4' ? 'Real-time micro-commerce' : 'Kairos document bundle';
+}
+
 function normalizeBundle(bundle: CommerceDocumentBundle): CommerceDocumentBundle {
+  const trackKey = bundle.trackKey || 't4';
+  const bundleType = bundle.bundleType || defaultBundleType(trackKey);
   return {
     ...bundle,
+    trackKey,
+    trackLabel: bundle.trackLabel || defaultTrackLabel(trackKey),
+    category: bundle.category || defaultCategory(trackKey, bundleType),
+    bundleType,
     checkpointId: bundle.checkpointId ?? null,
     createdAt: bundle.createdAt || new Date().toISOString(),
     buyer: bundle.buyer || 'Kairos agent',
@@ -128,6 +166,10 @@ function writeBundle(bundle: CommerceDocumentBundle): CommerceDocumentBundle {
 function mergeSeed(existing: CommerceDocumentBundle, seed: CommerceDocumentSeed): CommerceDocumentBundle {
   return normalizeBundle({
     ...existing,
+    trackKey: seed.trackKey ?? existing.trackKey,
+    trackLabel: seed.trackLabel || existing.trackLabel,
+    category: seed.category || existing.category,
+    bundleType: seed.bundleType || existing.bundleType,
     checkpointId: seed.checkpointId ?? existing.checkpointId,
     createdAt: seed.createdAt || existing.createdAt,
     buyer: seed.buyer || existing.buyer,
@@ -161,6 +203,10 @@ export function ensureCommerceDocumentBundle(seed: CommerceDocumentSeed): Commer
 
   return writeBundle({
     eventId: seed.eventId,
+    trackKey: seed.trackKey || 't4',
+    trackLabel: seed.trackLabel || defaultTrackLabel(seed.trackKey || 't4'),
+    category: seed.category || defaultCategory(seed.trackKey || 't4', seed.bundleType || defaultBundleType(seed.trackKey || 't4')),
+    bundleType: seed.bundleType || defaultBundleType(seed.trackKey || 't4'),
     checkpointId: seed.checkpointId ?? null,
     createdAt: seed.createdAt || new Date().toISOString(),
     buyer: seed.buyer || 'Kairos agent',
@@ -223,6 +269,98 @@ export function getCommerceDocumentLinks(lookup: CommerceDocumentLookup): Commer
   return bundle?.documents || null;
 }
 
+function sanitizeEventIdSegment(value: string): string {
+  return value
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 96) || 'event';
+}
+
+function receiptSettlementStatus(receipt: NanopaymentReceipt): string {
+  if (hasVerifiedTxHash(receipt)) return 'confirmed';
+  if (receipt.verificationState === 'fallback' || receipt.mode === 'fallback') return 'fallback';
+  if (receipt.referenceId) return 'pending';
+  return 'pending';
+}
+
+function receiptExplorerUrl(receipt: NanopaymentReceipt): string | null {
+  return hasVerifiedTxHash(receipt)
+    ? `https://testnet.arcscan.app/tx/${receipt.txHash}`
+    : null;
+}
+
+export function buildReceiptDocumentEventId(trackKey: Exclude<DocumentTrackKey, 't4'>, receipt: NanopaymentReceipt): string {
+  const base = receipt.referenceId
+    || (hasVerifiedTxHash(receipt) ? receipt.txHash : '')
+    || `${receipt.confirmedAt}-${receipt.eventName}-${receipt.source || receipt.model || receipt.type || 'kairos'}`;
+  return `${trackKey}-${sanitizeEventIdSegment(base)}`;
+}
+
+export function ensureReceiptDocumentBundle(
+  trackKey: Exclude<DocumentTrackKey, 't4'>,
+  receipt: NanopaymentReceipt,
+): CommerceDocumentBundle {
+  const source = receipt.source || receipt.model || receipt.type || 'Kairos';
+  const eventName = receipt.eventName || 'Kairos event';
+  const settlementStatus = receiptSettlementStatus(receipt);
+  const mode = receipt.mode || 'nanopayment';
+  const bundleType = defaultBundleType(trackKey);
+  const buyer = trackKey === 't1'
+    ? 'Kairos governance runtime'
+    : trackKey === 't2'
+      ? 'Kairos data runtime'
+      : 'Kairos compute runtime';
+  const seller = source;
+  const item = trackKey === 't1'
+    ? `${source} governance stage`
+    : trackKey === 't2'
+      ? `${source} paid API request`
+      : `${source} compute task`;
+  const trigger = trackKey === 't1'
+    ? `governance-${eventName}`
+    : trackKey === 't2'
+      ? `api-${eventName}`
+      : receipt.type === 'reflection'
+        ? 'sage-reflection'
+        : 'runtime-inference';
+  const description = trackKey === 't1'
+    ? `${eventName} paid for ${source} governance validation.`
+    : trackKey === 't2'
+      ? `${eventName} metered API access for ${source}.`
+      : `${eventName} metered compute for ${source}.`;
+  const deliverySummary = trackKey === 't1'
+    ? `${source} governance attestation recorded with ${settlementStatus} settlement evidence.`
+    : trackKey === 't2'
+      ? `${source} API usage evidence recorded with ${mode} settlement mode.`
+      : `${source} ${receipt.type === 'reflection' ? 'reflection' : 'inference'} worklog recorded with ${settlementStatus} settlement evidence.`;
+
+  return ensureCommerceDocumentBundle({
+    eventId: buildReceiptDocumentEventId(trackKey, receipt),
+    trackKey,
+    trackLabel: defaultTrackLabel(trackKey),
+    category: defaultCategory(trackKey, bundleType),
+    bundleType,
+    createdAt: new Date(receipt.confirmedAt || Date.now()).toISOString(),
+    buyer,
+    seller,
+    item,
+    trigger,
+    description,
+    referenceNotionalUsd: receipt.amount,
+    referenceCurrency: 'USDC',
+    deliverySummary,
+    settlement: {
+      amountUsdc: receipt.amount,
+      status: settlementStatus,
+      mode,
+      txHash: hasVerifiedTxHash(receipt) ? receipt.txHash : null,
+      referenceId: receipt.referenceId || null,
+      explorerUrl: receiptExplorerUrl(receipt),
+    },
+  });
+}
+
 function escapeHtml(value: string | number | null | undefined): string {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -239,6 +377,78 @@ function formatAmount(value: number | null | undefined, currency: string | null 
 }
 
 function renderKindSummary(bundle: CommerceDocumentBundle, kind: CommerceDocumentKind): { title: string; subtitle: string; accent: string; kicker: string } {
+  if (bundle.bundleType === 'governance') {
+    if (kind === 'invoice') {
+      return {
+        title: 'Kairos Governance Invoice',
+        subtitle: 'Issued automatically for a billed governance-stage decision',
+        accent: '#6fb7ff',
+        kicker: 'Invoice',
+      };
+    }
+    if (kind === 'receipt') {
+      return {
+        title: 'Kairos Governance Receipt',
+        subtitle: 'Settlement evidence for the billed governance-stage action',
+        accent: '#35e0a1',
+        kicker: 'Receipt',
+      };
+    }
+    return {
+      title: 'Kairos Governance Attestation',
+      subtitle: 'Human-readable proof for the governed action and its settlement state',
+      accent: '#ffcc66',
+      kicker: 'Attestation',
+    };
+  }
+  if (bundle.bundleType === 'api-usage') {
+    if (kind === 'invoice') {
+      return {
+        title: 'Kairos API Usage Invoice',
+        subtitle: 'Issued automatically for a metered paid API action',
+        accent: '#6fb7ff',
+        kicker: 'Invoice',
+      };
+    }
+    if (kind === 'receipt') {
+      return {
+        title: 'Kairos API Usage Receipt',
+        subtitle: 'Settlement evidence for the billed API request',
+        accent: '#35e0a1',
+        kicker: 'Receipt',
+      };
+    }
+    return {
+      title: 'Kairos API Evidence',
+      subtitle: 'Request-level proof for the billed API event',
+      accent: '#ffcc66',
+      kicker: 'Evidence',
+    };
+  }
+  if (bundle.bundleType === 'compute') {
+    if (kind === 'invoice') {
+      return {
+        title: 'Kairos Compute Invoice',
+        subtitle: 'Issued automatically for a metered inference or reflection action',
+        accent: '#6fb7ff',
+        kicker: 'Invoice',
+      };
+    }
+    if (kind === 'receipt') {
+      return {
+        title: 'Kairos Compute Receipt',
+        subtitle: 'Settlement evidence for the billed compute event',
+        accent: '#35e0a1',
+        kicker: 'Receipt',
+      };
+    }
+    return {
+      title: 'Kairos Compute Worklog',
+      subtitle: 'Execution proof for the inference or reflection event',
+      accent: '#ffcc66',
+      kicker: 'Worklog',
+    };
+  }
   if (kind === 'invoice') {
     return {
       title: 'Kairos Native Invoice',
@@ -269,6 +479,7 @@ export function renderCommerceDocumentHtml(bundle: CommerceDocumentBundle, kind:
   const referenceNotional = bundle.referenceNotionalUsd !== null
     ? formatAmount(bundle.referenceNotionalUsd, bundle.referenceCurrency || 'USDC', 2)
     : 'Not recorded';
+  const isMicroCommerce = bundle.bundleType === 'micro-commerce';
   const permanentUrl = kind === 'invoice'
     ? bundle.documents.invoiceUrl
     : kind === 'receipt'
@@ -279,16 +490,18 @@ export function renderCommerceDocumentHtml(bundle: CommerceDocumentBundle, kind:
     ? `
       <div class="callout">
         <strong>Billing note</strong><br />
-        This invoice is generated by Kairos for a native digital-service event. The proof receipt amount is intentionally tiny and is separate from the underlying reference notional.
+        ${isMicroCommerce
+          ? 'This invoice is generated by Kairos for a native digital-service event. The proof receipt amount is intentionally tiny and is separate from the underlying reference notional.'
+          : 'This invoice records the metered billed amount for the Kairos runtime event shown below.'}
       </div>
       <div class="grid">
         <div class="panel">
-          <div class="label">Reference service notional</div>
+          <div class="label">${isMicroCommerce ? 'Reference service notional' : 'Billed amount'}</div>
           <div class="value">${escapeHtml(referenceNotional)}</div>
         </div>
         <div class="panel">
-          <div class="label">Arc proof amount</div>
-          <div class="value">${escapeHtml(proofAmount)}</div>
+          <div class="label">${isMicroCommerce ? 'Arc proof amount' : 'Settlement mode'}</div>
+          <div class="value">${escapeHtml(isMicroCommerce ? proofAmount : bundle.settlement.mode)}</div>
         </div>
       </div>
     `
@@ -296,7 +509,9 @@ export function renderCommerceDocumentHtml(bundle: CommerceDocumentBundle, kind:
       ? `
         <div class="callout">
           <strong>Settlement note</strong><br />
-          This receipt records the proof settlement for the event. It is not a statement that the full reference notional was transferred on Arc.
+          ${isMicroCommerce
+            ? 'This receipt records the proof settlement for the event. It is not a statement that the full reference notional was transferred on Arc.'
+            : 'This receipt records the metered settlement evidence for the billed Kairos runtime event.'}
         </div>
         <div class="grid">
           <div class="panel">
@@ -311,11 +526,17 @@ export function renderCommerceDocumentHtml(bundle: CommerceDocumentBundle, kind:
       `
       : `
         <div class="callout">
-          <strong>Fulfillment note</strong><br />
-          This delivery proof attests that Kairos completed the digital commerce step described below and emitted the related settlement evidence.
+          <strong>${bundle.bundleType === 'governance' ? 'Attestation note' : bundle.bundleType === 'api-usage' ? 'Evidence note' : bundle.bundleType === 'compute' ? 'Worklog note' : 'Fulfillment note'}</strong><br />
+          ${isMicroCommerce
+            ? 'This delivery proof attests that Kairos completed the digital commerce step described below and emitted the related settlement evidence.'
+            : bundle.bundleType === 'governance'
+              ? 'This attestation explains the governed action, its stage context, and the linked settlement evidence.'
+              : bundle.bundleType === 'api-usage'
+                ? 'This evidence file explains the billed request context and the linked settlement evidence.'
+                : 'This worklog explains the billed inference or reflection event and the linked settlement evidence.'}
         </div>
         <div class="panel">
-          <div class="label">Delivery summary</div>
+          <div class="label">${bundle.bundleType === 'governance' ? 'Attestation summary' : bundle.bundleType === 'api-usage' ? 'Evidence summary' : bundle.bundleType === 'compute' ? 'Worklog summary' : 'Delivery summary'}</div>
           <div class="value">${escapeHtml(bundle.deliverySummary)}</div>
         </div>
       `;
@@ -466,6 +687,8 @@ export function renderCommerceDocumentHtml(bundle: CommerceDocumentBundle, kind:
         </thead>
         <tbody>
           <tr><td>Item</td><td>${escapeHtml(bundle.item)}</td></tr>
+          <tr><td>Track</td><td>${escapeHtml(bundle.trackLabel)}</td></tr>
+          <tr><td>Category</td><td>${escapeHtml(bundle.category)}</td></tr>
           <tr><td>Trigger</td><td>${escapeHtml(bundle.trigger)}</td></tr>
           <tr><td>Description</td><td>${escapeHtml(bundle.description)}</td></tr>
           <tr><td>Created At</td><td>${escapeHtml(bundle.createdAt)}</td></tr>
@@ -479,7 +702,9 @@ export function renderCommerceDocumentHtml(bundle: CommerceDocumentBundle, kind:
       </table>
     </section>
     <section class="footer">
-      Kairos generated this document automatically as part of its native commerce rail. These documents are intended to remove manual upload requirements for first-party Kairos events. External merchant documents can still be uploaded separately for multimodal verification.
+      ${isMicroCommerce
+        ? 'Kairos generated this document automatically as part of its native commerce rail. These documents are intended to remove manual upload requirements for first-party Kairos events. External merchant documents can still be uploaded separately for multimodal verification.'
+        : 'Kairos generated this document automatically as part of its metered proof layer. It is a human-readable companion to the underlying Arc receipt and is intended to make governance, API, and compute billing easier to inspect during review.'}
     </section>
   </div>
 </body>

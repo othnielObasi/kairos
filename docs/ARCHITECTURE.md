@@ -127,6 +127,7 @@ Readiness is exposed through `/api/status` and `/api/feeds/status`.
 | Track 3: Usage-Based Compute | `ai-reasoning.ts`, `sage-engine.ts` | `billingStore.addComputeEvent()` | `/api/status`, `/api/sage/status`, `/api/billing` |
 | Track 4: Real-Time Micro-Commerce | Approved checkpoint execution | `settleMicroCommerceEvent()` and checkpoint execution state | `/api/checkpoints`, `/api/transactions` |
 | Gemini commerce surface | `gemini-commerce.ts`, `gateway-balance.ts`, `commerce-documents.ts` | `billEvent("compute-function-call")`, `billEvent("compute-multimodal")`, `settleCommerceProofReceipt()`, native document-bundle generation | `/commerce`, `/api/commerce/status`, `/api/gemini/commerce-assistant`, `/api/commerce/analyze`, `/api/commerce/documents` |
+| Document vault | `commerce-documents.ts`, `billing-store.ts`, `server.ts` | Cross-track invoice, receipt, and proof generation for Tracks 1 to 4 | `/documents`, `/api/documents`, `/documents/:eventId/:kind` |
 
 ## Dashboard And API Architecture
 
@@ -136,6 +137,7 @@ Main static pages:
 
 - `/` and `/kairos`: live proof dashboard.
 - `/commerce`: Gemini function calling and multimodal commerce proof studio.
+- `/documents`: cross-track document vault for generated invoices, receipts, and proof files.
 - `/transactions` and `/history`: transaction history and audit ledger.
 - `/trades`: execution-oriented trade view.
 - `/judge`: redirects to `/kairos`.

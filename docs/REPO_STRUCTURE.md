@@ -106,6 +106,7 @@ src/dashboard/
 |-- public/
 |   |-- kairos.html
 |   |-- commerce.html
+|   |-- documents.html
 |   |-- transactions.html
 |   |-- trades.html
 |   |-- judge.html
@@ -121,6 +122,7 @@ src/dashboard/
 | `server.ts` | Express static server, JSON APIs, MCP proxy, CORS/rate limits |
 | `public/kairos.html` | Primary live proof dashboard |
 | `public/commerce.html` | Gemini commerce studio for function calling, multimodal review, and native commerce-document bundles |
+| `public/documents.html` | Cross-track document vault for invoices, receipts, and proof files |
 | `public/transactions.html` | Consolidated transaction history and audit ledger |
 | `public/trades.html` | Execution/trade-oriented view |
 | `public/judge.html` | Judge route surface |

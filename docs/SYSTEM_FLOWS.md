@@ -286,6 +286,23 @@ server.ts builds consolidated transaction rows
 transactions.html renders searchable audit ledger
 ```
 
+## Flow 9: Document Vault
+
+```text
+Billing receipts + native commerce bundles
+        |
+        v
+commerce-documents.ts normalizes invoice, receipt, and proof links
+        |
+        v
+/api/documents returns a cross-track index
+        |
+        v
+/documents renders a direct-access vault for judges and operators
+```
+
+This flow exists so users do not need to infer document links from the ledger or the commerce page.
+
 History is the detailed audit surface. It is designed to carry information that would make the dashboard too text-heavy:
 
 - Track labels.

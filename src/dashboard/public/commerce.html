@@ -260,6 +260,7 @@
     <nav>
       <a href="/kairos">Dashboard</a>
       <a href="/transactions">Transactions</a>
+      <a href="/documents">Documents</a>
       <a href="/execution">Execution History</a>
       <a href="/commerce" class="active">Commerce</a>
       <a href="/mcp" target="_blank" rel="noopener">MCP</a>
@@ -429,9 +430,9 @@
     <section class="bundle-panel">
       <div class="panel-head">
         <div>
-          <div class="panel-title">Kairos-Native Document Bundles</div>
+          <div class="panel-title">Kairos Document Vault</div>
           <p class="panel-copy">
-            These documents are generated automatically for first-party Kairos commerce events. Native Track 4 flows no longer depend on a human uploading a receipt or invoice first. Upload remains for external merchant documents only.
+            These documents are generated automatically across Kairos tracks. Track 1 to 3 bundles are created from billed receipts, while Track 4 bundles are created from native commerce events. Use the full Documents page for the complete vault.
           </p>
         </div>
         <span class="pill good" id="bundle-pill">Auto-generated</span>
@@ -521,7 +522,7 @@
       state.bundles = bundles || [];
       const host = el("bundle-grid");
       if (!state.bundles.length) {
-        host.innerHTML = '<div class="muted-copy">No Kairos-native bundles yet. The next Track 4 settlement will generate invoice, receipt, and delivery-proof links automatically.</div>';
+        host.innerHTML = '<div class="muted-copy">No bundles available yet. Kairos will generate invoice, receipt, and proof links automatically as billed events arrive.</div>';
         return;
       }
       host.innerHTML = state.bundles.map(function(bundle) {
@@ -529,13 +530,14 @@
           '<article class="bundle-card">' +
             '<div class="bundle-title">' + esc(bundle.item || "Kairos commerce event") + '</div>' +
             '<div class="bundle-meta">' + esc(bundle.createdAt || "") + '<br />' +
-              'Seller: ' + esc(bundle.seller || "Kairos commerce rail") + '<br />' +
+              esc(bundle.trackLabel || "Kairos document") + ' · ' + esc(bundle.category || "Document bundle") + '<br />' +
+              'Seller: ' + esc(bundle.seller || "Kairos rail") + '<br />' +
               'Proof amount: ' + esc(formatMoney(bundle.settlement && bundle.settlement.amountUsdc, "USDC")) +
             '</div>' +
             '<div class="bundle-links">' +
               '<a class="bundle-link" href="' + esc(bundle.documents.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a>' +
               '<a class="bundle-link" href="' + esc(bundle.documents.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a>' +
-              '<a class="bundle-link" href="' + esc(bundle.documents.deliveryProofUrl) + '" target="_blank" rel="noopener">Delivery proof</a>' +
+              '<a class="bundle-link" href="' + esc(bundle.documents.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a>' +
             '</div>' +
           '</article>'
         );
@@ -555,7 +557,7 @@
 
     async function loadBundles() {
       try {
-        const data = await fetchJson("/api/commerce/documents?limit=6");
+        const data = await fetchJson("/api/documents?limit=6");
         renderBundles(data.bundles || []);
       } catch (error) {
         el("bundle-grid").innerHTML = '<div class="muted-copy">Could not load generated document bundles: ' + esc(error.message) + '</div>';
@@ -777,7 +779,8 @@
           ? '<div style="height:8px"></div><div class="muted-copy">Documents: ' +
               '<a class="receipt-link" href="' + esc(result.documents.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a> · ' +
               '<a class="receipt-link" href="' + esc(result.documents.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a> · ' +
-              '<a class="receipt-link" href="' + esc(result.documents.deliveryProofUrl) + '" target="_blank" rel="noopener">Delivery proof</a>' +
+              '<a class="receipt-link" href="' + esc(result.documents.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a> Â· ' +
+              '<a class="receipt-link" href="/documents" target="_blank" rel="noopener">Open vault</a>' +
             '</div>'
           : '';
 

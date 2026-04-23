@@ -10,6 +10,7 @@ Kairos is not presented as a generic trading bot. The market loop is the workloa
 | --- | --- | --- |
 | Dashboard | `https://kairos.nov-tia.com` | Judge-facing proof surface for the four hackathon tracks |
 | Transaction History | `https://kairos.nov-tia.com/transactions` | Consolidated payment and settlement ledger |
+| Document Vault | `https://kairos.nov-tia.com/documents` | Direct access to Kairos-generated invoices, receipts, and proof files across tracks |
 | Execution History | `https://kairos.nov-tia.com/execution` | Underlying execution and position audit log |
 | Gemini Commerce Studio | `https://kairos.nov-tia.com/commerce` | Gemini function calling, multimodal receipt analysis, native commerce documents, and proof-settlement controls |
 | MCP endpoint | `https://kairos.nov-tia.com/mcp` | JSON-RPC tools, resources, and prompts for external agents |
@@ -27,6 +28,7 @@ Kairos is built to prove an economic model, not only to render a UI:
 - Gemini 3 Flash runtime reasoning, Gemini 3 Pro SAGE reflection, and resilient failover when providers fail.
 - Gemini function calling for live wallet, proof, and Track 4 inspection plus multimodal receipt or invoice analysis.
 - Native Kairos invoice, receipt, and delivery-proof bundle generation for first-party Track 4 events.
+- Cross-track invoice, receipt, and proof generation so Tracks 1 to 3 are inspectable without reading raw ledger rows.
 - A transparent margin story: this type of high-frequency agent activity works on Arc, but breaks on high-fee payment rails.
 
 Important: `Runtime cycles` on the dashboard are decision-loop counts. They are not the same thing as verified Arc transactions. Use `Real Arc txns`, the History page, and Arcscan links for on-chain proof.
@@ -431,9 +433,15 @@ Native commerce document routes:
 
 - `/api/commerce/documents`
 - `/api/commerce/documents/:eventId`
+- `/api/documents`
+- `/api/documents/:eventId`
+- `/documents`
 - `/commerce/docs/:eventId/invoice`
 - `/commerce/docs/:eventId/receipt`
 - `/commerce/docs/:eventId/delivery-proof`
+- `/documents/:eventId/invoice`
+- `/documents/:eventId/receipt`
+- `/documents/:eventId/delivery-proof`
 
 Recommended configuration:
 
@@ -465,6 +473,19 @@ Use `https://kairos.nov-tia.com/transactions` when the question is:
 - Track 3 compute receipts
 - Track 4 micro-commerce receipts
 - operator or audit receipts where applicable
+
+### Document Vault
+
+Use `https://kairos.nov-tia.com/documents` when the question is:
+
+- Where is the invoice for this billed event?
+- Where is the receipt for this billed event?
+- What proof file explains the governance, API, compute, or commerce action?
+
+`Document Vault` is the direct artifact surface. It complements:
+
+- `Transaction History` for the payment ledger
+- `Execution History` for the governed action log
 
 ### Execution History
 

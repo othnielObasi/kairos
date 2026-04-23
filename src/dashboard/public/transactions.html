@@ -149,6 +149,7 @@
     <nav>
       <a href="/kairos">Dashboard</a>
       <a href="/transactions" class="active">Transactions</a>
+      <a href="/documents">Documents</a>
       <a href="/execution">Execution History</a>
       <a href="/commerce">Commerce</a>
       <a href="/mcp" target="_blank" rel="noopener">MCP</a>
@@ -251,7 +252,7 @@
       const items = [];
       if (docs.invoiceUrl) items.push('<a class="tx-link" href="' + esc(docs.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a>');
       if (docs.receiptUrl) items.push('<a class="tx-link" href="' + esc(docs.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a>');
-      if (docs.deliveryProofUrl) items.push('<a class="tx-link" href="' + esc(docs.deliveryProofUrl) + '" target="_blank" rel="noopener">Delivery proof</a>');
+      if (docs.deliveryProofUrl) items.push('<a class="tx-link" href="' + esc(docs.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a>');
       return items.length
         ? '<div class="desc">Docs: ' + items.join(' · ') + '</div>'
         : '';

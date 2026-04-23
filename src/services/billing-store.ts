@@ -1,4 +1,5 @@
 import { NanopaymentReceipt, hasVerifiedTxHash } from './nanopayments.js';
+import { ensureReceiptDocumentBundle } from './commerce-documents.js';
 
 const STAGE_NAMES = [
   'Mandate',
@@ -83,6 +84,7 @@ class BillingStore {
     receipt.mode = receipt.mode || 'nanopayment';
     this.t1Events.unshift(receipt);
     if (this.t1Events.length > 100) this.t1Events.pop();
+    ensureReceiptDocumentBundle('t1', receipt);
 
     if (stageIndex >= 0 && stageIndex < 7) {
       this.stageCounts[stageIndex]++;
@@ -99,6 +101,7 @@ class BillingStore {
     receipt.mode = mode;
     this.t2Events.unshift(receipt);
     if (this.t2Events.length > 100) this.t2Events.pop();
+    ensureReceiptDocumentBundle('t2', receipt);
 
     if (!this.apiBreakdown[sourceKey]) {
       this.apiBreakdown[sourceKey] = {
@@ -125,6 +128,7 @@ class BillingStore {
     receipt.mode = receipt.mode || 'nanopayment';
     this.t3Events.unshift(receipt);
     if (this.t3Events.length > 100) this.t3Events.pop();
+    ensureReceiptDocumentBundle('t3', receipt);
 
     const stageIndex = receipt.type === 'reflection' || receipt.eventName.toLowerCase().includes('sage')
       ? 6

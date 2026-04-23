@@ -41,12 +41,15 @@ import {
 } from '../services/gemini-commerce.js';
 import { getGatewayBalanceInfo } from '../services/gateway-balance.js';
 import {
+  buildReceiptDocumentEventId,
+  ensureReceiptDocumentBundle,
   getCommerceDocumentBundle,
   getCommerceDocumentLinks,
   listCommerceDocumentBundles,
   renderCommerceDocumentHtml,
   type CommerceDocumentKind,
   type CommerceDocumentLinks,
+  type DocumentTrackKey,
 } from '../services/commerce-documents.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -495,6 +498,39 @@ function explorerUrl(txHash: string | null): string | null {
   return txHash ? `https://testnet.arcscan.app/tx/${txHash}` : null;
 }
 
+function backfillBillingDocumentBundles(): void {
+  for (const receipt of billingStore.t1Events) ensureReceiptDocumentBundle('t1', receipt);
+  for (const receipt of billingStore.t2Events) ensureReceiptDocumentBundle('t2', receipt);
+  for (const receipt of billingStore.t3Events) ensureReceiptDocumentBundle('t3', receipt);
+  getMicroCommerceEvents(200);
+}
+
+function buildDocumentVault(limit: number) {
+  backfillBillingDocumentBundles();
+  const cappedLimit = Math.min(Math.max(limit, 1), 500);
+  const bundles = listCommerceDocumentBundles(cappedLimit);
+  const summary = bundles.reduce(
+    (acc, bundle) => {
+      acc.total += 1;
+      acc.byTrack[bundle.trackKey] = (acc.byTrack[bundle.trackKey] || 0) + 1;
+      acc.byStatus[bundle.settlement.status] = (acc.byStatus[bundle.settlement.status] || 0) + 1;
+      return acc;
+    },
+    {
+      total: 0,
+      byTrack: {} as Record<DocumentTrackKey, number>,
+      byStatus: {} as Record<string, number>,
+    },
+  );
+
+  return {
+    generatedAt: new Date().toISOString(),
+    count: bundles.length,
+    summary,
+    bundles,
+  };
+}
+
 function receiptLedgerEntry(
   receipt: NanopaymentReceipt,
   index: number,
@@ -505,6 +541,7 @@ function receiptLedgerEntry(
   const txHash = verifiedHash(receipt.txHash);
   const source = receipt.source || receipt.model || receipt.type || 'Kairos';
   const eventName = receipt.eventName || category;
+  const bundle = ensureReceiptDocumentBundle(trackKey, receipt);
   return {
     id: `${trackKey}-${receipt.confirmedAt || Date.now()}-${index}`,
     timestamp: receiptTimestamp(receipt),
@@ -520,7 +557,11 @@ function receiptLedgerEntry(
     referenceId: receipt.referenceId || null,
     explorerUrl: explorerUrl(txHash),
     description: `${eventName} paid for ${source}`,
-    documentLinks: null,
+    documentLinks: bundle.documents || getCommerceDocumentLinks({
+      eventId: buildReceiptDocumentEventId(trackKey, receipt),
+      txHash,
+      referenceId: receipt.referenceId || null,
+    }),
   };
 }
 
@@ -749,17 +790,22 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     res.sendFile(path.join(__dirname, 'public', 'commerce.html'));
   });
 
-  app.get('/commerce/docs/:eventId/:kind', (req, res) => {
+  // Unified document vault
+  app.get('/documents', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'documents.html'));
+  });
+
+  app.get(['/documents/:eventId/:kind', '/commerce/docs/:eventId/:kind'], (req, res) => {
     const eventId = decodeURIComponent(req.params.eventId || '');
     const kind = req.params.kind as CommerceDocumentKind;
     if (!['invoice', 'receipt', 'delivery-proof'].includes(kind)) {
-      res.status(404).send('Unknown commerce document type');
+      res.status(404).send('Unknown document type');
       return;
     }
 
     const bundle = getCommerceDocumentBundle(eventId);
     if (!bundle) {
-      res.status(404).send('Commerce document bundle not found');
+      res.status(404).send('Document bundle not found');
       return;
     }
 
@@ -1320,8 +1366,8 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
         gatewayDepositVerified: false,
         warning: error.message || 'Gateway balance unavailable',
       }));
-      const allDocumentBundles = listCommerceDocumentBundles(500);
-      const documentBundles = allDocumentBundles.slice(0, 6);
+      const documentVault = buildDocumentVault(500);
+      const documentBundles = documentVault.bundles.slice(0, 6);
 
       res.json({
         runtime: getRuntimeConfig(),
@@ -1347,7 +1393,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
           meetsTxnRequirement: billing.meetsTxnRequirement,
         },
         documents: {
-          total: allDocumentBundles.length,
+          total: documentVault.count,
           recent: documentBundles,
         },
         track4,
@@ -1357,24 +1403,19 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     }
   });
 
-  app.get('/api/commerce/documents', (req, res) => {
+  app.get(['/api/documents', '/api/commerce/documents'], (req, res) => {
     try {
-      const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 200);
-      const bundles = listCommerceDocumentBundles(limit);
-      res.json({
-        generatedAt: new Date().toISOString(),
-        count: bundles.length,
-        bundles,
-      });
+      const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 500);
+      res.json(buildDocumentVault(limit));
     } catch (error: any) {
-      res.status(500).json({ error: error.message?.slice(0, 240) || 'Commerce documents unavailable' });
+      res.status(500).json({ error: error.message?.slice(0, 240) || 'Document vault unavailable' });
     }
   });
 
-  app.get('/api/commerce/documents/:eventId', (req, res) => {
+  app.get(['/api/documents/:eventId', '/api/commerce/documents/:eventId'], (req, res) => {
     const bundle = getCommerceDocumentBundle(decodeURIComponent(req.params.eventId || ''));
     if (!bundle) {
-      res.status(404).json({ error: 'Commerce document bundle not found' });
+      res.status(404).json({ error: 'Document bundle not found' });
       return;
     }
     res.json(bundle);
