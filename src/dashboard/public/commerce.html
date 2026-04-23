@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kairos - Gemini Commerce Studio</title>
+  <title>Kairos - Commerce Studio</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -226,14 +226,14 @@
     <div class="mark">K</div>
     <div>
       <div class="brand">KAIROS</div>
-      <div class="brand-sub">Gemini commerce and Arc proof studio</div>
+      <div class="brand-sub">Commerce Studio</div>
     </div>
     <nav>
-      <a href="/kairos">Dashboard</a>
-      <a href="/transactions">Transactions</a>
-      <a href="/documents">Documents</a>
+      <a href="/kairos">Proof Dashboard</a>
+      <a href="/transactions">Transaction History</a>
+      <a href="/documents">Document Vault</a>
       <a href="/execution">Execution History</a>
-      <a href="/commerce" class="active">Commerce</a>
+      <a href="/commerce" class="active">Commerce Studio</a>
       <a href="/mcp" target="_blank" rel="noopener">MCP</a>
     </nav>
   </header>
@@ -241,10 +241,10 @@
   <main>
     <section class="hero">
       <div class="hero-card">
-        <div class="kicker">Google Partner Surface</div>
-        <h1>Gemini function calling and multimodal commerce, now tied to Arc proof.</h1>
+        <div class="kicker">Commerce</div>
+        <h1>Commerce Studio</h1>
         <p class="hero-copy">
-          This page turns the Google partner story into a live product surface. Operators can ask Gemini for live Kairos commerce state through tools, analyze receipts or invoices with multimodal input, and create a bounded Arc USDC proof receipt when the document is review-safe.
+          Use Gemini tools and multimodal review to inspect or settle Track 4 proof receipts.
         </p>
         <div class="hero-note">
           <span>Proof receipts are intentionally capped below one cent.</span>
@@ -255,7 +255,6 @@
         <div class="proof-line"><span class="proof-label">Function Calling</span><span class="proof-val" id="proof-function">Loading...</span></div>
         <div class="proof-line"><span class="proof-label">Multimodal</span><span class="proof-val" id="proof-multimodal">Loading...</span></div>
         <div class="proof-line"><span class="proof-label">Settlement Rail</span><span class="proof-val">Arc Testnet / USDC</span></div>
-        <div class="proof-line"><span class="proof-label">Usage Model</span><span class="proof-val">Per action, per proof, per decision</span></div>
       </div>
     </section>
 
@@ -288,7 +287,7 @@
           <div>
             <div class="panel-title">Gemini Commerce Assistant</div>
             <p class="panel-copy">
-              Gemini 3 Flash uses live Kairos tools to answer operator questions about gateway balance, Arc proof, and Track 4 status. Settlement actions stay opt-in so we never blur inquiry with execution.
+              Ask Gemini about gateway balance, Arc proof, and Track 4 readiness.
             </p>
           </div>
           <span class="pill good" id="assistant-pill">Tooling live</span>
@@ -302,8 +301,8 @@
 
           <div class="field">
             <label for="assistant-prompt">Operator prompt</label>
-            <textarea id="assistant-prompt" placeholder="Ask Gemini to inspect live Kairos commerce state, explain a settlement decision, or preview a proof receipt."></textarea>
-            <div class="help">Gemini can inspect live tools now. It only settles if you explicitly enable settlement actions below.</div>
+            <textarea id="assistant-prompt" placeholder="Ask Gemini about commerce state or preview a proof receipt."></textarea>
+            <div class="help">Settlement stays opt-in.</div>
           </div>
 
           <label class="toggle">
@@ -330,7 +329,7 @@
           <div>
             <div class="panel-title">Multimodal Commerce Proof</div>
             <p class="panel-copy">
-              Upload a receipt, invoice, or delivery proof. Gemini reviews the image, extracts structured fields, flags review risk, and prepares a tiny Arc USDC proof receipt that stays clearly separate from the underlying invoice total.
+              Upload a receipt, invoice, or proof file for Gemini review before settlement.
             </p>
           </div>
           <span class="pill warn" id="analysis-pill">Review before settle</span>

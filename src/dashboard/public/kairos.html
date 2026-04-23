@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kairos — Arc Economic Proof</title>
+<title>Kairos - Proof Dashboard</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
 
@@ -119,7 +119,7 @@ html, body {
 .trk-num { font-size:9px; letter-spacing:.18em; color:var(--text3); margin-bottom:6px; }
 .trk-title { font-family:var(--sans); font-size:14px; font-weight:600; color:var(--text); margin-bottom:4px; }
 .trk-sub { font-size:10px; color:var(--text2); line-height:1.5; }
-.trk-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin-top:10px; }
+.trk-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-top:10px; }
 .tm { min-width:0; padding:7px 8px; border:1px solid rgba(255,255,255,.06); border-radius:3px; background:rgba(255,255,255,.025); }
 .tm-lbl { display:block; font-size:8px; color:var(--text3); letter-spacing:.1em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .tm-val { display:block; margin-top:3px; font-size:12px; color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -262,10 +262,10 @@ html, body {
       <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener" style="color:var(--teal);border:1px solid rgba(0,229,160,.2);padding:3px 10px;border-radius:2px;">Arc Explorer ↗</a>
       <a class="back-lnk" href="https://app.circle.com" target="_blank" rel="noopener" style="color:var(--blue);border:1px solid rgba(39,117,202,.2);padding:3px 10px;border-radius:2px;">Circle Console ↗</a>
       <a class="back-lnk" href="/mcp" target="_blank" rel="noopener" style="color:var(--blue);border:1px solid rgba(39,117,202,.2);padding:3px 10px;border-radius:2px;">MCP ↗</a>
-      <a class="back-lnk" href="/transactions" style="color:var(--teal);border:1px solid rgba(0,229,160,.2);padding:3px 10px;border-radius:2px;">History</a>
-      <a class="back-lnk" href="/documents" style="color:var(--blue);border:1px solid rgba(111,183,255,.22);padding:3px 10px;border-radius:2px;">Documents</a>
-      <a class="back-lnk" href="/commerce" style="color:var(--purple);border:1px solid rgba(111,183,255,.22);padding:3px 10px;border-radius:2px;">Commerce</a>
-      <a class="back-lnk" href="/">← Dashboard</a>
+      <a class="back-lnk" href="/transactions" style="color:var(--teal);border:1px solid rgba(0,229,160,.2);padding:3px 10px;border-radius:2px;">Transaction History</a>
+      <a class="back-lnk" href="/documents" style="color:var(--blue);border:1px solid rgba(111,183,255,.22);padding:3px 10px;border-radius:2px;">Document Vault</a>
+      <a class="back-lnk" href="/execution" style="color:var(--amber);border:1px solid rgba(244,163,74,.22);padding:3px 10px;border-radius:2px;">Execution History</a>
+      <a class="back-lnk" href="/commerce" style="color:var(--purple);border:1px solid rgba(111,183,255,.22);padding:3px 10px;border-radius:2px;">Commerce Studio</a>
     </div>
   </header>
 
@@ -639,7 +639,6 @@ function renderT1(data, track3) {
   }, 0);
   setTrackMetrics("t1-metrics", [
     { label:"Stages", value:activeStages + "/7", tone:activeStages >= 5 ? "live" : "warn" },
-    { label:"Gov receipts", value:events.length, tone:events.length ? "proof" : "" },
     { label:"Spend", value:fU(data.t1Spend), tone:"live" },
   ]);
   STAGE_NAMES.forEach((name,i) => {
@@ -709,7 +708,6 @@ function renderT2(data, track) {
   const liveSources = API_SOURCES.filter(s => (breakdown[s.key]?.mode || s.mode) === "x402").length;
   setTrackMetrics("t2-metrics", [
     { label:"Sources", value:liveSources + "/" + API_SOURCES.length, tone:liveSources === API_SOURCES.length ? "live" : "warn" },
-    { label:"Data events", value:events.length, tone:events.length ? "proof" : "" },
     { label:"Spend", value:fU(data.t2Spend), tone:"live" },
   ]);
   const allTrack2X402 = events.length > 0 && events.every(e => e.mode === "x402");
@@ -753,7 +751,6 @@ function renderT3(data, track) {
   const sage = track && track.sage ? track.sage : null;
   const geminiEvents = events.filter(e => /gemini/i.test(e.model || e.provider || e.eventName || "")).length;
   setTrackMetrics("t3-metrics", [
-    { label:"Compute events", value:events.length, tone:events.length ? "proof" : "" },
     { label:"Model", value:geminiEvents ? "Gemini 3" : "Ready", tone:geminiEvents ? "live" : "warn" },
     { label:"Spend", value:fU(data.t3Spend), tone:"live" },
   ]);
@@ -811,7 +808,6 @@ function renderT4(checkpoints, track) {
   const actionCount = trades.length + commerceEvents.length;
   const settledCount = settledTrades.length + settledCommerce.length;
   setTrackMetrics("t4-metrics", [
-    { label:"Recorded actions", value:actionCount, tone:actionCount ? "proof" : "" },
     { label:"Arc settled", value:settledCount, tone:settledCount ? "live" : "warn" },
     { label:"Volume", value:fU2(track?.settledVolumeUsd ?? settledVolume), tone:"live" },
   ]);

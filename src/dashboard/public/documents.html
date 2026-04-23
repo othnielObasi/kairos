@@ -185,14 +185,14 @@
     <div class="mark">K</div>
     <div>
       <div class="brand">KAIROS</div>
-      <div class="brand-sub">Invoice, receipt, and proof vault</div>
+      <div class="brand-sub">Document Vault</div>
     </div>
     <nav>
-      <a href="/kairos">Dashboard</a>
-      <a href="/transactions">Transactions</a>
-      <a href="/documents" class="active">Documents</a>
+      <a href="/kairos">Proof Dashboard</a>
+      <a href="/transactions">Transaction History</a>
+      <a href="/documents" class="active">Document Vault</a>
       <a href="/execution">Execution History</a>
-      <a href="/commerce">Commerce</a>
+      <a href="/commerce">Commerce Studio</a>
       <a href="/mcp" target="_blank" rel="noopener">MCP</a>
     </nav>
   </header>
@@ -200,20 +200,16 @@
   <main>
     <section class="hero">
       <div class="hero-card">
-        <div class="kicker">Unified Access</div>
-        <h1>Every invoice and receipt, one obvious place.</h1>
+        <div class="kicker">Vault</div>
+        <h1>Document Vault</h1>
         <p class="hero-copy">
-          This vault consolidates Kairos-generated invoice, receipt, and proof files across governance, paid APIs, usage-based compute, and real-time micro-commerce. It exists so judges and operators can open the supporting documents directly instead of hunting through track-specific pages.
+          Open Kairos invoice, receipt, and proof files in one place.
         </p>
-        <div class="hero-note">
-          <span>Track 1 to 3 bundles are generated from billed receipts.</span>
-          <span>Track 4 bundles are generated from native commerce events.</span>
-        </div>
       </div>
       <div class="proof-card">
-        <div class="proof-line"><span class="proof-label">Primary use</span><span class="proof-val">Direct doc access</span></div>
-        <div class="proof-line"><span class="proof-label">Proof model</span><span class="proof-val">Invoice + Receipt + Proof</span></div>
+        <div class="proof-line"><span class="proof-label">Access</span><span class="proof-val">Invoice, receipt, proof</span></div>
         <div class="proof-line"><span class="proof-label">Verification</span><span class="proof-val">Arcscan links when confirmed</span></div>
+        <div class="proof-line"><span class="proof-label">Scope</span><span class="proof-val">All four tracks</span></div>
       </div>
     </section>
 
@@ -236,7 +232,6 @@
       <div class="panel-head">
         <div>
           <div class="panel-title">Document Vault</div>
-          <div class="panel-copy">Open invoice, receipt, and proof files directly from here. Transactions still show the payment ledger, but this page is the fastest way to reach the supporting documents.</div>
         </div>
         <div class="refresh" id="refresh">Loading...</div>
       </div>
