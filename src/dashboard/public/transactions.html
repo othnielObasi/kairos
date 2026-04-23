@@ -55,19 +55,13 @@
     .tag-t { background: rgba(0,229,160,.1); color: var(--green); border: 1px solid rgba(0,229,160,.2); }
     .tag-b { background: rgba(39,117,202,.1); color: #2775ca; border: 1px solid rgba(39,117,202,.2); }
     .tag-arc { background: rgba(255,255,255,.04); color: var(--muted); border: 1px solid rgba(255,255,255,.12); }
-    .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .nav-btn {
-      font-size: 11px; letter-spacing: .08em; border-radius: 2px; padding: 3px 10px;
-      border: 1px solid rgba(255,255,255,.16); transition: .16s ease; white-space: nowrap;
-    }
-    .nav-btn:hover { background: rgba(255,255,255,.08); transform: translateY(-1px); }
-    .nav-btn.active { background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
-    .nav-dashboard { color: var(--text); border-color: rgba(255,255,255,.2); }
-    .nav-history { color: var(--green); border-color: rgba(53,224,161,.24); }
-    .nav-docs { color: var(--blue); border-color: rgba(111,183,255,.26); }
-    .nav-exec { color: var(--amber); border-color: rgba(255,204,102,.26); }
-    .nav-commerce { color: var(--blue); border-color: rgba(108,99,255,.28); }
-    .nav-mcp { color: #2775ca; border-color: rgba(39,117,202,.24); }
+    .hdr-right { margin-left:auto; display:flex; align-items:center; gap:16px; flex-wrap: wrap; }
+    .live-ind  { display:flex; align-items:center; gap:6px; }
+    .live-dot  { width:7px; height:7px; border-radius:50%; background:var(--green); animation:lp 1.4s ease-in-out infinite; }
+    .live-lbl { font-size:11px; color:var(--green); letter-spacing:.1em; }
+    @keyframes lp { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(53,224,161,.4)} 50%{opacity:.6;box-shadow:0 0 0 4px rgba(53,224,161,0)} }
+    .back-lnk { font-size:11px; color:var(--soft); text-decoration:none; cursor:pointer; letter-spacing:.08em; }
+    .back-lnk:hover { color:var(--muted); }
     main { max-width: 1480px; margin: 0 auto; padding: 22px 18px 48px; }
     .hero {
       display: grid; grid-template-columns: 1.3fr .7fr; gap: 18px; align-items: stretch;
@@ -150,10 +144,7 @@
       table { display: none; }
       .mobile-list { display: grid; }
     }
-    @media (max-width: 900px) {
-      .hdr { padding: 10px 14px; }
-      .hdr-right { margin-left: 0; width: 100%; }
-    }
+    @media (max-width: 900px) { .hdr { padding: 10px 14px; } .hdr-right { margin-left: 0; width: 100%; } }
     @media (max-width: 560px) {
       .stats { grid-template-columns: 1fr; }
       .hero-card { padding: 18px; }
@@ -174,12 +165,17 @@
       <span class="tag tag-p">Kairos Runtime</span>
     </div>
     <nav class="hdr-right">
-      <a class="nav-btn nav-dashboard" href="/kairos">Proof Dashboard</a>
-      <a class="nav-btn nav-history active" href="/transactions">Transaction History</a>
-      <a class="nav-btn nav-docs" href="/documents">Document Vault</a>
-      <a class="nav-btn nav-exec" href="/execution">Execution History</a>
-      <a class="nav-btn nav-commerce" href="/commerce">Commerce Studio</a>
-      <a class="nav-btn nav-mcp" href="/mcp" target="_blank" rel="noopener">MCP</a>
+      <div class="live-ind">
+        <div class="live-dot"></div>
+        <span class="live-lbl">LIVE</span>
+      </div>
+      <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener" style="color:var(--green);border:1px solid rgba(53,224,161,.2);padding:3px 10px;border-radius:2px;">Arc Explorer ↗</a>
+      <a class="back-lnk" href="https://app.circle.com" target="_blank" rel="noopener" style="color:#2775ca;border:1px solid rgba(39,117,202,.2);padding:3px 10px;border-radius:2px;">Circle Console ↗</a>
+      <a class="back-lnk" href="/mcp" target="_blank" rel="noopener" style="color:#2775ca;border:1px solid rgba(39,117,202,.2);padding:3px 10px;border-radius:2px;">MCP ↗</a>
+      <a class="back-lnk" href="/transactions" style="color:var(--green);border:1px solid rgba(53,224,161,.2);padding:3px 10px;border-radius:2px;background:rgba(255,255,255,.08);">Transaction History</a>
+      <a class="back-lnk" href="/documents" style="color:var(--blue);border:1px solid rgba(111,183,255,.22);padding:3px 10px;border-radius:2px;">Document Vault</a>
+      <a class="back-lnk" href="/execution" style="color:var(--amber);border:1px solid rgba(255,204,102,.22);padding:3px 10px;border-radius:2px;">Execution History</a>
+      <a class="back-lnk" href="/commerce" style="color:var(--blue);border:1px solid rgba(111,183,255,.22);padding:3px 10px;border-radius:2px;">Commerce Studio</a>
     </nav>
   </header>
 

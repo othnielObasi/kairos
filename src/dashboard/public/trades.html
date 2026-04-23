@@ -44,19 +44,20 @@
     .tag-b { background: rgba(96,165,250,.1); color: var(--info); border: 1px solid rgba(96,165,250,.2); }
     .tag-arc { background: rgba(255,255,255,.04); color: var(--fg2); border: 1px solid rgba(255,255,255,.12); }
     .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .nav-btn {
-      font-size: 11px; letter-spacing: .08em; border-radius: 2px; padding: 3px 10px;
-      border: 1px solid rgba(255,255,255,.16); transition: .16s ease; white-space: nowrap;
-      color: var(--fg2); text-decoration: none;
-    }
-    .nav-btn:hover { background: #ffffff08; transform: translateY(-1px); color: var(--w); }
-    .nav-btn.active { background: #ffffff08; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+    .live-ind  { display: flex; align-items: center; gap: 6px; }
+    .live-dot  { width: 7px; height: 7px; border-radius: 50%; background: var(--up); animation: lp 1.4s ease-in-out infinite; }
+    .live-lbl { font-size: 11px; color: var(--up); letter-spacing: .1em; }
+    @keyframes lp { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(52,211,153,.4); } 50% { opacity: .6; box-shadow: 0 0 0 4px rgba(52,211,153,0); } }
+    .back-lnk { font-size: 11px; letter-spacing: .08em; border-radius: 2px; padding: 3px 10px; border: 1px solid rgba(255,255,255,.16); transition: .16s ease; white-space: nowrap; text-decoration: none; }
+    .back-lnk:hover { background: #ffffff08; transform: translateY(-1px); color: var(--w); }
     .nav-dashboard { color: var(--w); border-color: rgba(255,255,255,.2); }
     .nav-history { color: var(--up); border-color: rgba(52,211,153,.24); }
     .nav-docs { color: #6fb7ff; border-color: rgba(111,183,255,.26); }
-    .nav-exec { color: var(--warn); border-color: rgba(251,191,36,.26); }
+    .nav-exec { color: var(--warn); border-color: rgba(251,191,36,.26); background: #ffffff08; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
     .nav-commerce { color: #6fb7ff; border-color: rgba(108,99,255,.28); }
     .nav-mcp { color: var(--info); border-color: rgba(96,165,250,.24); }
+    .nav-arcscan { color: var(--up); border-color: rgba(52,211,153,.24); }
+    .nav-circle { color: var(--info); border-color: rgba(96,165,250,.24); }
 
     .container { padding: 12px 16px 40px; max-width: 1400px; margin: 0 auto; }
     .stats-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 14px; }
@@ -113,12 +114,18 @@
       <span class="tag tag-p">Kairos Runtime</span>
     </div>
     <nav class="hdr-right">
-      <a class="nav-btn nav-dashboard" href="/kairos">Proof Dashboard</a>
-      <a class="nav-btn nav-history" href="/transactions">Transaction History</a>
-      <a class="nav-btn nav-docs" href="/documents">Document Vault</a>
-      <a class="nav-btn nav-exec active" href="/execution">Execution History</a>
-      <a class="nav-btn nav-commerce" href="/commerce">Commerce Studio</a>
-      <a class="nav-btn nav-mcp" href="/mcp">MCP</a>
+      <div class="live-ind">
+        <div class="live-dot"></div>
+        <span class="live-lbl">LIVE</span>
+      </div>
+      <a class="back-lnk nav-arcscan" href="https://testnet.arcscan.app" target="_blank" rel="noopener">Arc Explorers ↗</a>
+      <a class="back-lnk nav-circle" href="https://app.circle.com" target="_blank" rel="noopener">Circle Console ↗</a>
+      <a class="back-lnk nav-dashboard" href="/kairos">Little Console</a>
+      <a class="back-lnk nav-mcp" href="/mcp">NCP ↗</a>
+      <a class="back-lnk nav-history" href="/transactions">Transaction History</a>
+      <a class="back-lnk nav-docs" href="/documents">Document Vault</a>
+      <a class="back-lnk nav-exec" href="/execution">Execution History</a>
+      <a class="back-lnk nav-commerce" href="/commerce">Commerce Studio</a>
     </nav>
   </header>
 
