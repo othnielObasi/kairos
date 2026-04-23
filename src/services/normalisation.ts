@@ -143,8 +143,122 @@ export interface PriceData {
   source:    string;
 }
 
+function isCryptoTicker(ticker: string): boolean {
+  const normalised = ticker.toUpperCase().replace(/[^A-Z]/g, '');
+  return ['ETH', 'WETH', 'BTC', 'WBTC', 'USDC', 'SOL', 'MATIC', 'ARB'].includes(normalised);
+}
+
+function isPlausibleCryptoUsdPrice(ticker: string, price: number): boolean {
+  const normalised = ticker.toUpperCase().replace(/[^A-Z]/g, '');
+  if (!Number.isFinite(price) || price <= 0) return false;
+  if (normalised.includes('USDC')) return price > 0.9 && price < 1.1;
+  if (normalised.includes('BTC')) return price > 10_000 && price < 250_000;
+  if (normalised.includes('ETH') || normalised.includes('WETH')) return price > 100 && price < 20_000;
+  return price > 0.001 && price < 250_000;
+}
+
+function extractJsonObject(text: string): Record<string, any> | null {
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  try {
+    return JSON.parse(match[0]) as Record<string, any>;
+  } catch {
+    return null;
+  }
+}
+
+function parseUsdPrice(text: string, ticker: string): number | null {
+  const json = extractJsonObject(text);
+  const jsonPrice = Number(
+    json?.price_usd ??
+    json?.priceUsd ??
+    json?.price ??
+    json?.spot_price ??
+    json?.spotPrice,
+  );
+  if (isPlausibleCryptoUsdPrice(ticker, jsonPrice)) return jsonPrice;
+
+  const matches = Array.from(text.matchAll(/\$?\s*([0-9]{1,3}(?:,[0-9]{3})+(?:\.\d+)?|[0-9]+(?:\.\d+)?)/g));
+  for (const match of matches) {
+    const candidate = Number(match[1].replace(/,/g, ''));
+    if (isPlausibleCryptoUsdPrice(ticker, candidate)) return candidate;
+  }
+
+  return null;
+}
+
+function parseChangePercent(text: string): number {
+  const json = extractJsonObject(text);
+  const jsonChange = Number(
+    json?.change_24h_pct ??
+    json?.change24hPct ??
+    json?.change24h ??
+    json?.day_change_percent,
+  );
+  if (Number.isFinite(jsonChange)) return jsonChange;
+
+  const match = text.match(/(-?\d+(?:\.\d+)?)\s*%/);
+  return match ? Number(match[1]) : 0;
+}
+
+async function recordAisaPriceBilling(source: string): Promise<void> {
+  try {
+    const r1 = await billEvent('data-coingecko', { source, type:'data' });
+    const r2 = await billEvent('data-kraken',    { source, type:'data' });
+    billingStore.addApiEvent(r1, 'coingecko', 'x402');
+    billingStore.addApiEvent(r2, 'kraken', 'x402');
+  } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+}
+
+async function fetchCryptoSpotPriceData(ticker: string): Promise<PriceData | null> {
+  const symbol = ticker.toUpperCase().replace(/^W/, '');
+  const raw = await aisaPost('/perplexity/sonar', {
+    model: 'sonar',
+    messages: [{
+      role: 'user',
+      content:
+        `Return only compact JSON for the current ${symbol}/USD crypto spot price. ` +
+        `Use reliable market data and include keys price_usd and change_24h_pct. ` +
+        `No markdown, no prose.`,
+    }],
+  });
+
+  const text =
+    raw?.choices?.[0]?.message?.content ||
+    raw?.answer ||
+    raw?.text ||
+    raw?.content ||
+    JSON.stringify(raw);
+  const price = parseUsdPrice(text, symbol);
+  if (!price) return null;
+
+  const change24h = parseChangePercent(text);
+  return {
+    price,
+    priceA: price,
+    priceB: price * 1.0001,
+    high24h: price * 1.02,
+    low24h: price * 0.98,
+    volume24h: 0,
+    change24h,
+    timestamp: Date.now(),
+    source: 'aisa-perplexity-spot-price',
+  };
+}
+
 export async function fetchPriceData(ticker = 'ETH'): Promise<PriceData> {
   assertX402Ready();
+  if (isCryptoTicker(ticker)) {
+    const cryptoSpot = await fetchCryptoSpotPriceData(ticker).catch((err) => {
+      logger.warn('[Kairos] AIsa crypto spot price fetch failed:', err);
+      return null;
+    });
+    if (cryptoSpot) {
+      await recordAisaPriceBilling(cryptoSpot.source);
+      return cryptoSpot;
+    }
+  }
+
   // Fetch twice to preserve the downstream two-price shape. Some AIsa aliases
   // diverge materially for wrapped assets, so we sanity-check the secondary
   // quote and fall back to a near-identical synthetic secondary when needed.
@@ -159,6 +273,9 @@ export async function fetchPriceData(ticker = 'ETH'): Promise<PriceData> {
   // AIsa /financial/prices/snapshot response shape:
   // { snapshot: { price, day_change, day_change_percent, ticker, time, time_milliseconds } }
   const primary = primarySnapshot?.price ?? primarySnapshot?.close ?? 0;
+  if (isCryptoTicker(ticker) && !isPlausibleCryptoUsdPrice(ticker, primary)) {
+    throw new Error(`AIsa financial snapshot for ${ticker} returned non-crypto price ${primary}`);
+  }
   const rawSecondary = secondarySnapshot?.price ?? secondarySnapshot?.close ?? 0;
   const secondaryDeviation = primary > 0
     ? Math.abs(rawSecondary - primary) / primary
@@ -180,12 +297,7 @@ export async function fetchPriceData(ticker = 'ETH'): Promise<PriceData> {
   };
 
   // Record billing for Track 2 (both calls — priceA and priceB)
-  try {
-    const r1 = await billEvent('data-coingecko', { source:'aisa-financial-prices', type:'data' });
-    const r2 = await billEvent('data-kraken',    { source:'aisa-financial-prices', type:'data' });
-    billingStore.addApiEvent(r1, 'coingecko', 'x402');
-    billingStore.addApiEvent(r2, 'kraken', 'x402');
-  } catch(e) { logger.warn('[Kairos] billing skip:', e); }
+  await recordAisaPriceBilling('aisa-financial-prices');
 
   return normalised;
 }

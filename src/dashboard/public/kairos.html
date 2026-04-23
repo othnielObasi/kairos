@@ -233,6 +233,7 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
       <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener" style="color:var(--teal);border:1px solid rgba(0,229,160,.2);padding:3px 10px;border-radius:2px;">Arc Explorer ↗</a>
       <a class="back-lnk" href="https://app.circle.com" target="_blank" rel="noopener" style="color:var(--blue);border:1px solid rgba(39,117,202,.2);padding:3px 10px;border-radius:2px;">Circle Console ↗</a>
       <a class="back-lnk" href="/mcp" target="_blank" rel="noopener" style="color:var(--blue);border:1px solid rgba(39,117,202,.2);padding:3px 10px;border-radius:2px;">MCP ↗</a>
+      <a class="back-lnk" href="/transactions" style="color:var(--teal);border:1px solid rgba(0,229,160,.2);padding:3px 10px;border-radius:2px;">History</a>
       <a class="back-lnk" href="/">← Dashboard</a>
     </div>
   </header>
@@ -263,14 +264,14 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
       <div class="mi-sub">USDC per governed moment</div>
     </div>
     <div class="mi">
-      <div class="mi-lbl">Trust tier</div>
+      <div class="mi-lbl">Runtime identity</div>
       <div class="mi-val" id="mb-trust">—</div>
       <div class="mi-sub" id="mb-tsub">—</div>
     </div>
     <div class="mi" style="flex:2">
       <div class="mi-lbl">Kairos · Circle platform stack</div>
       <div class="mi-val" style="font-size:11px;color:var(--text2);margin-top:2px" id="mb-stack">Arc · USDC · Nanopayments · Circle Wallets · x402</div>
-      <div class="mi-sub">Powered by the Kairos governed runtime · 890+ baseline cycles</div>
+      <div class="mi-sub">Powered by the Kairos governed runtime</div>
     </div>
     <div class="mi">
       <div class="mi-lbl">x402 wallet</div>
@@ -617,8 +618,8 @@ function renderT2(data, track) {
   const events = data.t2Events || [];
   const allTrack2X402 = events.length > 0 && events.every(e => e.mode === "x402");
   noteEl.textContent = track && track.mode === "x402"
-    ? "x402 live: AIsa powers Twitter, news, and PRISM; spot price remains on Kraken/CoinGecko."
-    : "Fallback mode: legacy feeds are live and Kairos records fallback API billing receipts until the x402 signer is armed.";
+    ? "x402 live: AIsa powers price snapshots, Twitter, news, and PRISM; safety feeds only appear when AIsa is unavailable."
+    : "Fallback mode: Kairos keeps safety feeds live and records fallback API billing receipts until the x402 signer and Gateway balance are ready.";
   sc.appendChild(noteEl);
 
   el("t2-fhdr").textContent = allTrack2X402 ? "RECENT x402 PAYMENTS" : "RECENT TRACK 2 BILLING";
@@ -744,10 +745,11 @@ function updateBars(billing, status) {
   const pending = billing.pendingTxns || 0;
   const totalEvents = billing.totalEvents || txns;
   const spend  = billing.totalSpend || 0;
-  const cycles = status.totalCycles || status.cycleCount || 890;
-  const trust  = status.trustScore  || status.trust?.score || "—";
-  const tier   = status.capitalTier || status.trust?.tier  || "—";
-  const agentId= status.agentId     || "22";
+  const cycles = status.totalCycles || status.cycleCount || 0;
+  const runtimeLabel = status.mcp ? "Agent-ready" : "Kairos";
+  const runtimeSub = status.mode === "live"
+    ? "live runtime · root domain"
+    : "configured runtime · root domain";
   const cpd    = totalEvents > 0 ? spend / totalEvents : 0;
   const pct    = Math.min(100, (txns / target) * 100);
   const txnLabel = pending > 0
@@ -760,8 +762,8 @@ function updateBars(billing, status) {
   el("mb-cpd").textContent    = fU(cpd);
   el("mb-txbar").style.width  = pct + "%";
   el("mb-txreq").textContent  = txnLabel;
-  el("mb-trust").textContent  = trust;
-  el("mb-tsub").textContent   = tier + " tier · Agent #" + agentId;
+  el("mb-trust").textContent  = runtimeLabel;
+  el("mb-tsub").textContent   = runtimeSub;
 
   el("p-txns").textContent    = txns;
   el("p-tsub").textContent    = pending > 0

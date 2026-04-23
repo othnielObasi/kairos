@@ -1,27 +1,28 @@
 /**
- * Live Price Feed — Kraken + CoinGecko/DeFiLlama
+ * Live Price Feed — AIsa x402 primary + safety fallbacks
  *
- * Track 2 uses AIsa x402 for sentiment, news, and PRISM reasoning.
- * We intentionally keep live WETH/USDC spot pricing on Kraken/CoinGecko
- * because the AIsa financial price snapshot catalog is equity-ticker based.
+ * Track 2 uses AIsa x402 for price snapshots, sentiment, news, and PRISM
+ * whenever the Circle Gateway signer is funded. Kraken/CoinGecko/DeFiLlama
+ * stay as safety feeds so the trading loop keeps running if AIsa is down.
  */
 
 import type { MarketData } from '../strategy/momentum.js';
 import { createLogger } from '../agent/logger.js';
 import { fetchKrakenPrice, fetchKrakenOHLC } from './kraken-feed.js';
 import { recordTrack2Billing } from '../services/api-billing.js';
+import { fetchPriceData, getNormalisationStatus } from '../services/normalisation.js';
 
 const log = createLogger('LIVE-FEED');
 
-// AIsa x402 integration — truthfully limited to sentiment/news/PRISM for Kairos.
+// AIsa x402 integration — primary paid data path for Kairos.
 const USE_AISA = !!process.env.AISA_BASE_URL;
 if (USE_AISA) {
-  import('../services/normalisation.js').then(m => {
-    const normalisation = m.getNormalisationStatus();
+  Promise.resolve().then(() => {
+    const normalisation = getNormalisationStatus();
     if (normalisation.mode === 'x402') {
-      log.info('AIsa x402 is enabled for sentiment/news/PRISM; live spot pricing stays on Kraken/CoinGecko because AIsa financial price snapshots are equity tickers');
+      log.info('AIsa x402 is enabled as the primary price, sentiment, news, and PRISM data path');
     } else {
-      log.warn('AIsa configured but x402 signer is not ready — legacy price feeds remain primary', {
+      log.warn('AIsa configured but x402 signer is not ready — safety price feeds remain active', {
         reason: normalisation.reason,
       });
     }
@@ -47,10 +48,29 @@ const MAX_CONSECUTIVE_FAILURES = 5;
 
 /**
  * Fetch the current live ETH price in USD.
- * Tries Kraken first (direct exchange), then CoinGecko, then DeFiLlama.
+ * Tries AIsa x402 first, then Kraken, CoinGecko, and DeFiLlama.
  * Returns null only if all sources fail.
  */
 export async function fetchLivePrice(): Promise<{ price: number; source: string } | null> {
+  // Try AIsa first — paid x402 price snapshots for the hackathon data story.
+  if (USE_AISA && getNormalisationStatus().mode === 'x402') {
+    try {
+      const aisaResult = await fetchPriceData('ETH');
+      if (Number.isFinite(aisaResult.price) && aisaResult.price > 100 && aisaResult.price < 20_000) {
+        lastFetchedPrice = aisaResult.price;
+        lastFetchTime = Date.now();
+        consecutiveFailures = 0;
+        return { price: aisaResult.price, source: 'aisa-financial-prices-x402' };
+      }
+      log.warn('AIsa price snapshot returned an implausible ETH price — using safety feeds', {
+        price: aisaResult.price,
+        source: aisaResult.source,
+      });
+    } catch (e) {
+      log.warn('AIsa x402 price fetch failed — using safety feeds', { error: String(e) });
+    }
+  }
+
   // Try Kraken first — direct exchange pricing for WETH/USDC.
   try {
     const krakenResult = await fetchKrakenPrice();

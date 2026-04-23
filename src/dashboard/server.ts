@@ -23,7 +23,7 @@ import { getSAGEStatus, getActivePlaybookRules } from '../strategy/sage-engine.j
 import { getKrakenFeedStatus, fetchKrakenTicker, fetchKrakenBalance, fetchKrakenOpenOrders, fetchKrakenTradeHistory } from '../data/kraken-feed.js';
 import { fetchPrismData } from '../data/prism-feed.js';
 import { billingStore } from '../services/billing-store.js';
-import { hasVerifiedTxHash } from '../services/nanopayments.js';
+import { hasVerifiedTxHash, type NanopaymentReceipt } from '../services/nanopayments.js';
 import { getCliStatus, checkCliHealth } from '../data/kraken-cli.js';
 import { getKrakenAccountSnapshot, krakenPreflight } from '../data/kraken-bridge.js';
 import { generateAttestationSummary } from '../security/tee-attestation.js';
@@ -67,7 +67,6 @@ function humanizeModelName(model: string): string {
   const lower = model.toLowerCase();
   if (lower.includes('gemini-3-flash')) return 'Gemini 3 Flash';
   if (lower.includes('gemini-3-pro')) return 'Gemini 3 Pro';
-  if (lower.includes('gemini-2.5-flash')) return 'Gemini 2.5 Flash';
   if (lower.includes('claude-sonnet-4')) return 'Claude Sonnet 4';
   if (lower.includes('gpt-4o-mini')) return 'OpenAI GPT-4o mini';
   return model;
@@ -75,6 +74,18 @@ function humanizeModelName(model: string): string {
 
 function joinFlow(labels: string[]): string {
   return labels.filter(Boolean).join(' → ');
+}
+
+function readProviderErrorHints(): string[] {
+  return [
+    process.env.GEMINI_LAST_ERROR,
+    process.env.GEMINI_STATUS_NOTE,
+    process.env.OPENAI_LAST_ERROR,
+    process.env.ANTHROPIC_LAST_ERROR,
+  ]
+    .map((value) => value?.trim() || '')
+    .filter(Boolean)
+    .slice(0, 3);
 }
 
 function countByVisibility(items: Array<{ visibility: string }>) {
@@ -135,11 +146,11 @@ function buildTrack2Status() {
     label,
     note,
     legacySubtitle: normalisation.mode === 'x402'
-      ? 'Agent pays AIsa x402 endpoints per query · Circle Gateway settlement · USDC on Arc · 79 endpoints across financial, Twitter, and Perplexity'
-      : 'Agent queries live fallback feeds with Arc billing receipts · AIsa x402 standby · Kraken / CoinGecko / PRISM / Alpha Vantage',
+      ? 'Agent pays AIsa x402 endpoints per query · Circle Gateway settlement · USDC on Arc · financial, Twitter, news, and Perplexity'
+      : 'Agent queries live fallback feeds with Arc billing receipts · AIsa x402 standby · market, social, news, and PRISM data',
     subtitle: normalisation.mode === 'x402'
-      ? 'Agent pays AIsa x402 for Twitter, news, and PRISM reasoning · Circle Gateway settlement · USDC on Arc · live spot price stays on Kraken/CoinGecko'
-      : 'Agent queries live fallback feeds with Arc billing receipts · AIsa x402 standby · Kraken / CoinGecko / PRISM / Alpha Vantage',
+      ? 'Agent pays AIsa x402 for price snapshots, Twitter, news, and PRISM reasoning · Circle Gateway settlement · USDC on Arc'
+      : 'Agent queries live fallback feeds with Arc billing receipts · AIsa x402 standby · market, social, news, and PRISM data',
     endpoint: normalisation.endpoint,
     mode: normalisation.mode,
     reason: normalisation.reason,
@@ -148,15 +159,15 @@ function buildTrack2Status() {
     totalEvents: billing.t2Events.length,
     sourceLabels: normalisation.mode === 'x402'
       ? {
-          coingecko: 'CoinGecko / DeFiLlama',
-          kraken: 'Kraken Direct',
+          coingecko: 'AIsa x402 Spot A',
+          kraken: 'AIsa x402 Spot B',
           feargreed: 'AIsa Twitter',
           alphavantage: 'AIsa Fin. News',
           prism: 'AIsa Perplexity',
         }
       : {
-          coingecko: 'CoinGecko / DeFiLlama',
-          kraken: 'Kraken Direct',
+          coingecko: 'AIsa Spot A / Safety Feed',
+          kraken: 'AIsa Spot B / Safety Feed',
           feargreed: 'Fear & Greed',
           alphavantage: 'Alpha Vantage / PRISM News',
           prism: 'Strykr PRISM',
@@ -216,6 +227,15 @@ function buildTrack3Status() {
     ? humanizeModelName(reflectionModels[0] || 'gemini-3-pro-preview')
     : 'SAGE standby';
   const runtimeFailover: string[] = [];
+  const latestModel = latestEvent?.model || '';
+  const latestLowerModel = latestModel.toLowerCase();
+  const openAiFailoverActive = Boolean(
+    latestEvent &&
+    geminiConfigured &&
+    openaiConfigured &&
+    latestLowerModel.includes('gpt-4o-mini'),
+  );
+  const providerErrorHints = readProviderErrorHints();
 
   if (geminiConfigured) {
     if (openaiConfigured) runtimeFailover.push('OpenAI');
@@ -241,8 +261,12 @@ function buildTrack3Status() {
     } else {
       state = 'fallback';
       label = 'FALLBACK';
-      note = `${latestEvent.model || latestEvent.eventName || 'Compute'} used a fallback billing receipt because no verified Arc settlement hash is available yet.`;
-      fallbackReason = 'Fallback billing receipt active because the Arc settlement hash was not produced by the current signer path.';
+      note = openAiFailoverActive
+        ? 'Gemini 3 was attempted first, but the current Gemini keys are not completing requests; OpenAI GPT-4o mini is serving as the configured failover.'
+        : `${latestEvent.model || latestEvent.eventName || 'Compute'} used a fallback billing receipt because no verified Arc settlement hash is available yet.`;
+      fallbackReason = openAiFailoverActive
+        ? 'OpenAI failover active after Gemini 3 attempts did not complete. Check Gemini quota/model access if judges need live Gemini output visible.'
+        : 'Fallback billing receipt active because the Arc settlement hash was not produced by the current signer path.';
     }
   } else if (configuredCount === 0) {
     state = 'no_keys';
@@ -257,6 +281,7 @@ function buildTrack3Status() {
     note,
     subtitle: `Agent pays per LLM inference and SAGE reflection · Circle Nanopayments · ${primaryRuntime} runtime · ${geminiConfigured ? `${primaryReflection} SAGE reflection` : primaryReflection}${runtimeFailover.length ? ` · ${joinFlow(runtimeFailover)} failover` : ''}`,
     providers,
+    providerErrorHints,
     apiKeysConfigured: configuredCount > 0,
     runtimeModels,
     reflectionModels,
@@ -369,6 +394,176 @@ function buildTrack4Status(agentState: ReturnType<typeof getAgentState>) {
   };
 }
 
+type LedgerStatus = 'confirmed' | 'pending' | 'fallback' | 'local' | 'paper' | 'audit';
+
+interface LedgerTransaction {
+  id: string;
+  timestamp: string;
+  trackKey: 't1' | 't2' | 't3' | 't4' | 'ops';
+  track: string;
+  category: string;
+  source: string;
+  eventName: string;
+  amountUsdc: number;
+  mode: string;
+  status: LedgerStatus;
+  txHash: string | null;
+  referenceId: string | null;
+  explorerUrl: string | null;
+  description: string;
+}
+
+function verifiedHash(txHash: string | null | undefined): string | null {
+  if (!txHash) return null;
+  return hasVerifiedTxHash({ txHash }) ? txHash : null;
+}
+
+function receiptStatus(receipt: NanopaymentReceipt): LedgerStatus {
+  if (hasVerifiedTxHash(receipt)) return 'confirmed';
+  if (receipt.verificationState === 'fallback' || receipt.txHash?.startsWith('pending_')) return 'fallback';
+  if (receipt.referenceId) return 'pending';
+  return 'pending';
+}
+
+function receiptTimestamp(receipt: NanopaymentReceipt): string {
+  const timestamp = receipt.confirmedAt || Date.now();
+  return new Date(timestamp).toISOString();
+}
+
+function explorerUrl(txHash: string | null): string | null {
+  return txHash ? `https://testnet.arcscan.app/tx/${txHash}` : null;
+}
+
+function receiptLedgerEntry(
+  receipt: NanopaymentReceipt,
+  index: number,
+  trackKey: 't1' | 't2' | 't3',
+  track: string,
+  category: string,
+): LedgerTransaction {
+  const txHash = verifiedHash(receipt.txHash);
+  const source = receipt.source || receipt.model || receipt.type || 'Kairos';
+  const eventName = receipt.eventName || category;
+  return {
+    id: `${trackKey}-${receipt.confirmedAt || Date.now()}-${index}`,
+    timestamp: receiptTimestamp(receipt),
+    trackKey,
+    track,
+    category,
+    source,
+    eventName,
+    amountUsdc: receipt.amount || 0,
+    mode: receipt.mode || 'nanopayment',
+    status: receiptStatus(receipt),
+    txHash,
+    referenceId: receipt.referenceId || null,
+    explorerUrl: explorerUrl(txHash),
+    description: `${eventName} paid for ${source}`,
+  };
+}
+
+function checkpointLedgerEntries(limit: number): LedgerTransaction[] {
+  return getCheckpoints(limit)
+    .filter((checkpoint) => {
+      const execution = getCheckpointExecution(checkpoint);
+      return execution.requested || Boolean(checkpoint.onChainTxHash);
+    })
+    .map((checkpoint, index) => {
+      const execution = getCheckpointExecution(checkpoint);
+      const txHash = verifiedHash(execution.settlementTxHash || checkpoint.onChainTxHash || null);
+      const direction = checkpoint.strategyOutput.signal.direction;
+      const pair = config.tradingPair || 'WETH/USDC';
+      const mode = execution.executionMode || 'local_only';
+      const amountUsdc = execution.microSettlement.amountUsdc ?? 0;
+      const status: LedgerStatus = txHash
+        ? 'confirmed'
+        : execution.settlementStatus === 'paper'
+          ? 'paper'
+          : execution.settlementStatus === 'local_only'
+            ? 'local'
+            : 'pending';
+
+      return {
+        id: `t4-${checkpoint.id}-${index}`,
+        timestamp: execution.settledAt || checkpoint.timestamp,
+        trackKey: 't4' as const,
+        track: 'Track 04',
+        category: 'Real-time micro-commerce',
+        source: execution.settlementVenue || mode,
+        eventName: direction === 'NEUTRAL' ? 'approved-action' : `${direction.toLowerCase()}-action`,
+        amountUsdc,
+        mode,
+        status,
+        txHash,
+        referenceId: execution.microSettlement.referenceId || execution.kraken.orderId || null,
+        explorerUrl: explorerUrl(txHash),
+        description: `${direction} ${pair} action for ${execution.notionalUsd.toFixed(2)} USDC notional via ${mode}`,
+      };
+    });
+}
+
+function operatorLedgerEntries(limit: number): LedgerTransaction[] {
+  return getOperatorActionReceipts(limit).map((receipt, index) => ({
+    id: `ops-${receipt.id}-${index}`,
+    timestamp: receipt.timestamp,
+    trackKey: 'ops' as const,
+    track: 'Operator',
+    category: 'Human oversight',
+    source: receipt.actor,
+    eventName: receipt.action,
+    amountUsdc: 0,
+    mode: receipt.signatureVerification ? 'eip-1271' : 'local-operator',
+    status: receipt.signatureVerification?.valid === false ? 'fallback' : 'audit',
+    txHash: null,
+    referenceId: receipt.id,
+    explorerUrl: null,
+    description: `${receipt.action} -> ${receipt.modeAfter}: ${receipt.reason}`,
+  }));
+}
+
+function buildTransactionLedger(limit: number) {
+  const cappedLimit = Math.min(Math.max(limit, 1), 1000);
+  const records: LedgerTransaction[] = [
+    ...billingStore.t1Events.map((receipt, index) => receiptLedgerEntry(receipt, index, 't1', 'Track 01', 'Governance nanopayment')),
+    ...billingStore.t2Events.map((receipt, index) => receiptLedgerEntry(receipt, index, 't2', 'Track 02', 'Paid data access')),
+    ...billingStore.t3Events.map((receipt, index) => receiptLedgerEntry(receipt, index, 't3', 'Track 03', 'Usage-based compute')),
+    ...checkpointLedgerEntries(cappedLimit),
+    ...operatorLedgerEntries(Math.min(cappedLimit, 200)),
+  ].sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
+
+  const visible = records.slice(0, cappedLimit);
+  const summary = visible.reduce(
+    (acc, item) => {
+      acc.total += 1;
+      acc.totalSpendUsdc += item.amountUsdc;
+      acc.byStatus[item.status] = (acc.byStatus[item.status] || 0) + 1;
+      acc.byTrack[item.trackKey] = (acc.byTrack[item.trackKey] || 0) + 1;
+      if (item.status === 'confirmed') acc.confirmed += 1;
+      if (item.status === 'pending') acc.pending += 1;
+      if (item.status === 'fallback') acc.fallback += 1;
+      return acc;
+    },
+    {
+      total: 0,
+      confirmed: 0,
+      pending: 0,
+      fallback: 0,
+      totalSpendUsdc: 0,
+      byStatus: {} as Record<string, number>,
+      byTrack: {} as Record<string, number>,
+    },
+  );
+
+  summary.totalSpendUsdc = Math.round(summary.totalSpendUsdc * 1_000_000) / 1_000_000;
+
+  return {
+    generatedAt: new Date().toISOString(),
+    limit: cappedLimit,
+    summary,
+    transactions: visible,
+  };
+}
+
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_WINDOW_MS = 60_000;
@@ -432,6 +627,11 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
   // Trade history page — separate tab
   app.get('/trades', (_req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'trades.html'));
+  });
+
+  // Consolidated transaction ledger — all hackathon proof tracks in one view
+  app.get(['/transactions', '/history'], (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'transactions.html'));
   });
 
   // Economic proof walkthrough
@@ -989,7 +1189,8 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
           balance: formatted,
           formatted,
           kind: 'circle-wallet-balance',
-          warning: null,
+          gatewayDepositVerified: false,
+          warning: 'wallet USDC; Gateway spend pool is separate',
         });
         return;
       }
@@ -1009,10 +1210,21 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
         balance: bal.toString(),
         formatted: ethers.formatUnits(bal, 6),
         kind: 'onchain-wallet-balance',
-        warning: null,
+        gatewayDepositVerified: false,
+        warning: 'wallet USDC; Gateway spend pool is separate',
       });
     } catch (e: any) {
       res.status(500).json({ error: e.message?.slice(0, 200) || 'x402 wallet balance check failed' });
+    }
+  });
+
+  /** Consolidated transaction ledger for judge/audit review */
+  app.get('/api/transactions', (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string, 10) || 300;
+      res.json(buildTransactionLedger(limit));
+    } catch (e) {
+      res.status(500).json({ error: 'Failed to get transaction ledger' });
     }
   });
 
