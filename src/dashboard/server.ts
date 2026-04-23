@@ -46,6 +46,7 @@ import {
   buildCommerceDocumentFilename,
   getCommerceDocumentBundle,
   getCommerceDocumentLinks,
+  listAllCommerceDocumentBundles,
   listCommerceDocumentBundles,
   renderCommerceDocumentHtml,
   type CommerceDocumentKind,
@@ -509,8 +510,13 @@ function backfillBillingDocumentBundles(): void {
 function buildDocumentVault(limit: number) {
   backfillBillingDocumentBundles();
   const cappedLimit = Math.min(Math.max(limit, 1), 500);
-  const bundles = listCommerceDocumentBundles(cappedLimit);
-  const summary = bundles.reduce(
+  const allBundles = listAllCommerceDocumentBundles();
+  const bundles = allBundles.slice(0, cappedLimit);
+  const summary = allBundles.reduce<{
+    total: number;
+    byTrack: Record<DocumentTrackKey, number>;
+    byStatus: Record<string, number>;
+  }>(
     (acc, bundle) => {
       acc.total += 1;
       acc.byTrack[bundle.trackKey] = (acc.byTrack[bundle.trackKey] || 0) + 1;
@@ -526,7 +532,8 @@ function buildDocumentVault(limit: number) {
 
   return {
     generatedAt: new Date().toISOString(),
-    count: bundles.length,
+    count: allBundles.length,
+    visibleCount: bundles.length,
     summary,
     bundles,
   };
@@ -679,7 +686,7 @@ function buildTransactionLedger(limit: number) {
   ].sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
 
   const visible = records.slice(0, cappedLimit);
-  const summary = visible.reduce(
+  const summary = records.reduce(
     (acc, item) => {
       acc.total += 1;
       acc.totalSpendUsdc += item.amountUsdc;
@@ -706,6 +713,7 @@ function buildTransactionLedger(limit: number) {
   return {
     generatedAt: new Date().toISOString(),
     limit: cappedLimit,
+    visibleCount: visible.length,
     summary,
     transactions: visible,
   };
