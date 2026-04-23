@@ -242,7 +242,31 @@ Settlement state can be:
 
 For the hackathon proof story, `arc_settled` receipts are the highest-value Track 4 evidence.
 
-## Flow 7: Transaction History And Proof Ledger
+## Flow 7: Gemini Commerce Function Calling And Multimodal Proof
+
+```text
+Operator opens /commerce
+        |
+        v
+commerce.html loads /api/commerce/status
+        |
+        +--> Gemini function-calling assistant can inspect live gateway, Arc proof, and Track 4 state
+        |
+        +--> Gemini multimodal analysis can review an uploaded receipt or invoice image
+        |
+        v
+Preview distinguishes document total from proof-settlement amount
+        |
+        v
+Optional settleCommerceProofReceipt() creates bounded Arc USDC proof receipt
+        |
+        v
+Track 4, billing, and Transaction History update with the new proof row
+```
+
+This flow exists to make the Google partner story visible in the shipped product rather than only in backend configuration.
+
+## Flow 8: Transaction History And Proof Ledger
 
 ```text
 Billing receipts + checkpoint executions
@@ -267,7 +291,7 @@ History is the detailed audit surface. It is designed to carry information that 
 - Arcscan links for confirmed transaction hashes.
 - Pending/fallback state for unresolved receipts.
 
-## Flow 8: Dashboard Proof Surface
+## Flow 9: Dashboard Proof Surface
 
 ```text
 kairos.html polls:
@@ -289,7 +313,7 @@ Dashboard design rules:
 - Explain runtime cycles with tooltips.
 - Keep track cards consistent: purpose, status, three metrics, latest proof.
 
-## Flow 9: MCP Agent Interface
+## Flow 10: MCP Agent Interface
 
 ```text
 External MCP client
@@ -317,7 +341,7 @@ MCP exposes:
 
 The MCP surface makes Kairos usable by other agents, not only human dashboard viewers.
 
-## Flow 10: Persistence And Restart Recovery
+## Flow 11: Persistence And Restart Recovery
 
 ```text
 Runtime opens/closes positions or reaches persistence interval
@@ -339,7 +363,7 @@ Important operational note:
 
 The billing counters in `billingStore` are in-memory proof counters for the current runtime session. A PM2 restart resets the live dashboard count, and the loop rebuilds the 50+ transaction proof as new receipts are produced.
 
-## Flow 11: Failure And Fallback Handling
+## Flow 12: Failure And Fallback Handling
 
 | Failure | Runtime behavior |
 | --- | --- |
@@ -353,7 +377,7 @@ The billing counters in `billingStore` are in-memory proof counters for the curr
 | Repeated cycle errors | Scheduler pauses and resumes after cooldown |
 | Shutdown signal arrives | State is persisted and dashboard/MCP servers are stopped |
 
-## Flow 12: Verification Checklist
+## Flow 13: Verification Checklist
 
 Use this checklist before demos:
 

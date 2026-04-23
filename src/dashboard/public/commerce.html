@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kairos - Gemini Commerce Studio</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #07100d;
+      --panel: #0c1713;
+      --panel2: #111f19;
+      --line: rgba(53,224,161,.16);
+      --line-strong: rgba(53,224,161,.28);
+      --text: #edf8f2;
+      --muted: #8aa698;
+      --soft: #4f6d61;
+      --green: #35e0a1;
+      --blue: #6fb7ff;
+      --amber: #ffcc66;
+      --red: #ff7d7d;
+      --ink: #020604;
+      --shadow: 0 18px 60px rgba(0,0,0,.26);
+    }
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: "JetBrains Mono", monospace; font-size: 12px; }
+    body {
+      background:
+        radial-gradient(circle at 15% 5%, rgba(53,224,161,.20), transparent 30%),
+        radial-gradient(circle at 88% 12%, rgba(111,183,255,.16), transparent 28%),
+        linear-gradient(135deg, #07100d 0%, #0a120f 45%, #050908 100%);
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, textarea { font: inherit; }
+    header {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; gap: 14px; padding: 12px 18px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(7,16,13,.86); backdrop-filter: blur(18px);
+    }
+    .mark {
+      width: 28px; height: 28px; border-radius: 9px;
+      display: grid; place-items: center; color: var(--ink); font-weight: 800;
+      background: linear-gradient(135deg, var(--green), var(--blue));
+      box-shadow: 0 0 24px rgba(53,224,161,.22);
+    }
+    .brand { font-family: "Space Grotesk", sans-serif; font-size: 16px; font-weight: 700; letter-spacing: .08em; }
+    .brand-sub { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .16em; }
+    nav { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    nav a {
+      color: var(--muted); border: 1px solid transparent; border-radius: 999px;
+      padding: 6px 10px; font-size: 10px; font-weight: 700;
+    }
+    nav a:hover, nav a.active { color: var(--green); border-color: var(--line-strong); background: rgba(53,224,161,.08); }
+
+    main { max-width: 1480px; margin: 0 auto; padding: 22px 18px 48px; }
+    .hero {
+      display: grid; grid-template-columns: 1.2fr .8fr; gap: 18px; align-items: stretch;
+      margin-bottom: 16px;
+    }
+    .hero-card, .proof-card, .stat, .panel {
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, rgba(17,31,25,.92), rgba(9,18,15,.92));
+      box-shadow: var(--shadow);
+      border-radius: 20px;
+    }
+    .hero-card { padding: 24px; position: relative; overflow: hidden; }
+    .hero-card::after {
+      content: "";
+      position: absolute; inset: auto -80px -130px auto; width: 280px; height: 280px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(53,224,161,.22), transparent 62%);
+      pointer-events: none;
+    }
+    .kicker { color: var(--green); font-size: 10px; text-transform: uppercase; letter-spacing: .24em; margin-bottom: 10px; }
+    h1 { font-family: "Space Grotesk", sans-serif; font-size: clamp(30px, 5vw, 58px); line-height: .95; letter-spacing: -.04em; margin-bottom: 14px; }
+    .hero-copy { max-width: 760px; color: var(--muted); font-size: 13px; line-height: 1.8; }
+    .hero-note {
+      margin-top: 16px; display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 12px; border-radius: 999px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06);
+      color: var(--muted); font-size: 10px;
+    }
+    .proof-card { padding: 18px; display: grid; gap: 12px; }
+    .proof-line {
+      display: flex; justify-content: space-between; gap: 12px; padding: 12px;
+      border: 1px solid rgba(255,255,255,.06); border-radius: 14px; background: rgba(255,255,255,.025);
+    }
+    .proof-label { color: var(--soft); text-transform: uppercase; letter-spacing: .14em; font-size: 9px; }
+    .proof-val { color: var(--text); text-align: right; font-weight: 800; }
+
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat { padding: 16px; min-height: 112px; }
+    .stat-label { color: var(--soft); text-transform: uppercase; letter-spacing: .14em; font-size: 9px; margin-bottom: 8px; }
+    .stat-value { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .stat-sub { color: var(--muted); margin-top: 6px; font-size: 10px; line-height: 1.6; }
+    .stat-value.good { color: var(--green); }
+    .stat-value.warn { color: var(--amber); }
+    .stat-value.blue { color: var(--blue); }
+
+    .grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 16px; }
+    .panel { overflow: hidden; }
+    .panel-head {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex; justify-content: space-between; gap: 12px; align-items: flex-start;
+      background: rgba(255,255,255,.02);
+    }
+    .panel-title { font-family: "Space Grotesk", sans-serif; font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+    .panel-copy { margin-top: 6px; color: var(--muted); font-size: 11px; line-height: 1.7; max-width: 540px; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px;
+      font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .12em;
+      border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); color: var(--muted);
+    }
+    .pill.good { color: var(--green); border-color: rgba(53,224,161,.28); background: rgba(53,224,161,.08); }
+    .pill.warn { color: var(--amber); border-color: rgba(255,204,102,.28); background: rgba(255,204,102,.08); }
+    .panel-body { padding: 18px; display: grid; gap: 16px; }
+
+    .prompt-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .prompt-chip {
+      border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.03); color: var(--muted);
+      padding: 8px 10px; border-radius: 999px; cursor: pointer; font-size: 10px; font-weight: 700;
+    }
+    .prompt-chip:hover { color: var(--green); border-color: rgba(53,224,161,.28); background: rgba(53,224,161,.07); }
+
+    .field-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .field { display: grid; gap: 7px; }
+    .field label { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .14em; }
+    .field input, .field textarea {
+      width: 100%; border: 1px solid rgba(53,224,161,.18); border-radius: 14px;
+      background: rgba(3,8,6,.62); color: var(--text); padding: 12px 14px; outline: none;
+    }
+    .field textarea { min-height: 150px; resize: vertical; }
+    .field input:focus, .field textarea:focus {
+      border-color: rgba(53,224,161,.55); box-shadow: 0 0 0 3px rgba(53,224,161,.09);
+    }
+    .field .help { color: var(--soft); font-size: 10px; line-height: 1.6; }
+    .toggle {
+      display: inline-flex; align-items: center; gap: 10px; color: var(--muted); font-size: 10px;
+      padding: 10px 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.02);
+    }
+    .toggle input { accent-color: var(--green); }
+    .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .btn {
+      border: 1px solid transparent; border-radius: 999px; padding: 11px 16px; cursor: pointer;
+      font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: .14em;
+      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:disabled { cursor: default; opacity: .55; transform: none; }
+    .btn-primary { background: linear-gradient(135deg, var(--green), #5ff0b7); color: var(--ink); box-shadow: 0 10px 25px rgba(53,224,161,.18); }
+    .btn-secondary { background: rgba(255,255,255,.04); color: var(--text); border-color: rgba(255,255,255,.08); }
+    .btn-danger { background: rgba(255,125,125,.12); color: var(--red); border-color: rgba(255,125,125,.28); }
+    .status-line { color: var(--muted); font-size: 10px; min-height: 14px; }
+    .status-line.good { color: var(--green); }
+    .status-line.warn { color: var(--amber); }
+    .status-line.bad { color: var(--red); }
+
+    .result {
+      border: 1px solid rgba(255,255,255,.06); border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      padding: 16px;
+      min-height: 220px;
+    }
+    .result-title { color: var(--soft); text-transform: uppercase; letter-spacing: .14em; font-size: 9px; margin-bottom: 10px; }
+    .result-copy { color: var(--text); font-size: 12px; line-height: 1.8; white-space: pre-wrap; }
+    .muted-copy { color: var(--muted); font-size: 11px; line-height: 1.7; }
+    .tool-list { display: grid; gap: 10px; margin-top: 14px; }
+    .tool-card {
+      border: 1px solid rgba(111,183,255,.16); border-radius: 16px; background: rgba(111,183,255,.05); padding: 12px;
+    }
+    .tool-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+    .tool-name { color: var(--blue); font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: .14em; }
+    .tool-pre {
+      background: rgba(2,6,4,.55); border: 1px solid rgba(255,255,255,.05); border-radius: 12px;
+      padding: 10px; color: var(--muted); font-size: 10px; line-height: 1.7; overflow: auto;
+      white-space: pre-wrap; word-break: break-word;
+    }
+
+    .media-grid { display: grid; grid-template-columns: .92fr 1.08fr; gap: 14px; }
+    .drop {
+      border: 1px dashed rgba(53,224,161,.28); border-radius: 20px; padding: 16px;
+      background: rgba(53,224,161,.04); min-height: 220px; display: grid; gap: 10px; align-content: start;
+    }
+    .preview {
+      width: 100%; min-height: 190px; border-radius: 14px; overflow: hidden;
+      border: 1px solid rgba(255,255,255,.06); background: rgba(2,6,4,.48); display: grid; place-items: center;
+    }
+    .preview img { width: 100%; height: 100%; object-fit: contain; display: none; }
+    .preview-note { color: var(--soft); font-size: 10px; text-align: center; line-height: 1.7; padding: 18px; }
+    .list { display: grid; gap: 8px; }
+    .row {
+      display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px;
+      border: 1px solid rgba(255,255,255,.05); border-radius: 14px; background: rgba(255,255,255,.02);
+    }
+    .row-label { color: var(--soft); font-size: 10px; text-transform: uppercase; letter-spacing: .12em; }
+    .row-value { color: var(--text); font-size: 11px; font-weight: 700; text-align: right; max-width: 68%; word-break: break-word; }
+    .issues { display: grid; gap: 8px; margin-top: 10px; }
+    .issue {
+      padding: 10px 12px; border-radius: 14px; border: 1px solid rgba(255,204,102,.20);
+      background: rgba(255,204,102,.08); color: var(--amber); font-size: 10px; line-height: 1.7;
+    }
+    .issue.bad { border-color: rgba(255,125,125,.20); background: rgba(255,125,125,.08); color: var(--red); }
+    .receipt-card {
+      margin-top: 12px; padding: 12px; border-radius: 16px;
+      border: 1px solid rgba(53,224,161,.22); background: rgba(53,224,161,.08);
+    }
+    .receipt-link { color: var(--blue); font-weight: 800; }
+    .footnote {
+      margin-top: 16px; padding: 14px 16px; border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.025); color: var(--muted); line-height: 1.8;
+    }
+
+    @media (max-width: 1120px) {
+      .hero, .grid, .media-grid, .stats, .field-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      header { align-items: flex-start; }
+      nav { width: 100%; margin-left: 0; }
+      .hero-card, .panel-body { padding: 18px; }
+      .panel-head { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="mark">K</div>
+    <div>
+      <div class="brand">KAIROS</div>
+      <div class="brand-sub">Gemini commerce and Arc proof studio</div>
+    </div>
+    <nav>
+      <a href="/kairos">Dashboard</a>
+      <a href="/transactions">Transactions</a>
+      <a href="/execution">Execution History</a>
+      <a href="/commerce" class="active">Commerce</a>
+      <a href="/mcp" target="_blank" rel="noopener">MCP</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-card">
+        <div class="kicker">Google Partner Surface</div>
+        <h1>Gemini function calling and multimodal commerce, now tied to Arc proof.</h1>
+        <p class="hero-copy">
+          This page turns the Google partner story into a live product surface. Operators can ask Gemini for live Kairos commerce state through tools, analyze receipts or invoices with multimodal input, and create a bounded Arc USDC proof receipt when the document is review-safe.
+        </p>
+        <div class="hero-note">
+          <span>Proof receipts are intentionally capped below one cent.</span>
+          <span id="hero-proof-cap">Loading cap...</span>
+        </div>
+      </div>
+      <div class="proof-card">
+        <div class="proof-line"><span class="proof-label">Function Calling</span><span class="proof-val" id="proof-function">Loading...</span></div>
+        <div class="proof-line"><span class="proof-label">Multimodal</span><span class="proof-val" id="proof-multimodal">Loading...</span></div>
+        <div class="proof-line"><span class="proof-label">Settlement Rail</span><span class="proof-val">Arc Testnet / USDC</span></div>
+        <div class="proof-line"><span class="proof-label">Usage Model</span><span class="proof-val">Per action, per proof, per decision</span></div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="stat-label">Gemini Readiness</div>
+        <div class="stat-value" id="stat-gemini">-</div>
+        <div class="stat-sub" id="stat-gemini-sub">Loading function models...</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Gateway Balance</div>
+        <div class="stat-value blue" id="stat-gateway">-</div>
+        <div class="stat-sub" id="stat-gateway-sub">Checking spend readiness...</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Track 4 Proof</div>
+        <div class="stat-value" id="stat-track4">-</div>
+        <div class="stat-sub" id="stat-track4-sub">Loading settlement state...</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Arc Receipt Counter</div>
+        <div class="stat-value good" id="stat-proof">-</div>
+        <div class="stat-sub" id="stat-proof-sub">Loading real transaction proof...</div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">Gemini Commerce Assistant</div>
+            <p class="panel-copy">
+              Gemini 3 Flash uses live Kairos tools to answer operator questions about gateway balance, Arc proof, and Track 4 status. Settlement actions stay opt-in so we never blur inquiry with execution.
+            </p>
+          </div>
+          <span class="pill good" id="assistant-pill">Tooling live</span>
+        </div>
+        <div class="panel-body">
+          <div class="prompt-chips">
+            <button class="prompt-chip" type="button" data-prompt="Summarize Track 4 readiness, gateway balance, and whether Kairos can settle a proof receipt right now.">Track 4 readiness</button>
+            <button class="prompt-chip" type="button" data-prompt="Explain the difference between execution history and transaction history for Kairos in three short points.">Explain proof surfaces</button>
+            <button class="prompt-chip" type="button" data-prompt="Preview a commerce proof settlement for a 27.40 USD invoice from AIsa Labs without actually settling it.">Preview settlement</button>
+          </div>
+
+          <div class="field">
+            <label for="assistant-prompt">Operator prompt</label>
+            <textarea id="assistant-prompt" placeholder="Ask Gemini to inspect live Kairos commerce state, explain a settlement decision, or preview a proof receipt."></textarea>
+            <div class="help">Gemini can inspect live tools now. It only settles if you explicitly enable settlement actions below.</div>
+          </div>
+
+          <label class="toggle">
+            <input type="checkbox" id="allow-settlement" />
+            <span>Allow Gemini to call the settlement tool for reviewed commerce proof receipts.</span>
+          </label>
+
+          <div class="actions">
+            <button class="btn btn-primary" id="assistant-run" type="button">Run Gemini Assistant</button>
+            <button class="btn btn-secondary" id="assistant-clear" type="button">Clear</button>
+          </div>
+          <div class="status-line" id="assistant-status">Assistant idle.</div>
+
+          <div class="result">
+            <div class="result-title">Assistant Response</div>
+            <div class="result-copy" id="assistant-result">No Gemini response yet.</div>
+            <div class="tool-list" id="assistant-tools"></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">Multimodal Commerce Proof</div>
+            <p class="panel-copy">
+              Upload a receipt, invoice, or delivery proof. Gemini reviews the image, extracts structured fields, flags review risk, and prepares a tiny Arc USDC proof receipt that stays clearly separate from the underlying invoice total.
+            </p>
+          </div>
+          <span class="pill warn" id="analysis-pill">Review before settle</span>
+        </div>
+        <div class="panel-body">
+          <div class="media-grid">
+            <div class="drop">
+              <div class="field">
+                <label for="doc-file">Receipt or invoice image</label>
+                <input id="doc-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+              </div>
+              <div class="field">
+                <label for="doc-url">Optional image URL</label>
+                <input id="doc-url" type="url" placeholder="https://..." />
+              </div>
+              <div class="preview" id="doc-preview">
+                <img id="doc-preview-img" alt="Commerce document preview" />
+                <div class="preview-note" id="doc-preview-note">Upload a PNG, JPG, WEBP, or GIF receipt or invoice to run Gemini multimodal analysis.</div>
+              </div>
+            </div>
+
+            <div class="list">
+              <div class="field-grid">
+                <div class="field">
+                  <label for="expected-merchant">Expected merchant</label>
+                  <input id="expected-merchant" type="text" placeholder="AIsa Labs" />
+                </div>
+                <div class="field">
+                  <label for="expected-amount">Expected amount</label>
+                  <input id="expected-amount" type="number" min="0" step="0.01" placeholder="27.40" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="analysis-note">Operator note</label>
+                <textarea id="analysis-note" placeholder="Describe what Gemini should verify, such as merchant match, invoice total, or delivery evidence."></textarea>
+                <div class="help">Kairos treats this as document verification plus proof settlement preview, not as direct invoice settlement.</div>
+              </div>
+              <div class="actions">
+                <button class="btn btn-primary" id="analyze-run" type="button">Analyze with Gemini</button>
+                <button class="btn btn-secondary" id="analysis-clear" type="button">Reset</button>
+                <button class="btn btn-danger" id="settle-run" type="button" disabled>Create Arc Proof Receipt</button>
+              </div>
+              <div class="status-line" id="analysis-status">Awaiting document.</div>
+            </div>
+          </div>
+
+          <div class="result">
+            <div class="result-title">Multimodal Analysis</div>
+            <div id="analysis-empty" class="muted-copy">No document analysis yet. Upload a receipt or invoice to see Gemini's structured interpretation, review status, and proof-settlement preview.</div>
+            <div id="analysis-content" style="display:none">
+              <div class="row"><span class="row-label">Summary</span><span class="row-value" id="analysis-summary">-</span></div>
+              <div class="row"><span class="row-label">Decision</span><span class="row-value" id="analysis-decision">-</span></div>
+              <div class="row"><span class="row-label">Document Type</span><span class="row-value" id="analysis-type">-</span></div>
+              <div class="row"><span class="row-label">Merchant</span><span class="row-value" id="analysis-merchant">-</span></div>
+              <div class="row"><span class="row-label">Invoice / Receipt</span><span class="row-value" id="analysis-invoice">-</span></div>
+              <div class="row"><span class="row-label">Reference Total</span><span class="row-value" id="analysis-total">-</span></div>
+              <div class="row"><span class="row-label">Proof Settlement</span><span class="row-value" id="analysis-proof">-</span></div>
+              <div class="row"><span class="row-label">Confidence</span><span class="row-value" id="analysis-confidence">-</span></div>
+              <div class="row"><span class="row-label">Settlement Rationale</span><span class="row-value" id="analysis-rationale">-</span></div>
+              <div class="issues" id="analysis-issues"></div>
+              <div class="receipt-card" id="settlement-result" style="display:none"></div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <div class="footnote">
+      Gemini function calling here is live, not mocked. The assistant can inspect real Kairos state through backend tools. Multimodal analysis uses the supplied image, then prepares a safe proof receipt preview capped below one cent. That proof amount is the Arc settlement evidence for the commerce event, not the original invoice or order notional.
+    </div>
+  </main>
+
+  <script>
+    const ARC_TX = "https://testnet.arcscan.app/tx/";
+    const state = {
+      status: null,
+      analysis: null,
+      settlement: null,
+      previewDataUrl: "",
+    };
+
+    function el(id) { return document.getElementById(id); }
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>\"']/g, function(ch) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[ch];
+      });
+    }
+    function prettyJson(value) {
+      return JSON.stringify(value, null, 2);
+    }
+    function formatMoney(value, currency) {
+      if (value === null || value === undefined || value === "" || Number.isNaN(Number(value))) return "N/A";
+      const amount = Number(value);
+      const code = currency || "USD";
+      if (code === "USDC") return amount.toFixed(3) + " USDC";
+      return amount.toFixed(2) + " " + code;
+    }
+    function setStatus(id, text, tone) {
+      const node = el(id);
+      node.textContent = text;
+      node.className = "status-line" + (tone ? " " + tone : "");
+    }
+    function setButtonBusy(button, busy, busyLabel, idleLabel) {
+      button.disabled = busy;
+      button.textContent = busy ? busyLabel : idleLabel;
+    }
+
+    async function fetchJson(url, options) {
+      const response = await fetch(url, options);
+      const data = await response.json().catch(function() { return {}; });
+      if (!response.ok) {
+        throw new Error(data.error || ("Request failed with " + response.status));
+      }
+      return data;
+    }
+
+    function renderStatus(data) {
+      state.status = data;
+      el("hero-proof-cap").textContent = "Proof cap " + formatMoney(data.settlement.proofCapUsdc, "USDC");
+      el("proof-function").textContent = data.gemini.functionModels.length ? data.gemini.functionModels.join(", ") : "Not configured";
+      el("proof-multimodal").textContent = data.gemini.multimodalModels.length ? data.gemini.multimodalModels.join(", ") : "Not configured";
+
+      el("stat-gemini").textContent = data.gemini.configured ? "READY" : "NO KEYS";
+      el("stat-gemini").className = "stat-value " + (data.gemini.configured ? "good" : "warn");
+      el("stat-gemini-sub").textContent = "Function: " + data.gemini.functionModels.join(", ") + " | Multimodal: " + data.gemini.multimodalModels.join(", ") + (data.gemini.fallbackProvider ? " | Fallback: " + data.gemini.fallbackProvider : "");
+
+      el("stat-gateway").textContent = data.settlement.gatewayBalance.formatted + " USDC";
+      el("stat-gateway-sub").textContent = data.settlement.gatewayBalance.warning || data.settlement.gatewayBalance.kind;
+
+      el("stat-track4").textContent = data.track4.label;
+      el("stat-track4").className = "stat-value " + (data.track4.state === "live_arc" || data.track4.state === "arc_settled" ? "good" : data.track4.state === "idle" ? "warn" : "blue");
+      el("stat-track4-sub").textContent = data.track4.note || "Track 4 state ready.";
+
+      el("stat-proof").textContent = String(data.txProof.realTxns);
+      el("stat-proof-sub").textContent = data.txProof.pendingTxns + " pending | " + formatMoney(data.txProof.totalSpend, "USDC") + " total spend";
+
+      el("assistant-pill").textContent = data.gemini.configured ? "Gemini live" : "Gemini missing";
+      el("assistant-pill").className = "pill " + (data.gemini.configured ? "good" : "warn");
+      el("analysis-pill").textContent = "Cap " + formatMoney(data.settlement.proofCapUsdc, "USDC");
+    }
+
+    async function loadStatus() {
+      try {
+        const data = await fetchJson("/api/commerce/status");
+        renderStatus(data);
+      } catch (error) {
+        el("stat-gemini").textContent = "ERROR";
+        el("stat-gemini").className = "stat-value warn";
+        el("stat-gemini-sub").textContent = error.message;
+      }
+    }
+
+    function renderAssistantResult(result) {
+      el("assistant-result").textContent = result.text || "No assistant text returned.";
+      const toolsHost = el("assistant-tools");
+      if (!result.toolCalls || result.toolCalls.length === 0) {
+        toolsHost.innerHTML = "";
+        return;
+      }
+      toolsHost.innerHTML = result.toolCalls.map(function(call, index) {
+        return (
+          '<div class="tool-card">' +
+            '<div class="tool-head">' +
+              '<div class="tool-name">Tool ' + (index + 1) + ': ' + esc(call.name) + '</div>' +
+              '<span class="pill good">Executed</span>' +
+            '</div>' +
+            '<div class="tool-pre"><strong>Args</strong>\n' + esc(prettyJson(call.args)) + '</div>' +
+            '<div style="height:8px"></div>' +
+            '<div class="tool-pre"><strong>Response</strong>\n' + esc(prettyJson(call.response)) + '</div>' +
+          '</div>'
+        );
+      }).join("");
+    }
+
+    async function runAssistant() {
+      const prompt = el("assistant-prompt").value.trim();
+      if (!prompt) {
+        setStatus("assistant-status", "Add an operator prompt before running the assistant.", "warn");
+        return;
+      }
+
+      const button = el("assistant-run");
+      setButtonBusy(button, true, "Running...", "Run Gemini Assistant");
+      setStatus("assistant-status", "Calling Gemini with live Kairos tools...", "");
+
+      try {
+        const result = await fetchJson("/api/gemini/commerce-assistant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: prompt,
+            allowSettlementActions: el("allow-settlement").checked,
+          }),
+        });
+        renderAssistantResult(result);
+        setStatus("assistant-status", "Assistant response ready from " + result.model + ".", "good");
+      } catch (error) {
+        el("assistant-result").textContent = "Assistant request failed.";
+        el("assistant-tools").innerHTML = "";
+        setStatus("assistant-status", error.message, "bad");
+      } finally {
+        setButtonBusy(button, false, "Running...", "Run Gemini Assistant");
+      }
+    }
+
+    function resetAssistant() {
+      el("assistant-prompt").value = "";
+      el("allow-settlement").checked = false;
+      el("assistant-result").textContent = "No Gemini response yet.";
+      el("assistant-tools").innerHTML = "";
+      setStatus("assistant-status", "Assistant idle.", "");
+    }
+
+    function updatePreview(dataUrl) {
+      state.previewDataUrl = dataUrl || "";
+      const img = el("doc-preview-img");
+      const note = el("doc-preview-note");
+      if (!dataUrl) {
+        img.style.display = "none";
+        img.src = "";
+        note.style.display = "block";
+        note.textContent = "Upload a PNG, JPG, WEBP, or GIF receipt or invoice to run Gemini multimodal analysis.";
+        return;
+      }
+      img.src = dataUrl;
+      img.style.display = "block";
+      note.style.display = "none";
+    }
+
+    function readFileAsDataUrl(file) {
+      return new Promise(function(resolve, reject) {
+        const reader = new FileReader();
+        reader.onload = function() { resolve(reader.result); };
+        reader.onerror = function() { reject(new Error("Failed to read image file")); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderIssues(analysis) {
+      const host = el("analysis-issues");
+      const issues = Array.isArray(analysis.issues) ? analysis.issues : [];
+      if (issues.length === 0) {
+        host.innerHTML = '<div class="issue">No blocking issues were detected. Review the proof preview before settling.</div>';
+        return;
+      }
+      host.innerHTML = issues.map(function(issue) {
+        const tone = analysis.needsHumanReview || analysis.settlementIntent === "reject" ? " bad" : "";
+        return '<div class="issue' + tone + '">' + esc(issue) + '</div>';
+      }).join("");
+    }
+
+    function renderAnalysis(result) {
+      state.analysis = result;
+      state.settlement = null;
+      const analysis = result.analysis;
+      const preview = result.settlementPreview;
+      el("analysis-empty").style.display = "none";
+      el("analysis-content").style.display = "block";
+      el("settlement-result").style.display = "none";
+      el("settlement-result").innerHTML = "";
+
+      el("analysis-summary").textContent = analysis.summary || "No summary returned.";
+      el("analysis-decision").textContent = analysis.settlementIntent.toUpperCase() + (analysis.needsHumanReview ? " | HUMAN REVIEW" : "");
+      el("analysis-type").textContent = analysis.documentType || "unknown";
+      el("analysis-merchant").textContent = analysis.merchantName || "Unknown";
+      el("analysis-invoice").textContent = analysis.invoiceNumber || "Not found";
+      el("analysis-total").textContent = formatMoney(analysis.totalAmount, analysis.currency || "USD");
+      el("analysis-proof").textContent = formatMoney(preview.proofSettlementAmountUsdc, "USDC");
+      el("analysis-confidence").textContent = Math.round((Number(analysis.confidence) || 0) * 100) + "%";
+      el("analysis-rationale").textContent = analysis.settlementRationale || preview.reason || "No rationale returned.";
+      renderIssues(analysis);
+
+      const canSettle = Boolean(preview.ready && !analysis.needsHumanReview && analysis.settlementIntent !== "reject");
+      el("settle-run").disabled = !canSettle;
+      const modelPrefix = result.model ? (result.model + ": ") : "";
+      setStatus(
+        "analysis-status",
+        modelPrefix + (
+          canSettle
+            ? "Document is review-safe. You can mint a small Arc proof receipt."
+            : (preview.reason || "Document still requires review before any settlement proof.")
+        ),
+        canSettle ? "good" : "warn"
+      );
+    }
+
+    async function runAnalysis() {
+      const file = el("doc-file").files[0];
+      const imageUrl = el("doc-url").value.trim();
+      if (!file && !imageUrl) {
+        setStatus("analysis-status", "Add a receipt image file or image URL before running analysis.", "warn");
+        return;
+      }
+
+      const button = el("analyze-run");
+      setButtonBusy(button, true, "Analyzing...", "Analyze with Gemini");
+      setStatus("analysis-status", "Sending image to Gemini multimodal analysis...", "");
+
+      try {
+        let imageDataUrl = "";
+        if (file) {
+          imageDataUrl = await readFileAsDataUrl(file);
+          updatePreview(imageDataUrl);
+        }
+
+        const expectedAmountRaw = el("expected-amount").value.trim();
+        const body = {
+          imageDataUrl: imageDataUrl || undefined,
+          imageUrl: !imageDataUrl ? imageUrl || undefined : undefined,
+          expectedMerchant: el("expected-merchant").value.trim() || undefined,
+          expectedAmount: expectedAmountRaw ? Number(expectedAmountRaw) : undefined,
+          prompt: el("analysis-note").value.trim() || undefined,
+        };
+
+        const result = await fetchJson("/api/commerce/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+
+        renderAnalysis(result);
+      } catch (error) {
+        state.analysis = null;
+        el("analysis-empty").style.display = "block";
+        el("analysis-content").style.display = "none";
+        el("settle-run").disabled = true;
+        setStatus("analysis-status", error.message, "bad");
+      } finally {
+        setButtonBusy(button, false, "Analyzing...", "Analyze with Gemini");
+      }
+    }
+
+    async function settleProof() {
+      if (!state.analysis) {
+        setStatus("analysis-status", "Run analysis before settling a proof receipt.", "warn");
+        return;
+      }
+
+      const button = el("settle-run");
+      setButtonBusy(button, true, "Settling...", "Create Arc Proof Receipt");
+      setStatus("analysis-status", "Submitting a bounded Arc proof receipt...", "");
+
+      try {
+        const analysis = state.analysis.analysis;
+        const result = await fetchJson("/api/commerce/settle", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            merchantName: analysis.merchantName,
+            documentType: analysis.documentType,
+            summary: analysis.summary,
+            requestedAmountUsdc: analysis.proofSettlementAmountUsdc,
+            settlementIntent: analysis.settlementIntent,
+            needsHumanReview: analysis.needsHumanReview,
+            invoiceNumber: analysis.invoiceNumber,
+          }),
+        });
+
+        state.settlement = result;
+        const txHash = result.receipt && result.receipt.txHash ? result.receipt.txHash : "";
+        const txLink = /^0x[a-fA-F0-9]{64}$/.test(txHash)
+          ? '<a class="receipt-link" href="' + ARC_TX + encodeURIComponent(txHash) + '" target="_blank" rel="noopener">View Arc receipt</a>'
+          : '<span class="muted-copy">Receipt reference is still pending final Arc hash hydration.</span>';
+
+        el("settlement-result").style.display = "block";
+        el("settlement-result").innerHTML =
+          '<div class="result-title" style="margin-bottom:8px">Settlement Result</div>' +
+          '<div class="muted-copy">Kairos created a ' + formatMoney(result.proofAmountUsdc, "USDC") + ' proof receipt for ' + esc(analysis.merchantName || "the reviewed document") + '.</div>' +
+          '<div style="height:8px"></div>' +
+          '<div class="muted-copy">Event: ' + esc(result.receipt.eventName || "track4-gemini-commerce-proof") + '</div>' +
+          '<div class="muted-copy">Status: ' + esc(result.receipt.verificationState || result.receipt.mode || "pending") + '</div>' +
+          '<div style="height:8px"></div>' +
+          txLink;
+
+        setStatus("analysis-status", "Arc proof receipt submitted successfully.", "good");
+        loadStatus();
+      } catch (error) {
+        setStatus("analysis-status", error.message, "bad");
+      } finally {
+        setButtonBusy(button, false, "Settling...", "Create Arc Proof Receipt");
+      }
+    }
+
+    function resetAnalysis() {
+      state.analysis = null;
+      state.settlement = null;
+      state.previewDataUrl = "";
+      el("doc-file").value = "";
+      el("doc-url").value = "";
+      el("expected-merchant").value = "";
+      el("expected-amount").value = "";
+      el("analysis-note").value = "";
+      updatePreview("");
+      el("analysis-empty").style.display = "block";
+      el("analysis-content").style.display = "none";
+      el("settlement-result").style.display = "none";
+      el("settle-run").disabled = true;
+      setStatus("analysis-status", "Awaiting document.", "");
+    }
+
+    document.querySelectorAll("[data-prompt]").forEach(function(button) {
+      button.addEventListener("click", function() {
+        el("assistant-prompt").value = button.getAttribute("data-prompt");
+      });
+    });
+
+    el("assistant-run").addEventListener("click", runAssistant);
+    el("assistant-clear").addEventListener("click", resetAssistant);
+    el("analyze-run").addEventListener("click", runAnalysis);
+    el("analysis-clear").addEventListener("click", resetAnalysis);
+    el("settle-run").addEventListener("click", settleProof);
+    el("doc-file").addEventListener("change", async function(event) {
+      const file = event.target.files[0];
+      if (!file) {
+        updatePreview("");
+        return;
+      }
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        updatePreview(dataUrl);
+      } catch (error) {
+        setStatus("analysis-status", error.message, "bad");
+      }
+    });
+
+    loadStatus();
+  </script>
+</body>
+</html>

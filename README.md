@@ -11,6 +11,7 @@ Kairos is not presented as a generic trading bot. The market loop is the workloa
 | Dashboard | `https://kairos.nov-tia.com` | Judge-facing proof surface for the four hackathon tracks |
 | Transaction History | `https://kairos.nov-tia.com/transactions` | Consolidated payment and settlement ledger |
 | Execution History | `https://kairos.nov-tia.com/execution` | Underlying execution and position audit log |
+| Gemini Commerce Studio | `https://kairos.nov-tia.com/commerce` | Gemini function calling, multimodal receipt analysis, and proof-settlement controls |
 | MCP endpoint | `https://kairos.nov-tia.com/mcp` | JSON-RPC tools, resources, and prompts for external agents |
 | Agent card | `https://kairos.nov-tia.com/.well-known/agent-card.json` | Public metadata for agent discovery |
 | Arc explorer | `https://testnet.arcscan.app` | External verifier for confirmed Arc transaction hashes |
@@ -24,6 +25,7 @@ Kairos is built to prove an economic model, not only to render a UI:
 - USDC-denominated settlement across governance, APIs, compute, and approved actions.
 - x402-backed paid API consumption through AIsa and Circle infrastructure.
 - Gemini 3 Flash runtime reasoning, Gemini 3 Pro SAGE reflection, and resilient failover when providers fail.
+- Gemini function calling for live wallet, proof, and Track 4 inspection plus multimodal receipt or invoice analysis.
 - A transparent margin story: this type of high-frequency agent activity works on Arc, but breaks on high-fee payment rails.
 
 Important: `Runtime cycles` on the dashboard are decision-loop counts. They are not the same thing as verified Arc transactions. Use `Real Arc txns`, the History page, and Arcscan links for on-chain proof.
@@ -364,6 +366,57 @@ That is why `Execution History` relates to Track 4 without being the same thing 
 Why this matters:
 
 Track 4 proves the most visible part of the hackathon thesis: a user or agent interaction can trigger immediate USDC settlement per interaction instead of relying on subscriptions or batched invoices.
+
+## Gemini Commerce Studio
+
+The Google partner requirements are surfaced in production at `https://kairos.nov-tia.com/commerce`.
+
+This page has two live workflows:
+
+### 1. Gemini function-calling assistant
+
+What it does:
+
+- Uses Gemini 3 Flash function calling against live Kairos backend tools
+- Explains current gateway balance, Arc proof counts, and Track 4 settlement state
+- Can preview a proof settlement without sending a transaction
+- Can optionally mint a proof receipt only when the operator explicitly enables settlement actions
+- Falls back to OpenAI operator summarization if Gemini quota or availability fails, while keeping settlement actions opt-in
+
+What tools Gemini can call:
+
+- `get_gateway_balance`
+- `get_arc_receipt_summary`
+- `get_track4_micro_commerce_status`
+- `preview_commerce_proof_settlement`
+- `settle_commerce_proof_receipt` when settlement actions are enabled
+
+Why this matters:
+
+This closes the gap between "Gemini is configured in the backend" and "Gemini is visibly driving agent commerce logic in the shipped product."
+
+### 2. Gemini multimodal commerce proof
+
+What it does:
+
+- Accepts a receipt, invoice, or delivery-proof image
+- Uses Gemini multimodal analysis to extract merchant, invoice number, date, totals, and issues
+- Produces a settlement recommendation of `approve`, `review`, or `reject`
+- Prepares a bounded Arc proof receipt preview capped at `<= 0.01 USDC`
+- Falls back to OpenAI vision analysis if Gemini multimodal calls are unavailable at runtime
+
+Important distinction:
+
+The multimodal flow does not settle the full invoice amount on Arc. It creates a tiny proof receipt for the reviewed commerce event. The invoice total remains the reference notional, while the proof receipt is the judge-facing settlement evidence.
+
+Recommended configuration:
+
+```bash
+GEMINI_FUNCTION_MODELS=gemini-3-flash-preview
+GEMINI_MULTIMODAL_MODELS=gemini-3-pro-preview,gemini-3-flash-preview
+COMMERCE_PROOF_SETTLEMENT_AMOUNT_USDC=0.009
+COMMERCE_PROOF_SETTLEMENT_MAX_USDC=0.01
+```
 
 ## Transaction History vs Execution History
 

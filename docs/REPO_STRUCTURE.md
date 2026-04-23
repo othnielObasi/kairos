@@ -89,6 +89,8 @@ Payment, billing, wallet, and data normalisation services.
 | `x402-client.mjs` | x402 paying fetch client |
 | `x402-client.d.mts` | Type declarations for the x402 client |
 | `circle-wallet.ts` | Circle wallet helper utilities |
+| `gateway-balance.ts` | Unified Circle wallet or Arc wallet balance lookup for commerce and x402 readiness |
+| `gemini-commerce.ts` | Gemini function-calling and multimodal commerce proof workflows |
 | `api-billing.ts` | API billing helpers |
 | `setup-gateway.mjs` | Circle Gateway setup helper |
 
@@ -102,6 +104,7 @@ src/dashboard/
 |-- UI_VERSIONS.md
 |-- public/
 |   |-- kairos.html
+|   |-- commerce.html
 |   |-- transactions.html
 |   |-- trades.html
 |   |-- judge.html
@@ -116,6 +119,7 @@ src/dashboard/
 | --- | --- |
 | `server.ts` | Express static server, JSON APIs, MCP proxy, CORS/rate limits |
 | `public/kairos.html` | Primary live proof dashboard |
+| `public/commerce.html` | Gemini commerce studio for function calling and multimodal receipt proof |
 | `public/transactions.html` | Consolidated transaction history and audit ledger |
 | `public/trades.html` | Execution/trade-oriented view |
 | `public/judge.html` | Judge route surface |

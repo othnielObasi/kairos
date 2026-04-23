@@ -339,6 +339,41 @@ export async function settleMicroCommerceEvent(
   }
 }
 
+export async function settleCommerceEventAmount(
+  eventName: string,
+  amountUsdc: number,
+  meta: {
+    source?: string;
+    model?: string;
+    type?: string;
+  } = {},
+): Promise<NanopaymentReceipt> {
+  try {
+    return await createSettlementReceipt(
+      eventName,
+      TRACK4_SETTLEMENT_ADDRESS,
+      amountUsdc,
+      {
+        ...meta,
+        type: meta.type || 'micro-commerce',
+      },
+      true,
+    );
+  } catch (err) {
+    console.warn(`[NANO] settleCommerceEventAmount failed (${eventName}):`, (err as Error).message || err);
+    return {
+      eventName,
+      ...meta,
+      type: meta.type || 'micro-commerce',
+      mode: 'fallback',
+      txHash: 'pending_' + Date.now(),
+      verificationState: 'fallback',
+      amount: amountUsdc,
+      confirmedAt: Date.now(),
+    };
+  }
+}
+
 // ── Transaction count helper for demo proof ──────────────────────────────────
 
 /** Return the total number of real (non-pending) nanopayment tx hashes seen. */

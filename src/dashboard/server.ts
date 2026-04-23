@@ -32,7 +32,14 @@ import { ALL_TOOLS } from '../mcp/tools.js';
 import { ALL_RESOURCES } from '../mcp/resources.js';
 import { ALL_PROMPTS } from '../mcp/prompts.js';
 import { getNormalisationStatus } from '../services/normalisation.js';
-import { ethers } from 'ethers';
+import {
+  analyzeCommerceDocument,
+  buildCommerceSettlementPreview,
+  runGeminiCommerceAssistant,
+  type GeminiCommerceTool,
+  settleCommerceProofReceipt,
+} from '../services/gemini-commerce.js';
+import { getGatewayBalanceInfo } from '../services/gateway-balance.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DASHBOARD_PORT = parseInt(process.env.PORT || '3000', 10);
@@ -683,7 +690,7 @@ export function stopDashboard(): Promise<void> {
 
 export function startDashboard(port: number = DASHBOARD_PORT): void {
   const app = express();
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.json({ limit: '12mb' }));
   app.use(rateLimit);
 
   // Security headers
@@ -713,6 +720,11 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
   // Economic proof walkthrough
   app.get('/judge', (_req, res) => {
     res.redirect('/kairos');
+  });
+
+  // Gemini commerce studio
+  app.get('/commerce', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'commerce.html'));
   });
 
   // Serve static files
@@ -1239,35 +1251,60 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     }
   });
 
+  app.get('/api/commerce/status', async (_req, res) => {
+    try {
+      const billing = billingStore.toJSON();
+      const state = getAgentState();
+      const track4 = buildTrack4Status(state);
+      const geminiConfigured = Boolean(
+        process.env.GEMINI_API_KEY_PRIMARY
+        || process.env.GEMINI_API_KEY_SECONDARY
+        || process.env.GEMINI_API_KEY,
+      );
+      const gatewayBalance = await getGatewayBalanceInfo().catch((error: Error) => ({
+        balance: '0',
+        formatted: '0.00',
+        kind: 'unconfigured' as const,
+        gatewayDepositVerified: false,
+        warning: error.message || 'Gateway balance unavailable',
+      }));
+
+      res.json({
+        runtime: getRuntimeConfig(),
+        gemini: {
+          configured: geminiConfigured,
+          functionModels: parseModelList(process.env.GEMINI_FUNCTION_MODELS, 'gemini-3-flash-preview'),
+          multimodalModels: parseModelList(process.env.GEMINI_MULTIMODAL_MODELS, 'gemini-3-pro-preview,gemini-3-flash-preview'),
+          fallbackProvider: process.env.OPENAI_API_KEY ? 'OpenAI GPT-4o mini' : null,
+        },
+        settlement: {
+          defaultProofUsdc: parseFloat(
+            process.env.COMMERCE_PROOF_SETTLEMENT_AMOUNT_USDC
+            || process.env.TRACK4_SETTLEMENT_AMOUNT_USDC
+            || '0.009',
+          ),
+          proofCapUsdc: parseFloat(process.env.COMMERCE_PROOF_SETTLEMENT_MAX_USDC || '0.01'),
+          gatewayBalance,
+        },
+        txProof: {
+          realTxns: billing.realTxns,
+          pendingTxns: billing.pendingTxns,
+          totalSpend: billing.totalSpend,
+          meetsTxnRequirement: billing.meetsTxnRequirement,
+        },
+        track4,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message?.slice(0, 240) || 'Commerce status unavailable' });
+    }
+  });
+
   /** x402 wallet balance — uses Circle Wallets balance or the configured Arc address */
   app.get('/api/gateway-balance', async (_req, res) => {
     try {
-      const usdcAddress = (process.env.USDC_ADDRESS || '0x3600000000000000000000000000000000000000').toLowerCase();
-
       if (process.env.CIRCLE_API_KEY && process.env.CIRCLE_ENTITY_SECRET && process.env.CIRCLE_WALLET_ID) {
-        const { CircleDeveloperControlledWalletsClient } = await import('@circle-fin/developer-controlled-wallets');
-        const circleClient = new CircleDeveloperControlledWalletsClient({
-          apiKey: process.env.CIRCLE_API_KEY,
-          entitySecret: process.env.CIRCLE_ENTITY_SECRET,
-        });
-        const response = await circleClient.getWalletTokenBalance({
-          id: process.env.CIRCLE_WALLET_ID,
-          includeAll: true,
-        } as any);
-        const balances = (response as any)?.data?.tokenBalances || [];
-        const usdcBalance = balances.find((entry: any) => {
-          const tokenAddress = entry?.token?.tokenAddress?.toLowerCase?.() || '';
-          const symbol = entry?.token?.symbol || '';
-          return tokenAddress === usdcAddress || symbol === 'USDC';
-        });
-        const formatted = usdcBalance?.amount || '0.00';
-        res.json({
-          balance: formatted,
-          formatted,
-          kind: 'circle-wallet-balance',
-          gatewayDepositVerified: false,
-          warning: 'wallet USDC; Gateway spend pool is separate',
-        });
+        const info = await getGatewayBalanceInfo();
+        res.json(info);
         return;
       }
 
@@ -1277,20 +1314,195 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
         return;
       }
 
-      const rpc = process.env.ARC_RPC_URL || 'https://rpc.testnet.arc.network';
-      const provider = new ethers.JsonRpcProvider(rpc);
-      const erc20Abi = ['function balanceOf(address) view returns (uint256)'];
-      const token = new ethers.Contract(usdcAddress, erc20Abi, provider);
-      const bal = await token.balanceOf(agentAddress);
-      res.json({
-        balance: bal.toString(),
-        formatted: ethers.formatUnits(bal, 6),
-        kind: 'onchain-wallet-balance',
-        gatewayDepositVerified: false,
-        warning: 'wallet USDC; Gateway spend pool is separate',
-      });
+      const info = await getGatewayBalanceInfo();
+      res.json(info);
     } catch (e: any) {
       res.status(500).json({ error: e.message?.slice(0, 200) || 'x402 wallet balance check failed' });
+    }
+  });
+
+  app.post('/api/gemini/commerce-assistant', async (req, res) => {
+    try {
+      const prompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : '';
+      if (!prompt) {
+        res.status(400).json({ error: 'prompt is required' });
+        return;
+      }
+
+      const allowSettlementActions = req.body?.allowSettlementActions === true;
+      const state = getAgentState();
+      const billing = billingStore.toJSON();
+      const track4 = buildTrack4Status(state);
+
+      const tools: GeminiCommerceTool[] = [
+        {
+          name: 'get_gateway_balance',
+          description: 'Return the current Circle wallet or Arc wallet USDC balance used for x402 and commerce readiness.',
+          parameters: {
+            type: 'object',
+            properties: {},
+          },
+          handler: async () => await getGatewayBalanceInfo(),
+        },
+        {
+          name: 'get_arc_receipt_summary',
+          description: 'Return the current Arc receipt counts and spend totals for Kairos.',
+          parameters: {
+            type: 'object',
+            properties: {},
+          },
+          handler: async () => {
+            const latestTrack4Confirmed = getMicroCommerceEvents(10)
+              .find((event) => event.txHash && /^0x[a-fA-F0-9]{64}$/.test(event.txHash));
+            const latestConfirmed = [
+              ...(billing.t1Events || []),
+              ...(billing.t2Events || []),
+              ...(billing.t3Events || []),
+            ].find((receipt) => hasVerifiedTxHash(receipt));
+
+            return {
+              realTxns: billing.realTxns,
+              pendingTxns: billing.pendingTxns,
+              totalSpend: billing.totalSpend,
+              meetsTxnRequirement: billing.meetsTxnRequirement,
+              latestConfirmedTxHash: latestConfirmed?.txHash || latestTrack4Confirmed?.txHash || null,
+            };
+          },
+        },
+        {
+          name: 'get_track4_micro_commerce_status',
+          description: 'Return Track 4 micro-commerce settlement status, recent events, and Arc settlement proof state.',
+          parameters: {
+            type: 'object',
+            properties: {},
+          },
+          handler: async () => ({
+            state: track4.state,
+            label: track4.label,
+            note: track4.note,
+            actionsRecorded: track4.actionsRecorded,
+            settledVolumeUsd: track4.settledVolumeUsd,
+            recentEvents: getMicroCommerceEvents(5),
+          }),
+        },
+        {
+          name: 'preview_commerce_proof_settlement',
+          description: 'Preview a small Arc USDC proof settlement for a commerce event without sending a transaction.',
+          parameters: {
+            type: 'object',
+            properties: {
+              merchantName: { type: 'string', description: 'Merchant or counterparty name' },
+              documentType: { type: 'string', description: 'Document type such as invoice, receipt, or delivery_proof' },
+              totalAmount: { type: 'number', description: 'Reference amount from the source document' },
+              currency: { type: 'string', description: 'Reference currency from the source document' },
+              requestedAmountUsdc: { type: 'number', description: 'Optional proof settlement amount in USDC, capped for safety' },
+              needsHumanReview: { type: 'boolean', description: 'Whether the document still needs review' },
+            },
+          },
+          handler: async (args) => buildCommerceSettlementPreview({
+            merchantName: typeof args.merchantName === 'string' ? args.merchantName : null,
+            documentType: typeof args.documentType === 'string' ? args.documentType : null,
+            totalAmount: typeof args.totalAmount === 'number' ? args.totalAmount : null,
+            currency: typeof args.currency === 'string' ? args.currency : null,
+            requestedAmountUsdc: typeof args.requestedAmountUsdc === 'number' ? args.requestedAmountUsdc : null,
+            needsHumanReview: args.needsHumanReview === true,
+          }),
+        },
+      ];
+
+      if (allowSettlementActions) {
+        tools.push({
+          name: 'settle_commerce_proof_receipt',
+          description: 'Create a small Arc USDC proof receipt for a reviewed commerce event. Use only when the operator explicitly allows settlement actions.',
+          parameters: {
+            type: 'object',
+            properties: {
+              merchantName: { type: 'string', description: 'Merchant or counterparty name' },
+              documentType: { type: 'string', description: 'Document type such as invoice, receipt, or delivery_proof' },
+              summary: { type: 'string', description: 'Short settlement summary for the proof record' },
+              requestedAmountUsdc: { type: 'number', description: 'Optional proof settlement amount in USDC, capped for safety' },
+              settlementIntent: { type: 'string', description: 'approve, review, or reject' },
+              needsHumanReview: { type: 'boolean', description: 'Whether the document still needs human review' },
+              invoiceNumber: { type: 'string', description: 'Optional invoice or receipt number' },
+            },
+            required: ['merchantName', 'documentType'],
+          },
+          handler: async (args) => await settleCommerceProofReceipt({
+            merchantName: typeof args.merchantName === 'string' ? args.merchantName : null,
+            documentType: typeof args.documentType === 'string' ? args.documentType : null,
+            summary: typeof args.summary === 'string' ? args.summary : null,
+            requestedAmountUsdc: typeof args.requestedAmountUsdc === 'number' ? args.requestedAmountUsdc : null,
+            settlementIntent: typeof args.settlementIntent === 'string' ? args.settlementIntent : null,
+            needsHumanReview: args.needsHumanReview === true,
+            invoiceNumber: typeof args.invoiceNumber === 'string' ? args.invoiceNumber : null,
+          }),
+        });
+      }
+
+      const result = await runGeminiCommerceAssistant({
+        prompt,
+        runtimeContext: [
+          `Kairos runtime mode: ${(process.env.MODE || 'simulation')}`,
+          `Real Arc txns: ${billing.realTxns}`,
+          `Pending txns: ${billing.pendingTxns}`,
+          `Track 4 status: ${track4.label}`,
+          `Gateway signer configured: ${Boolean((process.env.CIRCLE_API_KEY && process.env.CIRCLE_ENTITY_SECRET && process.env.CIRCLE_WALLET_ID) || process.env.OWS_MNEMONIC || process.env.PRIVATE_KEY)}`,
+          'Use preview and settlement tools carefully and distinguish proof receipts from underlying invoice or order notional.',
+        ].join('\n'),
+        tools,
+      });
+
+      res.json({
+        ...result,
+        allowSettlementActions,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message?.slice(0, 240) || 'Gemini commerce assistant failed' });
+    }
+  });
+
+  app.post('/api/commerce/analyze', async (req, res) => {
+    try {
+      const result = await analyzeCommerceDocument({
+        imageDataUrl: typeof req.body?.imageDataUrl === 'string' ? req.body.imageDataUrl : undefined,
+        imageBase64: typeof req.body?.imageBase64 === 'string' ? req.body.imageBase64 : undefined,
+        mimeType: typeof req.body?.mimeType === 'string' ? req.body.mimeType : undefined,
+        imageUrl: typeof req.body?.imageUrl === 'string' ? req.body.imageUrl : undefined,
+        prompt: typeof req.body?.prompt === 'string' ? req.body.prompt : undefined,
+        expectedMerchant: typeof req.body?.expectedMerchant === 'string' ? req.body.expectedMerchant : undefined,
+        expectedAmount: typeof req.body?.expectedAmount === 'number' ? req.body.expectedAmount : undefined,
+      });
+
+      res.json({
+        ...result,
+        settlementPreview: buildCommerceSettlementPreview({
+          merchantName: result.analysis.merchantName,
+          documentType: result.analysis.documentType,
+          totalAmount: result.analysis.totalAmount,
+          currency: result.analysis.currency,
+          requestedAmountUsdc: result.analysis.proofSettlementAmountUsdc,
+          needsHumanReview: result.analysis.needsHumanReview,
+        }),
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message?.slice(0, 240) || 'Commerce document analysis failed' });
+    }
+  });
+
+  app.post('/api/commerce/settle', async (req, res) => {
+    try {
+      const result = await settleCommerceProofReceipt({
+        merchantName: typeof req.body?.merchantName === 'string' ? req.body.merchantName : null,
+        documentType: typeof req.body?.documentType === 'string' ? req.body.documentType : null,
+        summary: typeof req.body?.summary === 'string' ? req.body.summary : null,
+        requestedAmountUsdc: typeof req.body?.requestedAmountUsdc === 'number' ? req.body.requestedAmountUsdc : null,
+        settlementIntent: typeof req.body?.settlementIntent === 'string' ? req.body.settlementIntent : null,
+        needsHumanReview: req.body?.needsHumanReview === true,
+        invoiceNumber: typeof req.body?.invoiceNumber === 'string' ? req.body.invoiceNumber : null,
+      });
+      res.json(result);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message?.slice(0, 240) || 'Commerce settlement failed' });
     }
   });
 

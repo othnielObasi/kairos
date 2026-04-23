@@ -31,6 +31,8 @@ Static dashboard and History          MCP HTTP bridge
         v                                 v
 Billing, checkpoint, status APIs      MCP tools/resources/prompts
         |
+        +--> Gemini commerce assistant and multimodal proof APIs
+        |
         v
 Kairos agent runtime loop
         |
@@ -124,6 +126,7 @@ Readiness is exposed through `/api/status` and `/api/feeds/status`.
 | Track 2: Per-API Monetization | `normalisation.ts`, sentiment, PRISM, price feeds | `billingStore.addApiEvent()` | `/api/status`, `/api/billing` |
 | Track 3: Usage-Based Compute | `ai-reasoning.ts`, `sage-engine.ts` | `billingStore.addComputeEvent()` | `/api/status`, `/api/sage/status`, `/api/billing` |
 | Track 4: Real-Time Micro-Commerce | Approved checkpoint execution | `settleMicroCommerceEvent()` and checkpoint execution state | `/api/checkpoints`, `/api/transactions` |
+| Gemini commerce surface | `gemini-commerce.ts`, `gateway-balance.ts` | `billEvent("compute-function-call")`, `billEvent("compute-multimodal")`, `settleCommerceProofReceipt()` | `/commerce`, `/api/commerce/status`, `/api/gemini/commerce-assistant`, `/api/commerce/analyze` |
 
 ## Dashboard And API Architecture
 
@@ -132,6 +135,7 @@ The dashboard server in `src/dashboard/server.ts` serves static pages and JSON A
 Main static pages:
 
 - `/` and `/kairos`: live proof dashboard.
+- `/commerce`: Gemini function calling and multimodal commerce proof studio.
 - `/transactions` and `/history`: transaction history and audit ledger.
 - `/trades`: execution-oriented trade view.
 - `/judge`: redirects to `/kairos`.
@@ -147,6 +151,10 @@ Core APIs:
 - `/api/sage/status`
 - `/api/operator/state`
 - `/api/gateway-balance`
+- `/api/commerce/status`
+- `/api/gemini/commerce-assistant`
+- `/api/commerce/analyze`
+- `/api/commerce/settle`
 
 The dashboard is intentionally concise. Detailed receipt and transaction explanations belong on the History page and API responses.
 
