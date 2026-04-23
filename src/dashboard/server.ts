@@ -40,6 +40,14 @@ import {
   settleCommerceProofReceipt,
 } from '../services/gemini-commerce.js';
 import { getGatewayBalanceInfo } from '../services/gateway-balance.js';
+import {
+  getCommerceDocumentBundle,
+  getCommerceDocumentLinks,
+  listCommerceDocumentBundles,
+  renderCommerceDocumentHtml,
+  type CommerceDocumentKind,
+  type CommerceDocumentLinks,
+} from '../services/commerce-documents.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DASHBOARD_PORT = parseInt(process.env.PORT || '3000', 10);
@@ -463,6 +471,7 @@ interface LedgerTransaction {
   referenceId: string | null;
   explorerUrl: string | null;
   description: string;
+  documentLinks?: CommerceDocumentLinks | null;
 }
 
 function verifiedHash(txHash: string | null | undefined): string | null {
@@ -511,6 +520,7 @@ function receiptLedgerEntry(
     referenceId: receipt.referenceId || null,
     explorerUrl: explorerUrl(txHash),
     description: `${eventName} paid for ${source}`,
+    documentLinks: null,
   };
 }
 
@@ -550,6 +560,11 @@ function checkpointLedgerEntries(limit: number): LedgerTransaction[] {
         referenceId: execution.microSettlement.referenceId || execution.kraken.orderId || null,
         explorerUrl: explorerUrl(txHash),
         description: `${direction} ${pair} action for ${execution.notionalUsd.toFixed(2)} USDC notional via ${mode}`,
+        documentLinks: getCommerceDocumentLinks({
+          checkpointId: checkpoint.id,
+          txHash,
+          referenceId: execution.microSettlement.referenceId || execution.kraken.orderId || null,
+        }),
       };
     });
 }
@@ -570,6 +585,12 @@ function microCommerceLedgerEntries(limit: number): LedgerTransaction[] {
     referenceId: event.referenceId,
     explorerUrl: event.explorerUrl,
     description: event.description,
+    documentLinks: getCommerceDocumentLinks({
+      eventId: event.id,
+      checkpointId: event.checkpointId,
+      txHash: event.txHash,
+      referenceId: event.referenceId,
+    }),
   }));
 }
 
@@ -589,6 +610,7 @@ function operatorLedgerEntries(limit: number): LedgerTransaction[] {
     referenceId: receipt.id,
     explorerUrl: null,
     description: `${receipt.action} -> ${receipt.modeAfter}: ${receipt.reason}`,
+    documentLinks: null,
   }));
 }
 
@@ -725,6 +747,24 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
   // Gemini commerce studio
   app.get('/commerce', (_req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'commerce.html'));
+  });
+
+  app.get('/commerce/docs/:eventId/:kind', (req, res) => {
+    const eventId = decodeURIComponent(req.params.eventId || '');
+    const kind = req.params.kind as CommerceDocumentKind;
+    if (!['invoice', 'receipt', 'delivery-proof'].includes(kind)) {
+      res.status(404).send('Unknown commerce document type');
+      return;
+    }
+
+    const bundle = getCommerceDocumentBundle(eventId);
+    if (!bundle) {
+      res.status(404).send('Commerce document bundle not found');
+      return;
+    }
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(renderCommerceDocumentHtml(bundle, kind));
   });
 
   // Serve static files
@@ -878,6 +918,11 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
           ipfsCid: cp.ipfs?.cid || null,
           txHash: execution.settlementTxHash || cp.onChainTxHash || null,
           onChainTxHash: cp.onChainTxHash || null,
+          commerceDocuments: getCommerceDocumentLinks({
+            checkpointId: cp.id,
+            txHash: execution.settlementTxHash || cp.onChainTxHash || null,
+            referenceId: execution.microSettlement.referenceId || execution.kraken.orderId || null,
+          }),
           execution,
         };
       }),
@@ -979,7 +1024,14 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
   /** Closed trade history (persistent — survives restarts) */
   app.get(['/api/trades', '/api/executions'], (req, res) => {
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
-    res.json({ trades: getRecentTrades(limit) });
+    res.json({
+      trades: getRecentTrades(limit).map((trade) => ({
+        ...trade,
+        commerceDocuments: getCommerceDocumentLinks({
+          txHash: trade.txHash || null,
+        }),
+      })),
+    });
   });
 
   /** Trade history as CSV download */
@@ -1268,6 +1320,8 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
         gatewayDepositVerified: false,
         warning: error.message || 'Gateway balance unavailable',
       }));
+      const allDocumentBundles = listCommerceDocumentBundles(500);
+      const documentBundles = allDocumentBundles.slice(0, 6);
 
       res.json({
         runtime: getRuntimeConfig(),
@@ -1292,11 +1346,38 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
           totalSpend: billing.totalSpend,
           meetsTxnRequirement: billing.meetsTxnRequirement,
         },
+        documents: {
+          total: allDocumentBundles.length,
+          recent: documentBundles,
+        },
         track4,
       });
     } catch (error: any) {
       res.status(500).json({ error: error.message?.slice(0, 240) || 'Commerce status unavailable' });
     }
+  });
+
+  app.get('/api/commerce/documents', (req, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit as string, 10) || 20, 200);
+      const bundles = listCommerceDocumentBundles(limit);
+      res.json({
+        generatedAt: new Date().toISOString(),
+        count: bundles.length,
+        bundles,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message?.slice(0, 240) || 'Commerce documents unavailable' });
+    }
+  });
+
+  app.get('/api/commerce/documents/:eventId', (req, res) => {
+    const bundle = getCommerceDocumentBundle(decodeURIComponent(req.params.eventId || ''));
+    if (!bundle) {
+      res.status(404).json({ error: 'Commerce document bundle not found' });
+      return;
+    }
+    res.json(bundle);
   });
 
   /** x402 wallet balance — uses Circle Wallets balance or the configured Arc address */
@@ -1382,7 +1463,15 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
             note: track4.note,
             actionsRecorded: track4.actionsRecorded,
             settledVolumeUsd: track4.settledVolumeUsd,
-            recentEvents: getMicroCommerceEvents(5),
+            recentEvents: getMicroCommerceEvents(5).map((event) => ({
+              ...event,
+              documentLinks: getCommerceDocumentLinks({
+                eventId: event.id,
+                checkpointId: event.checkpointId,
+                txHash: event.txHash,
+                referenceId: event.referenceId,
+              }),
+            })),
           }),
         },
         {

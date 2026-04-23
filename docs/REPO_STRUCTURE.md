@@ -91,6 +91,7 @@ Payment, billing, wallet, and data normalisation services.
 | `circle-wallet.ts` | Circle wallet helper utilities |
 | `gateway-balance.ts` | Unified Circle wallet or Arc wallet balance lookup for commerce and x402 readiness |
 | `gemini-commerce.ts` | Gemini function-calling and multimodal commerce proof workflows |
+| `commerce-documents.ts` | Native invoice, receipt, and delivery-proof bundle generation plus HTML rendering |
 | `api-billing.ts` | API billing helpers |
 | `setup-gateway.mjs` | Circle Gateway setup helper |
 
@@ -119,7 +120,7 @@ src/dashboard/
 | --- | --- |
 | `server.ts` | Express static server, JSON APIs, MCP proxy, CORS/rate limits |
 | `public/kairos.html` | Primary live proof dashboard |
-| `public/commerce.html` | Gemini commerce studio for function calling and multimodal receipt proof |
+| `public/commerce.html` | Gemini commerce studio for function calling, multimodal review, and native commerce-document bundles |
 | `public/transactions.html` | Consolidated transaction history and audit ledger |
 | `public/trades.html` | Execution/trade-oriented view |
 | `public/judge.html` | Judge route surface |

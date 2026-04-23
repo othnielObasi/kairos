@@ -126,7 +126,7 @@ Readiness is exposed through `/api/status` and `/api/feeds/status`.
 | Track 2: Per-API Monetization | `normalisation.ts`, sentiment, PRISM, price feeds | `billingStore.addApiEvent()` | `/api/status`, `/api/billing` |
 | Track 3: Usage-Based Compute | `ai-reasoning.ts`, `sage-engine.ts` | `billingStore.addComputeEvent()` | `/api/status`, `/api/sage/status`, `/api/billing` |
 | Track 4: Real-Time Micro-Commerce | Approved checkpoint execution | `settleMicroCommerceEvent()` and checkpoint execution state | `/api/checkpoints`, `/api/transactions` |
-| Gemini commerce surface | `gemini-commerce.ts`, `gateway-balance.ts` | `billEvent("compute-function-call")`, `billEvent("compute-multimodal")`, `settleCommerceProofReceipt()` | `/commerce`, `/api/commerce/status`, `/api/gemini/commerce-assistant`, `/api/commerce/analyze` |
+| Gemini commerce surface | `gemini-commerce.ts`, `gateway-balance.ts`, `commerce-documents.ts` | `billEvent("compute-function-call")`, `billEvent("compute-multimodal")`, `settleCommerceProofReceipt()`, native document-bundle generation | `/commerce`, `/api/commerce/status`, `/api/gemini/commerce-assistant`, `/api/commerce/analyze`, `/api/commerce/documents` |
 
 ## Dashboard And API Architecture
 
@@ -155,6 +155,9 @@ Core APIs:
 - `/api/gemini/commerce-assistant`
 - `/api/commerce/analyze`
 - `/api/commerce/settle`
+- `/api/commerce/documents`
+- `/api/commerce/documents/:eventId`
+- `/commerce/docs/:eventId/:kind`
 
 The dashboard is intentionally concise. Detailed receipt and transaction explanations belong on the History page and API responses.
 

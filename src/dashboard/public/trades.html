@@ -109,7 +109,7 @@
         </div>
         <div class="explain-card">
           <div class="explain-k">How they relate</div>
-          <div class="explain-v">One execution can appear here and also produce a separate receipt in Transactions.</div>
+          <div class="explain-v">One execution can appear here, generate Kairos invoice, receipt, and delivery-proof pages, and also produce a separate payment receipt in Transactions.</div>
         </div>
       </div>
     </div>
@@ -136,11 +136,12 @@
               <th>Opened</th>
               <th>Closed</th>
               <th>Artifact</th>
+              <th>Commerce Docs</th>
               <th>Settlement Ref</th>
             </tr>
           </thead>
           <tbody id="trades-body">
-            <tr><td colspan="14" class="loading">Loading execution history...</td></tr>
+            <tr><td colspan="15" class="loading">Loading execution history...</td></tr>
           </tbody>
         </table>
       </div>
@@ -160,6 +161,14 @@
       if (!hash) return '<span style="color:var(--fg3)">-</span>';
       var short = hash.length > 12 ? hash.slice(0, 6) + '...' + hash.slice(-4) : hash;
       return '<a href="https://testnet.arcscan.app/tx/' + encodeURIComponent(hash) + '" target="_blank" rel="noopener" style="color:var(--info);text-decoration:none" title="' + hash + '">LINK ' + short + '</a>';
+    }
+    function commerceDocs(docs) {
+      if (!docs) return '<span style="color:var(--fg3)">-</span>';
+      var links = [];
+      if (docs.invoiceUrl) links.push('<a href="' + docs.invoiceUrl + '" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none">INV</a>');
+      if (docs.receiptUrl) links.push('<a href="' + docs.receiptUrl + '" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none">RCT</a>');
+      if (docs.deliveryProofUrl) links.push('<a href="' + docs.deliveryProofUrl + '" target="_blank" rel="noopener" style="color:var(--cyan);text-decoration:none">PROOF</a>');
+      return links.length ? links.join(' / ') : '<span style="color:var(--fg3)">-</span>';
     }
     function reasonBadge(r) {
       var m = { stop_loss: 'badge-dn', direction_flip: 'badge-warn', reconciliation: 'badge-info', manual: 'badge-info' };
@@ -196,7 +205,7 @@
     function renderTrades(trades) {
       var tbody = document.getElementById('trades-body');
       if (!trades || trades.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="14" class="empty">No closed executions yet. Approved actions will appear here once they are opened and closed.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="15" class="empty">No closed executions yet. Approved actions will appear here once they are opened and closed.</td></tr>';
         return;
       }
       tbody.innerHTML = trades.map(function(t) {
@@ -214,6 +223,7 @@
           '<td style="color:var(--fg2);font-size:9.5px">' + tsShort(t.openedAt) + '</td>' +
           '<td style="color:var(--fg2);font-size:9.5px">' + tsShort(t.closedAt) + '</td>' +
           '<td style="font-size:9px">' + ipfsLink(t.ipfsCid) + '</td>' +
+          '<td style="font-size:9px">' + commerceDocs(t.commerceDocuments) + '</td>' +
           '<td style="font-size:9px">' + txLink(t.txHash) + '</td>' +
           '</tr>';
       }).join('');

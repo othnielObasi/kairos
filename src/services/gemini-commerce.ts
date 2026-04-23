@@ -2,6 +2,7 @@ import { createLogger } from '../agent/logger.js';
 import { billingStore } from './billing-store.js';
 import { billEvent, settleCommerceEventAmount } from './nanopayments.js';
 import { recordMicroCommerceEvent } from './micro-commerce-store.js';
+import { getCommerceDocumentBundle } from './commerce-documents.js';
 
 const log = createLogger('GEMINI-COMMERCE');
 
@@ -592,11 +593,15 @@ export async function settleCommerceProofReceipt(input: {
     trigger: 'gemini-multimodal-commerce',
     description: `${summary} Settled ${proofAmountUsdc.toFixed(3)} USDC proof receipt on Arc.`,
     checkpointId: null,
+    referenceNotionalUsd: null,
+    referenceCurrency: 'USD',
+    deliverySummary: `Gemini reviewed a ${documentType} for ${merchant} and approved a bounded proof receipt.`,
   });
 
   return {
     proofAmountUsdc,
     receipt,
     event,
+    documents: getCommerceDocumentBundle(event.id)?.documents || null,
   };
 }

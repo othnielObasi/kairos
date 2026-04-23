@@ -254,6 +254,8 @@ commerce.html loads /api/commerce/status
         |
         +--> Gemini multimodal analysis can review an uploaded receipt or invoice image
         |
+        +--> Recent native Track 4 document bundles load from /api/commerce/documents
+        |
         v
 Preview distinguishes document total from proof-settlement amount
         |
@@ -262,6 +264,9 @@ Optional settleCommerceProofReceipt() creates bounded Arc USDC proof receipt
         |
         v
 Track 4, billing, and Transaction History update with the new proof row
+        |
+        v
+Kairos generates /commerce/docs/:eventId/invoice, /receipt, and /delivery-proof pages for the event
 ```
 
 This flow exists to make the Google partner story visible in the shipped product rather than only in backend configuration.

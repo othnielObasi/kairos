@@ -161,7 +161,7 @@
         <div class="kicker">Consolidated Hackathon Evidence</div>
         <h1>Every paid action, one audit trail.</h1>
         <p class="hero-copy">
-          This page consolidates governance nanopayments, x402 data calls, usage-based LLM compute, and real-time micro-commerce receipts into a single judge-friendly history.
+          This page consolidates governance nanopayments, x402 data calls, usage-based LLM compute, and real-time micro-commerce receipts into a single judge-friendly history, including native Kairos invoice, receipt, and delivery-proof links when a Track 4 event generated them.
         </p>
       </div>
       <div class="proof-card">
@@ -245,6 +245,17 @@
       if (row.referenceId) return '<span class="dim">' + esc(short(row.referenceId)) + '</span>';
       return '<span class="dim">no external receipt</span>';
     }
+    function docLinks(row) {
+      const docs = row.documentLinks;
+      if (!docs) return '';
+      const items = [];
+      if (docs.invoiceUrl) items.push('<a class="tx-link" href="' + esc(docs.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a>');
+      if (docs.receiptUrl) items.push('<a class="tx-link" href="' + esc(docs.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a>');
+      if (docs.deliveryProofUrl) items.push('<a class="tx-link" href="' + esc(docs.deliveryProofUrl) + '" target="_blank" rel="noopener">Delivery proof</a>');
+      return items.length
+        ? '<div class="desc">Docs: ' + items.join(' · ') + '</div>'
+        : '';
+    }
     function rowMatches(row) {
       const q = state.query.trim().toLowerCase();
       const trackOk = state.track === "all" || row.trackKey === state.track;
@@ -278,7 +289,7 @@
         return '<tr>' +
           '<td class="mono dim">' + esc(fmtTime(row.timestamp)) + '</td>' +
           '<td><div class="track">' + esc(row.track) + '</div><div class="dim">' + esc(row.category) + '</div></td>' +
-          '<td><div>' + esc(row.eventName) + '</div><div class="desc">' + esc(row.description) + '</div></td>' +
+          '<td><div>' + esc(row.eventName) + '</div><div class="desc">' + esc(row.description) + '</div>' + docLinks(row) + '</td>' +
           '<td><div>' + esc(row.source) + '</div><div class="dim">' + esc(row.mode) + '</div></td>' +
           '<td class="amount mono">' + fmtUsdc(row.amountUsdc) + '</td>' +
           '<td><span class="pill ' + esc(row.status) + '">' + esc(row.status) + '</span></td>' +
@@ -290,6 +301,7 @@
           '<div class="mobile-top"><span class="track">' + esc(row.track) + '</span><span class="pill ' + esc(row.status) + '">' + esc(row.status) + '</span></div>' +
           '<div><strong>' + esc(row.eventName) + '</strong></div>' +
           '<div class="desc">' + esc(row.description) + '</div>' +
+          docLinks(row) +
           '<div class="desc">' + esc(fmtTime(row.timestamp)) + ' / ' + esc(row.source) + ' / ' + fmtUsdc(row.amountUsdc) + '</div>' +
           '<div style="margin-top:8px">' + txCell(row) + '</div>' +
           '</article>';

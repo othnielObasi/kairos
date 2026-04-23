@@ -1,6 +1,7 @@
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { hasVerifiedTxHash, type NanopaymentReceipt } from './nanopayments.js';
+import { ensureCommerceDocumentBundle } from './commerce-documents.js';
 
 const STATE_DIR = join(process.cwd(), '.kairos');
 const LOG_FILE = join(STATE_DIR, 'micro-commerce.jsonl');
@@ -76,6 +77,9 @@ export function recordMicroCommerceEvent(
     trigger: string;
     description: string;
     checkpointId?: number | null;
+    referenceNotionalUsd?: number | null;
+    referenceCurrency?: string | null;
+    deliverySummary?: string | null;
   },
 ): MicroCommerceEvent {
   loadEvents();
@@ -102,11 +106,60 @@ export function recordMicroCommerceEvent(
   events.unshift(event);
   if (events.length > MAX_EVENTS) events.pop();
   persistEvent(event);
+
+  try {
+    ensureCommerceDocumentBundle({
+      eventId: event.id,
+      checkpointId: event.checkpointId,
+      createdAt: event.timestamp,
+      buyer: event.buyer,
+      seller: event.seller,
+      item: event.item,
+      trigger: event.trigger,
+      description: event.description,
+      referenceNotionalUsd: meta.referenceNotionalUsd ?? null,
+      referenceCurrency: meta.referenceCurrency || 'USDC',
+      deliverySummary: meta.deliverySummary || event.description,
+      settlement: {
+        amountUsdc: event.amountUsdc,
+        status: event.status,
+        mode: event.settlementMode,
+        txHash: event.txHash,
+        referenceId: event.referenceId,
+        explorerUrl: event.explorerUrl,
+      },
+    });
+  } catch (error) {
+    console.warn('[MICRO-COMMERCE] Failed to create commerce documents:', (error as Error).message || error);
+  }
+
   return event;
 }
 
 export function getMicroCommerceEvents(limit = 20): MicroCommerceEvent[] {
   loadEvents();
+  for (const event of events) {
+    try {
+      ensureCommerceDocumentBundle({
+        eventId: event.id,
+        checkpointId: event.checkpointId,
+        createdAt: event.timestamp,
+        buyer: event.buyer,
+        seller: event.seller,
+        item: event.item,
+        trigger: event.trigger,
+        description: event.description,
+        settlement: {
+          amountUsdc: event.amountUsdc,
+          status: event.status,
+          mode: event.settlementMode,
+          txHash: event.txHash,
+          referenceId: event.referenceId,
+          explorerUrl: event.explorerUrl,
+        },
+      });
+    } catch (_) {}
+  }
   return events.slice(0, Math.max(0, Math.min(limit, MAX_EVENTS)));
 }
 

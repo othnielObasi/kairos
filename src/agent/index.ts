@@ -915,6 +915,18 @@ async function runCycle(): Promise<void> {
       checkpoint.execution.microSettlement.referenceId = settlement.referenceId ?? null;
       checkpoint.execution.microSettlement.mode = settlement.mode ?? null;
 
+      recordMicroCommerceEvent(settlement, {
+        item: `${strategyOutput.signal.direction} ${config.tradingPair} approved action`,
+        buyer: 'Kairos agent',
+        seller: 'Kairos real-time commerce rail',
+        trigger: 'track4-approved-action',
+        checkpointId: checkpoint.id,
+        description: `Kairos approved a ${strategyOutput.signal.direction} ${config.tradingPair} action and generated a ${settlement.amount.toFixed(3)} USDC proof receipt.`,
+        referenceNotionalUsd: checkpoint.execution.notionalUsd,
+        referenceCurrency: 'USDC',
+        deliverySummary: `Governed action approved after mandate, oracle, supervisory, and risk checks.`,
+      });
+
       if (hasVerifiedTxHash(settlement)) {
         checkpoint.onChainTxHash = settlement.txHash;
         checkpoint.execution.executionMode = 'arc_settled';
@@ -1295,6 +1307,9 @@ async function settleTrack4ProofCommerce(checkpointId: number, reason: string): 
     trigger: 'post-cycle audit checkout',
     checkpointId,
     description: `Kairos purchased a per-interaction audit proof capsule after cycle ${cycleCount}: ${reason}`,
+    referenceNotionalUsd: null,
+    referenceCurrency: 'USDC',
+    deliverySummary: `Audit proof capsule issued after cycle ${cycleCount}.`,
   });
   lastTrack4ProofCommerceCycle = cycleCount;
 
