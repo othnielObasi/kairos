@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kairos - Transaction History</title>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -21,7 +21,7 @@
       --red: #ff7d7d;
       --ink: #020604;
     }
-    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: "JetBrains Mono", monospace; font-size: 12px; }
+    html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: "IBM Plex Mono", monospace; font-size: 12px; }
     body {
       background:
         radial-gradient(circle at 15% 5%, rgba(53,224,161,.20), transparent 30%),
@@ -47,7 +47,7 @@
       border-bottom: 1px solid rgba(255,255,255,0.06);
       background: rgba(7,16,13,0.92); backdrop-filter: blur(16px);
     }
-    .hdr-logo { font-family: "Space Grotesk", sans-serif; font-size: 18px; font-weight: 700; letter-spacing: .12em; }
+    .hdr-logo { font-family: "IBM Plex Sans", sans-serif; font-size: 18px; font-weight: 600; letter-spacing: .12em; }
     .hdr-logo span { color: var(--blue); }
     .hdr-tags { display: flex; gap: 8px; margin-left: 4px; flex-wrap: wrap; }
     .tag { font-size: 10px; letter-spacing: .1em; padding: 3px 9px; border-radius: 2px; font-weight: 500; text-transform: uppercase; }
@@ -80,7 +80,7 @@
       pointer-events: none;
     }
     .kicker { color: var(--green); font-size: 10px; text-transform: uppercase; letter-spacing: .24em; margin-bottom: 10px; }
-    h1 { font-family: "Space Grotesk", sans-serif; font-size: clamp(30px, 5vw, 58px); line-height: .95; letter-spacing: -.04em; margin-bottom: 14px; }
+    h1 { font-family: "IBM Plex Sans", sans-serif; font-size: clamp(30px, 5vw, 58px); line-height: .95; letter-spacing: -.04em; margin-bottom: 14px; }
     .hero-copy { max-width: 780px; color: var(--muted); font-size: 13px; line-height: 1.75; }
     .proof-card { padding: 18px; display: grid; gap: 12px; }
     .proof-line { display: flex; justify-content: space-between; gap: 12px; padding: 12px; border: 1px solid rgba(255,255,255,.06); border-radius: 14px; background: rgba(255,255,255,.025); }
@@ -111,7 +111,7 @@
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
       padding: 14px 16px; border-bottom: 1px solid rgba(53,224,161,.16);
     }
-    .ledger-title { font-family: "Space Grotesk", sans-serif; font-size: 16px; font-weight: 700; }
+    .ledger-title { font-family: "IBM Plex Sans", sans-serif; font-size: 16px; font-weight: 600; }
     .refresh { color: var(--soft); font-size: 10px; }
     table { width: 100%; border-collapse: collapse; }
     th {
