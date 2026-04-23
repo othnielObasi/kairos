@@ -10,7 +10,7 @@ Kairos is not presented as a generic trading bot. The market loop is the workloa
 | --- | --- | --- |
 | Dashboard | `https://kairos.nov-tia.com` | Judge-facing proof surface for the four hackathon tracks |
 | Transaction History | `https://kairos.nov-tia.com/transactions` | Consolidated payment and settlement ledger |
-| Trade History | `https://kairos.nov-tia.com/trades` | Underlying execution and position audit log |
+| Execution History | `https://kairos.nov-tia.com/execution` | Underlying execution and position audit log |
 | MCP endpoint | `https://kairos.nov-tia.com/mcp` | JSON-RPC tools, resources, and prompts for external agents |
 | Agent card | `https://kairos.nov-tia.com/.well-known/agent-card.json` | Public metadata for agent discovery |
 | Arc explorer | `https://testnet.arcscan.app` | External verifier for confirmed Arc transaction hashes |
@@ -313,7 +313,7 @@ How the flow works:
 4. The checkpoint or micro-commerce store records the event.
 5. The dashboard Track 4 card updates.
 6. `Transaction History` receives the payment row.
-7. If applicable, `Trade History` also receives the execution context for the underlying action.
+7. If applicable, `Execution History` also receives the execution context for the underlying action.
 
 Track 4 state meanings:
 
@@ -347,25 +347,25 @@ What `Transaction History` shows:
 - The Track 4 payment or settlement receipt itself
 - Receipt amount, mode, status, reference, and Arc verifier
 
-What `Trade History` shows:
+What `Execution History` shows:
 
 - The underlying governed action or execution lifecycle
 - Entry, exit, PnL, close reason, artifact, and related tx link if present
 
-Why Track 4 has both `Transaction History` and `Trade History`:
+Why Track 4 has both `Transaction History` and `Execution History`:
 
 One approved Kairos action can generate two different records:
 
 - A trade or execution record showing what Kairos decided to do
 - A payment or settlement record showing how that action was economically settled or proven
 
-That is why `Trade History` relates to Track 4 without being the same thing as the Track 4 proof ledger.
+That is why `Execution History` relates to Track 4 without being the same thing as the Track 4 proof ledger.
 
 Why this matters:
 
 Track 4 proves the most visible part of the hackathon thesis: a user or agent interaction can trigger immediate USDC settlement per interaction instead of relying on subscriptions or batched invoices.
 
-## Transaction History vs Trade History
+## Transaction History vs Execution History
 
 These two surfaces answer different questions.
 
@@ -386,16 +386,16 @@ Use `https://kairos.nov-tia.com/transactions` when the question is:
 - Track 4 micro-commerce receipts
 - operator or audit receipts where applicable
 
-### Trade History
+### Execution History
 
-Use `https://kairos.nov-tia.com/trades` when the question is:
+Use `https://kairos.nov-tia.com/execution` when the question is:
 
 - What action did Kairos take?
 - When was a position opened or closed?
 - What was the PnL?
 - What artifact explains the action?
 
-`Trade History` is the execution log. It is related most closely to Track 4, but it is not itself the Track 4 proof ledger.
+`Execution History` is the execution log. It is related most closely to Track 4, but it is not itself the Track 4 proof ledger.
 
 ## MCP Surface
 
@@ -594,7 +594,7 @@ Use this checklist before demos or production reviews:
 2. `npm test` passes.
 3. `npm run test:mcp` passes.
 4. `https://kairos.nov-tia.com` returns `200`.
-5. `/transactions`, `/trades`, `/mcp`, and `/.well-known/agent-card.json` return `200`.
+5. `/transactions`, `/execution`, `/mcp`, and `/.well-known/agent-card.json` return `200`.
 6. `/api/billing` shows `realTxns >= 50` when the demo proof target is being exercised.
 7. Track 2 reports `x402` mode or explains fallback clearly.
 8. Track 3 shows Gemini readiness or clear provider failover state.

@@ -701,7 +701,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
   });
 
   // Trade history page — separate tab
-  app.get('/trades', (_req, res) => {
+  app.get(['/trades', '/execution'], (_req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'trades.html'));
   });
 
@@ -965,13 +965,13 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
   });
 
   /** Closed trade history (persistent — survives restarts) */
-  app.get('/api/trades', (req, res) => {
+  app.get(['/api/trades', '/api/executions'], (req, res) => {
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
     res.json({ trades: getRecentTrades(limit) });
   });
 
   /** Trade history as CSV download */
-  app.get('/api/trades/csv', (_req, res) => {
+  app.get(['/api/trades/csv', '/api/executions/csv'], (_req, res) => {
     const trades = loadClosedTrades();
     const header = 'ID,Asset,Side,Size,Entry Price,Exit Price,PnL ($),PnL (%),Reason,Opened At,Closed At,Duration (min),IPFS CID,Tx Hash';
     const rows = trades.map(t => [
@@ -992,12 +992,12 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
     ].join(','));
     const csv = [header, ...rows].join('\n');
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename="kairos-trades.csv"');
+    res.setHeader('Content-Disposition', 'attachment; filename="kairos-executions.csv"');
     res.send(csv);
   });
 
   /** Trade statistics */
-  app.get('/api/trades/stats', (_req, res) => {
+  app.get(['/api/trades/stats', '/api/executions/stats'], (_req, res) => {
     const stats = getTradeStats();
     // Use actual capital for PnL instead of summing trades (trade log may be incomplete)
     const state = getAgentState();

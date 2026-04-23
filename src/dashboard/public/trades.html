@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kairos - Trade History</title>
+  <title>Kairos - Execution History</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -52,6 +52,20 @@
     .loading { padding: 40px 20px; text-align: center; color: var(--fg3); }
     .refresh { display: flex; align-items: center; gap: 6px; font-size: 9px; color: var(--fg3); }
     .refresh .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--up); box-shadow: 0 0 6px #34d39940; }
+    .explain {
+      margin-bottom: 14px;
+      background: linear-gradient(180deg, #0d1320, #0b111b);
+      border: 1px solid var(--brd);
+      border-radius: 6px;
+      padding: 12px 14px;
+    }
+    .explain-title { font-size: 10px; color: var(--w); font-weight: 700; letter-spacing: 0.4px; margin-bottom: 6px; }
+    .explain-copy { font-size: 10px; color: var(--fg2); line-height: 1.7; }
+    .explain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
+    .explain-card { border: 1px solid var(--brd); border-radius: 5px; background: #ffffff05; padding: 10px; }
+    .explain-k { font-size: 8px; color: var(--fg3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .explain-v { font-size: 10px; color: var(--fg); line-height: 1.6; }
+    @media (max-width: 900px) { .explain-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -59,28 +73,49 @@
     <div style="display:flex;align-items:center;gap:8px">
       <div class="logo">K</div>
       <span class="brand">KAIROS</span>
-      <span class="sub">Trade History · Audit Log</span>
+      <span class="sub">Execution History · Audit Log</span>
     </div>
     <nav>
       <a href="/">Dashboard</a>
       <a href="/transactions">Transactions</a>
-      <a href="/trades" class="active">Trade History</a>
+      <a href="/execution" class="active">Execution History</a>
       <a href="/kairos" class="judge-link">Economic Proof</a>
     </nav>
   </header>
 
   <div class="container">
     <div class="stats-bar" id="stats">
-      <div class="stat-card"><div class="stat-label">Total Trades</div><div class="stat-value" id="s-total">-</div></div>
+      <div class="stat-card"><div class="stat-label">Total Executions</div><div class="stat-value" id="s-total">-</div></div>
       <div class="stat-card"><div class="stat-label">Total PnL</div><div class="stat-value" id="s-pnl">-</div><div class="stat-sub" id="s-pnl-sub"></div></div>
       <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value" id="s-winrate">-</div><div class="stat-sub" id="s-winrate-sub"></div></div>
-      <div class="stat-card"><div class="stat-label">Best Trade</div><div class="stat-value" id="s-best">-</div></div>
-      <div class="stat-card"><div class="stat-label">Worst Trade</div><div class="stat-value" id="s-worst">-</div></div>
+      <div class="stat-card"><div class="stat-label">Best Outcome</div><div class="stat-value" id="s-best">-</div></div>
+      <div class="stat-card"><div class="stat-label">Worst Outcome</div><div class="stat-value" id="s-worst">-</div></div>
+    </div>
+
+    <div class="explain">
+      <div class="explain-title">What Execution History means</div>
+      <div class="explain-copy">
+        This page is the governed action and outcome log. It shows what Kairos executed, when it opened or closed an action, the resulting PnL, and the supporting artifact or settlement reference. It is not the same as the payment ledger.
+      </div>
+      <div class="explain-grid">
+        <div class="explain-card">
+          <div class="explain-k">What this page answers</div>
+          <div class="explain-v">What action did Kairos take, when did it close, and what was the outcome?</div>
+        </div>
+        <div class="explain-card">
+          <div class="explain-k">What Transactions answers</div>
+          <div class="explain-v">What got paid or settled on Arc, and which receipt proves it?</div>
+        </div>
+        <div class="explain-card">
+          <div class="explain-k">How they relate</div>
+          <div class="explain-v">One execution can appear here and also produce a separate receipt in Transactions.</div>
+        </div>
+      </div>
     </div>
 
     <div class="panel">
       <div class="panel-header">
-        <span class="panel-title">Closed Trades</span>
+        <span class="panel-title">Closed Executions</span>
         <div class="refresh"><div class="dot"></div><span id="refresh-time">-</span></div>
       </div>
       <div style="overflow-x:auto">
@@ -99,12 +134,12 @@
               <th>Duration</th>
               <th>Opened</th>
               <th>Closed</th>
-              <th>Receipt</th>
-              <th>Tx</th>
+              <th>Artifact</th>
+              <th>Settlement Ref</th>
             </tr>
           </thead>
           <tbody id="trades-body">
-            <tr><td colspan="14" class="loading">Loading trade history...</td></tr>
+            <tr><td colspan="14" class="loading">Loading execution history...</td></tr>
           </tbody>
         </table>
       </div>
@@ -160,7 +195,7 @@
     function renderTrades(trades) {
       var tbody = document.getElementById('trades-body');
       if (!trades || trades.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="14" class="empty">No closed trades yet. Trades will appear here when positions are closed.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="14" class="empty">No closed executions yet. Approved actions will appear here once they are opened and closed.</td></tr>';
         return;
       }
       tbody.innerHTML = trades.map(function(t) {
@@ -185,8 +220,8 @@
 
     async function fetchAll() {
       try {
-        var r1 = fetch('/api/trades?limit=200').then(function(r) { return r.json(); });
-        var r2 = fetch('/api/trades/stats').then(function(r) { return r.json(); });
+        var r1 = fetch('/api/executions?limit=200').then(function(r) { return r.json(); });
+        var r2 = fetch('/api/executions/stats').then(function(r) { return r.json(); });
         var results = await Promise.all([r1, r2]);
         renderTrades(results[0].trades);
         renderStats(results[1]);
