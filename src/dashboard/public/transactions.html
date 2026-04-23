@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kairos - Transaction History</title>
+  <title>Kairos - Payment Ledger</title>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -171,11 +171,12 @@
       </div>
       <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener" style="color:var(--green);border:1px solid rgba(53,224,161,.2);padding:3px 10px;border-radius:2px;">Arc Explorer ↗</a>
       <a class="back-lnk" href="https://app.circle.com" target="_blank" rel="noopener" style="color:#2775ca;border:1px solid rgba(39,117,202,.2);padding:3px 10px;border-radius:2px;">Circle Console ↗</a>
+      <a class="back-lnk" href="/kairos" style="color:var(--text);border:1px solid rgba(255,255,255,.2);padding:3px 10px;border-radius:2px;">Proof Dashboard</a>
       <a class="back-lnk" href="/mcp" target="_blank" rel="noopener" style="color:#2775ca;border:1px solid rgba(39,117,202,.2);padding:3px 10px;border-radius:2px;">MCP ↗</a>
-      <a class="back-lnk" href="/transactions" style="color:var(--green);border:1px solid rgba(53,224,161,.2);padding:3px 10px;border-radius:2px;background:rgba(255,255,255,.08);">Transaction History</a>
+      <a class="back-lnk" href="/transactions" style="color:var(--green);border:1px solid rgba(53,224,161,.2);padding:3px 10px;border-radius:2px;background:rgba(255,255,255,.08);">Payment Ledger</a>
       <a class="back-lnk" href="/documents" style="color:var(--blue);border:1px solid rgba(111,183,255,.22);padding:3px 10px;border-radius:2px;">Document Vault</a>
-      <a class="back-lnk" href="/execution" style="color:var(--amber);border:1px solid rgba(255,204,102,.22);padding:3px 10px;border-radius:2px;">Execution History</a>
-      <a class="back-lnk" href="/commerce" style="color:var(--blue);border:1px solid rgba(111,183,255,.22);padding:3px 10px;border-radius:2px;">Commerce Studio</a>
+      <a class="back-lnk" href="/execution" style="color:var(--amber);border:1px solid rgba(255,204,102,.22);padding:3px 10px;border-radius:2px;">Execution Log</a>
+      <a class="back-lnk" href="/commerce" style="color:var(--blue);border:1px solid rgba(111,183,255,.22);padding:3px 10px;border-radius:2px;">Commerce Intelligence</a>
     </nav>
   </header>
 
@@ -183,7 +184,7 @@
     <section class="hero">
       <div class="hero-card">
         <div class="kicker">Ledger</div>
-        <h1>Transaction History</h1>
+        <h1>Payment Ledger</h1>
         <p class="hero-copy">
           Confirmed, pending, and fallback settlement receipts across the Kairos tracks.
         </p>
@@ -211,7 +212,7 @@
 
     <section class="ledger">
       <div class="ledger-head">
-        <div class="ledger-title">Transaction History</div>
+        <div class="ledger-title">Payment Ledger</div>
         <div class="refresh" id="refresh">Loading...</div>
       </div>
       <div style="overflow-x:auto">
