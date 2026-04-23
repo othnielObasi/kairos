@@ -49,6 +49,7 @@ import {
   listAllCommerceDocumentBundles,
   listCommerceDocumentBundles,
   renderCommerceDocumentHtml,
+  type CommerceDocumentBundle,
   type CommerceDocumentKind,
   type CommerceDocumentLinks,
   type DocumentTrackKey,
@@ -573,6 +574,41 @@ function receiptLedgerEntry(
   };
 }
 
+function eventNameFromBundle(bundle: CommerceDocumentBundle): string {
+  if (bundle.trigger.startsWith('governance-')) return bundle.trigger.slice('governance-'.length);
+  if (bundle.trigger.startsWith('api-')) return bundle.trigger.slice('api-'.length);
+  if (bundle.trigger === 'sage-reflection') return 'compute-sage';
+  if (bundle.trigger === 'runtime-inference') return 'compute-llm';
+  return bundle.item || bundle.category;
+}
+
+function persistedReceiptLedgerEntries(): LedgerTransaction[] {
+  return listAllCommerceDocumentBundles()
+    .filter((bundle) => bundle.trackKey === 't1' || bundle.trackKey === 't2' || bundle.trackKey === 't3')
+    .map((bundle, index) => {
+      const txHash = verifiedHash(bundle.settlement.txHash);
+      const trackKey = bundle.trackKey as 't1' | 't2' | 't3';
+
+      return {
+        id: `doc-${bundle.eventId}-${index}`,
+        timestamp: bundle.createdAt,
+        trackKey,
+        track: bundle.trackLabel,
+        category: bundle.category,
+        source: bundle.seller || 'Kairos',
+        eventName: eventNameFromBundle(bundle),
+        amountUsdc: bundle.settlement.amountUsdc || 0,
+        mode: bundle.settlement.mode || 'nanopayment',
+        status: bundle.settlement.status as LedgerStatus,
+        txHash,
+        referenceId: bundle.settlement.referenceId || null,
+        explorerUrl: bundle.settlement.explorerUrl || explorerUrl(txHash),
+        description: bundle.description,
+        documentLinks: bundle.documents || null,
+      };
+    });
+}
+
 function checkpointLedgerEntries(limit: number): LedgerTransaction[] {
   return getCheckpoints(limit)
     .filter((checkpoint) => {
@@ -676,10 +712,9 @@ function buildTransactionLedger(limit: number) {
       const ref = entry.txHash || entry.referenceId || '';
       return ref ? !settlementRefs.has(ref) : true;
     });
+  const receiptEntries = persistedReceiptLedgerEntries();
   const records: LedgerTransaction[] = [
-    ...billingStore.t1Events.map((receipt, index) => receiptLedgerEntry(receipt, index, 't1', 'Track 01', 'Governance nanopayment')),
-    ...billingStore.t2Events.map((receipt, index) => receiptLedgerEntry(receipt, index, 't2', 'Track 02', 'Paid data access')),
-    ...billingStore.t3Events.map((receipt, index) => receiptLedgerEntry(receipt, index, 't3', 'Track 03', 'Usage-based compute')),
+    ...receiptEntries,
     ...microEntries,
     ...checkpointEntries,
     ...operatorLedgerEntries(Math.min(cappedLimit, 200)),
