@@ -148,7 +148,7 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
 .s-name { font-size:10px; flex:1; transition:color .3s; }
 .s-bar  { width:40px; height:2px; background:rgba(255,255,255,.06); border-radius:1px; flex-shrink:0; }
 .s-fill { height:100%; border-radius:1px; background:var(--purple); opacity:.8; transition:width .5s ease; }
-.s-amt  { font-size:10px; width:42px; text-align:right; flex-shrink:0; font-variant-numeric:tabular-nums; transition:color .3s; }
+.s-amt  { font-size:10px; width:64px; text-align:right; flex-shrink:0; font-variant-numeric:tabular-nums; transition:color .3s; }
 .s-icon { font-size:10px; width:12px; text-align:center; flex-shrink:0; transition:color .3s; }
 .feed-div { font-size:9px; color:var(--text3); letter-spacing:.12em; padding:8px 0 4px; border-bottom:1px solid var(--border); margin-bottom:4px; }
 
@@ -156,8 +156,8 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
 .api-src  { display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid rgba(255,255,255,.03); }
 .api-dot  { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
 .api-name { font-size:10px; color:var(--text2); flex:1; }
-.api-calls{ font-size:10px; color:var(--text3); width:44px; text-align:right; font-variant-numeric:tabular-nums; }
-.api-amt  { font-size:10px; color:var(--blue); font-weight:500; width:48px; text-align:right; font-variant-numeric:tabular-nums; }
+.api-calls{ font-size:10px; color:var(--text3); width:48px; text-align:right; font-variant-numeric:tabular-nums; }
+.api-amt  { font-size:10px; color:var(--blue); font-weight:500; width:74px; text-align:right; font-variant-numeric:tabular-nums; }
 .api-mode { font-size:8px; width:40px; text-align:center; padding:1px 4px; border-radius:2px; flex-shrink:0; }
 .api-mode.live { background:rgba(0,229,160,.1); color:var(--teal); border:1px solid rgba(0,229,160,.2); }
 .api-mode.fb   { background:rgba(240,165,0,.1); color:var(--amber); border:1px solid rgba(240,165,0,.2); }
@@ -435,11 +435,11 @@ html, body { background:var(--bg); color:var(--text); font-family:var(--mono); f
 <script>
 const STAGE_NAMES = ["Mandate","Oracle","Simulator","Supervisory","Risk Router","LLM Reasoning","SAGE"];
 const API_SOURCES = [
-  { key:"coingecko",    name:"AIsa Fin. Prices", color:"#6C63FF", mode:"x402" },
-  { key:"kraken",       name:"AIsa Fin. Prices", color:"#2775CA", mode:"x402" },
-  { key:"feargreed",    name:"AIsa Twitter",   color:"#F0A500", mode:"x402" },
-  { key:"alphavantage", name:"AIsa Fin. News",  color:"#00E5A0", mode:"x402" },
-  { key:"prism",        name:"AIsa Perplexity", color:"#FF6B9D", mode:"x402" },
+  { key:"coingecko",    name:"AIsa Spot A",      color:"#6C63FF", mode:"x402", price:"x402 spot" },
+  { key:"kraken",       name:"AIsa Spot B",      color:"#2775CA", mode:"x402", price:"x402 spot" },
+  { key:"feargreed",    name:"AIsa Twitter",     color:"#F0A500", mode:"x402", price:"$0.0022 endpoint" },
+  { key:"alphavantage", name:"AIsa Fin. News",   color:"#00E5A0", mode:"x402", price:"$0.048 endpoint" },
+  { key:"prism",        name:"AIsa Perplexity",  color:"#FF6B9D", mode:"x402", price:"$0.012 endpoint" },
 ];
 const POLL = 2000;
 const ARC_EXPLORER = 'https://testnet.arcscan.app/tx/';
@@ -550,20 +550,32 @@ if (window.location.href.endsWith("#")) {
 }
 
 // ── T1 ──────────────────────────────────────────────────────────────────────
-function renderT1(data) {
+function renderT1(data, track3) {
   const sc = el("t1-stages");
   sc.innerHTML = "";
-  const counts = data.stageCounts || new Array(7).fill(0);
-  const spends = data.stageSpend  || new Array(7).fill(0);
+  const counts = (data.stageCounts || new Array(7).fill(0)).slice();
+  const spends = (data.stageSpend  || new Array(7).fill(0)).slice();
+  const t3Events = data.t3Events || [];
+  const llmEvents = t3Events.filter(e => (e.type || "").toLowerCase() === "inference" || (e.eventName || "").includes("llm"));
+  const sageEvents = t3Events.filter(e => (e.type || "").toLowerCase() === "reflection" || (e.eventName || "").toLowerCase().includes("sage"));
+  counts[5] = Math.max(counts[5] || 0, llmEvents.length);
+  spends[5] = Math.max(spends[5] || 0, llmEvents.reduce((sum,e) => sum + Number(e.amount || e.amt || 0), 0));
+  counts[6] = Math.max(counts[6] || 0, sageEvents.length);
+  spends[6] = Math.max(spends[6] || 0, sageEvents.reduce((sum,e) => sum + Number(e.amount || e.amt || 0), 0));
+  const sage = track3 && track3.sage ? track3.sage : null;
   STAGE_NAMES.forEach((name,i) => {
-    const fired = counts[i] > 0;
+    const sagePersisted = i === 6 && sage && Number(sage.reflectionCount || 0) > 0;
+    const fired = counts[i] > 0 || sagePersisted;
+    const amountText = counts[i] > 0
+      ? fU(spends[i])
+      : (sagePersisted ? (sage.reflectionCount + " refl") : "—");
     const row = document.createElement("div");
     row.className = "stage-item";
     row.innerHTML = `
       <span class="s-num">0${i+1}</span>
       <span class="s-name" style="color:${fired?"#8884AA":"#3D3B5A"}">${name}</span>
       <div class="s-bar"><div class="s-fill" style="width:${fired?"100%":"0%"}"></div></div>
-      <span class="s-amt" style="color:${fired?"#8884AA":"#3D3B5A"}">${fired?fU(spends[i]):"—"}</span>
+      <span class="s-amt" style="color:${fired?"#8884AA":"#3D3B5A"}">${amountText}</span>
       <span class="s-icon" style="color:${fired?"var(--teal)":"#3D3B5A"}">${fired?"✓":"–"}</span>
     `;
     sc.appendChild(row);
@@ -605,8 +617,8 @@ function renderT2(data, track) {
     row.innerHTML = `
       <div class="api-dot" style="background:${s.color}"></div>
       <span class="api-name">${labels[s.key] || s.name}</span>
-      <span class="api-calls">${info.calls} calls</span>
-      <span class="api-amt">${fU(info.spend)}</span>
+      <span class="api-calls" title="${s.price}">${info.calls} calls</span>
+      <span class="api-amt" title="Circle proof receipt spend; ${s.price} is paid separately by x402">${fU(info.spend)} rcpt</span>
       <span class="api-mode ${mode==="x402"?"live":"fb"}">${mode==="x402"?"x402":"fallback"}</span>
     `;
     sc.appendChild(row);
@@ -618,7 +630,7 @@ function renderT2(data, track) {
   const events = data.t2Events || [];
   const allTrack2X402 = events.length > 0 && events.every(e => e.mode === "x402");
   noteEl.textContent = track && track.mode === "x402"
-    ? "x402 live: AIsa powers price snapshots, Twitter, news, and PRISM; safety feeds only appear when AIsa is unavailable."
+    ? "x402 live: AIsa powers price snapshots, Twitter, news, and PRISM. Source spend shows Kairos proof receipts; endpoint prices settle separately through Gateway."
     : "Fallback mode: Kairos keeps safety feeds live and records fallback API billing receipts until the x402 signer and Gateway balance are ready.";
   sc.appendChild(noteEl);
 
@@ -677,6 +689,20 @@ function renderT3(data, track) {
     `;
     body.appendChild(div);
   });
+  if (track && track.sage) {
+    const sage = track.sage;
+    const div = document.createElement("div");
+    div.className = "cmp-item";
+    div.innerHTML = `
+      <span class="cmp-icon">◆</span>
+      <div class="cmp-body">
+        <div class="cmp-name">SAGE reflection status</div>
+        <div class="cmp-meta">${sage.enabled ? "enabled" : "disabled"} · ${sage.reflectionCount || 0} reflection(s) · ${sage.pendingOutcomes || 0} pending outcome(s)${sage.lastReflection ? " · last " + fTs(sage.lastReflection) : ""}</div>
+      </div>
+      <span class="cmp-amt">${sage.pendingOutcomes ? "READY" : "STANDBY"}</span>
+    `;
+    body.appendChild(div);
+  }
   el("t3-total").textContent = fU(data.t3Spend) + " USDC";
 }
 
@@ -790,7 +816,7 @@ async function poll() {
     setConn("live");
     el("poll-t").textContent = "Updated " + new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
 
-    renderT1(billing);
+    renderT1(billing, status.tracks?.track3 || null);
     renderT2(billing, status.tracks?.track2 || null);
     renderT3(billing, status.tracks?.track3 || null);
     renderT4(checkpoints.checkpoints || checkpoints, status.tracks?.track4 || null);

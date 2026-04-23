@@ -126,6 +126,12 @@ class BillingStore {
     this.t3Events.unshift(receipt);
     if (this.t3Events.length > 100) this.t3Events.pop();
 
+    const stageIndex = receipt.type === 'reflection' || receipt.eventName.toLowerCase().includes('sage')
+      ? 6
+      : 5;
+    this.stageCounts[stageIndex]++;
+    this.stageSpend[stageIndex] += receipt.amount;
+
     this.t3Spend += receipt.amount;
     this.totalSpend += receipt.amount;
     this.recordReceipt(3, receipt);
@@ -146,6 +152,14 @@ class BillingStore {
     for (const receipt of this.t1Events) {
       const stageIndex = STAGE_NAMES.indexOf(receipt.source || '');
       if (stageIndex < 0) continue;
+      if (isRealReceipt(receipt)) stageRealCounts[stageIndex]++;
+      else stagePendingCounts[stageIndex]++;
+    }
+
+    for (const receipt of this.t3Events) {
+      const stageIndex = receipt.type === 'reflection' || receipt.eventName.toLowerCase().includes('sage')
+        ? 6
+        : 5;
       if (isRealReceipt(receipt)) stageRealCounts[stageIndex]++;
       else stagePendingCounts[stageIndex]++;
     }

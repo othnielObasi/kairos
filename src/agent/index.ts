@@ -55,7 +55,8 @@ import { executeKrakenTrade, closeKrakenPosition, getKrakenAccountSnapshot, krak
 import { getCliStatus } from '../data/kraken-cli.js';
 import { getOperatorControlState, getLatestOperatorAction } from './operator-control.js';
 import { recordClosedTrade, getRecentTrades, getTradeStats, loadClosedTrades, type ClosedTrade } from './trade-log.js';
-import { hasVerifiedTxHash, settleMicroCommerceEvent } from '../services/nanopayments.js';
+import { billEvent, hasVerifiedTxHash, settleMicroCommerceEvent } from '../services/nanopayments.js';
+import { billingStore } from '../services/billing-store.js';
 import { pathToFileURL } from 'url';
 
 const log = createLogger('AGENT');
@@ -737,6 +738,16 @@ async function runCycle(): Promise<void> {
   }
 
   // ── Gate Trace: single structured log showing signal at each gate ──
+  try {
+    billingStore.addGovernanceEvent(
+      await billEvent('governance-risk-router', {
+        type: 'governance',
+        source: onChainRiskCheck?.available ? 'arc-risk-policy' : 'kairos-risk-router',
+      }),
+      4,
+    );
+  } catch (_) {}
+
   const gateTrace = {
     cycle: cycleCount,
     signal: strategyOutput.signal.direction,
