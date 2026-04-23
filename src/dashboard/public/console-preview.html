@@ -7,43 +7,39 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/review-preview.css" />
   <style>
-    .attention-grid {
+    .tight-panel {
+      padding: 18px;
+    }
+
+    .row-list {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
+      gap: 10px;
     }
 
-    .details-card .pill-row {
-      margin-bottom: 0;
-    }
-
-    .summary-label {
-      color: var(--muted);
-      font-size: 11px;
-      line-height: 1.7;
-    }
-
-    .summary-count {
-      font-weight: 800;
-      color: var(--text);
-    }
-
-    .summary-row {
+    .row-item {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 13px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      background: rgba(255, 255, 255, 0.025);
     }
 
-    @media (max-width: 1180px) {
-      .attention-grid {
-        grid-template-columns: 1fr 1fr;
-      }
+    .row-title {
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .row-copy {
+      color: var(--muted);
+      line-height: 1.65;
     }
 
     @media (max-width: 760px) {
-      .attention-grid {
-        grid-template-columns: 1fr;
+      .row-item {
+        flex-direction: column;
       }
     }
   </style>
@@ -53,137 +49,72 @@
     <div class="mark">K</div>
     <div>
       <div class="brand">KAIROS</div>
-      <div class="brand-sub">Console Preview - calmer operator flow</div>
+      <div class="brand-sub">Console Preview</div>
     </div>
     <nav class="header-nav">
-      <a href="/review-ui">Review Hub</a>
-      <a href="/judge-preview">Judge Preview</a>
-      <a href="/console-preview" class="active">Console Preview</a>
-      <a href="/kairos">Current Kairos</a>
-      <a href="/execution">Execution</a>
-      <a href="/transactions">Transactions</a>
+      <a href="/review-ui">Review</a>
+      <a href="/judge-preview">Judge</a>
+      <a href="/console-preview" class="active">Console</a>
+      <a href="/kairos">Current</a>
     </nav>
   </header>
 
   <main class="preview-main">
-    <div class="review-banner">
-      Preview only. This operator console is additive and does not replace the current `/kairos` runtime wall until you review it.
-    </div>
+    <div class="review-banner">Preview only. Current `/kairos` remains the default operator view.</div>
 
     <section class="hero-grid section">
       <article class="hero-card">
-        <div class="kicker">Operator Console Preview</div>
-        <h1 class="hero-title">Run Kairos without reading the whole wall at once.</h1>
-        <p class="hero-copy">
-          This preview keeps the same proof inventory and the same specialist pages, but restructures the first screen around what an operator needs most: current proof health, attention items, and fast paths into the right detailed surface.
-        </p>
+        <div class="kicker">Operator Snapshot</div>
+        <h1 class="hero-title">Status first.</h1>
+        <p class="hero-copy">Runtime, exceptions, tracks, then recent activity.</p>
         <div class="hero-actions">
-          <a class="btn btn-primary" href="/kairos">Open Current Kairos</a>
-          <a class="btn btn-secondary" href="/execution">Open Execution History</a>
-          <a class="btn btn-secondary" href="/transactions">Open Transactions</a>
+          <a class="btn btn-primary" href="/transactions">Transactions</a>
+          <a class="btn btn-secondary" href="/execution">Execution</a>
+          <a class="btn btn-secondary" href="/commerce">Commerce</a>
         </div>
       </article>
 
       <aside class="hero-rail">
         <div class="rail-item">
           <div class="rail-label">Runtime</div>
-          <div class="rail-value" id="runtime-mode">Loading runtime...</div>
+          <div class="rail-value" id="runtime-mode">Loading...</div>
         </div>
         <div class="rail-item">
-          <div class="rail-label">Trading Pair</div>
-          <div class="rail-value" id="runtime-pair">Loading pair...</div>
+          <div class="rail-label">Pair</div>
+          <div class="rail-value" id="runtime-pair">Loading...</div>
         </div>
         <div class="rail-item">
-          <div class="rail-label">Cycles And Positions</div>
-          <div class="rail-value" id="runtime-cycles">Loading runtime counters...</div>
-        </div>
-        <div class="rail-item">
-          <div class="rail-label">MCP Surface</div>
-          <div class="rail-value" id="runtime-mcp">Loading MCP summary...</div>
+          <div class="rail-label">Cycles / Positions</div>
+          <div class="rail-value" id="runtime-cycles">Loading...</div>
         </div>
       </aside>
     </section>
 
-    <section class="stats-grid">
-      <article class="metric-card">
-        <div class="metric-label">Verified Arc Txns</div>
-        <div class="metric-value good" id="metric-real">-</div>
-        <div class="metric-sub">Primary proof signal across all represented tracks.</div>
-      </article>
-      <article class="metric-card">
-        <div class="metric-label">Pending Proofs</div>
-        <div class="metric-value warn" id="metric-pending">-</div>
-        <div class="metric-sub">Receipts still resolving into a confirmed Arc verifier.</div>
-      </article>
-      <article class="metric-card">
-        <div class="metric-label">Attention Items</div>
-        <div class="metric-value" id="metric-attention">-</div>
-        <div class="metric-sub">Fallback, local-only, paper, and audit-only items needing judgment.</div>
-      </article>
-      <article class="metric-card">
-        <div class="metric-label">Capital / Open Positions</div>
-        <div class="metric-value blue" id="metric-capital">-</div>
-        <div class="metric-sub">Runtime capital with current open-position count for context.</div>
-      </article>
-    </section>
-
     <section class="section">
       <div class="section-head">
         <div>
-          <div class="section-title">Attention Now</div>
-          <div class="section-copy">
-            This section surfaces the items most likely to need operator interpretation instead of forcing operators to hunt for them across the whole page.
-          </div>
+          <div class="section-title">Attention</div>
+          <div class="section-copy">What needs a human first.</div>
         </div>
       </div>
-
-      <div class="attention-grid">
-        <article class="section-card">
-          <div class="pill-row">
-            <span class="pill warn">Pending</span>
-          </div>
-          <div class="card-title" id="attention-pending">-</div>
-          <div class="card-copy">Receipts submitted but not yet carrying a confirmed Arc hash.</div>
-        </article>
-
-        <article class="section-card">
-          <div class="pill-row">
-            <span class="pill bad">Fallback</span>
-          </div>
-          <div class="card-title" id="attention-fallback">-</div>
-          <div class="card-copy">Events that stayed safe but are not currently backed by a verified settlement hash.</div>
-        </article>
-
-        <article class="section-card">
-          <div class="pill-row">
-            <span class="pill bad">Local / Paper</span>
-          </div>
-          <div class="card-title" id="attention-local-paper">-</div>
-          <div class="card-copy">Local-only or paper execution paths that still matter operationally but are not Arc proof.</div>
-        </article>
-
-        <article class="section-card">
-          <div class="pill-row">
-            <span class="pill blue">Audit-only</span>
-          </div>
-          <div class="card-title" id="attention-audit">-</div>
-          <div class="card-copy">Operator oversight records and audit events that belong in the story, but not in the north-star proof count.</div>
-        </article>
+      <div class="section-card tight-panel">
+        <div class="row-list" id="attention-rows">
+          <div class="empty-state">Loading attention...</div>
+        </div>
       </div>
     </section>
 
     <section class="section">
       <div class="section-head">
         <div>
-          <div class="section-title">Progressive Track View</div>
-          <div class="section-copy">
-            Each track keeps its detail, but detail is now a second action. The first glance answers status, proof level, and where to go next.
-          </div>
+          <div class="section-title">Track Status</div>
+          <div class="section-copy">One row per track.</div>
         </div>
       </div>
-
-      <div class="track-grid" id="track-details">
-        <div class="empty-state">Loading track details...</div>
+      <div class="section-card tight-panel">
+        <div class="row-list" id="track-rows">
+          <div class="empty-state">Loading tracks...</div>
+        </div>
       </div>
     </section>
 
@@ -191,82 +122,26 @@
       <div class="section-head">
         <div>
           <div class="section-title">Recent Activity</div>
-          <div class="section-copy">
-            Keep proof, pending work, and execution outcomes visible together without turning the landing screen back into a telemetry wall.
-          </div>
+          <div class="section-copy">Mixed proof and execution feed.</div>
         </div>
       </div>
-
-      <div class="story-grid">
-        <article class="feed-card">
-          <div class="card-title">Recent Confirmed Proofs</div>
-          <div class="feed-list" id="confirmed-feed">
-            <div class="empty-state">Loading confirmed proofs...</div>
-          </div>
-        </article>
-
-        <article class="feed-card">
-          <div class="card-title">Recent Pending Proofs</div>
-          <div class="feed-list" id="pending-feed">
-            <div class="empty-state">Loading pending proofs...</div>
-          </div>
-        </article>
-
-        <article class="feed-card">
-          <div class="card-title">Recent Executions</div>
-          <div class="feed-list" id="execution-feed">
-            <div class="empty-state">Loading recent executions...</div>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="section-head">
-        <div>
-          <div class="section-title">Go Deeper</div>
-          <div class="section-copy">
-            The preview is designed to help operators decide where to go next, not to replace the detailed surfaces that already work well.
-          </div>
+      <div class="section-card tight-panel">
+        <div class="row-list" id="activity-rows">
+          <div class="empty-state">Loading activity...</div>
         </div>
-      </div>
-
-      <div class="surface-grid">
-        <article class="surface-card">
-          <div class="pill-row"><span class="pill good">Settlement</span></div>
-          <div class="surface-title">Transactions</div>
-          <div class="surface-copy">Use for settlement proof, references, statuses, and verifier links.</div>
-          <div class="link-row"><a class="link-chip green" href="/transactions">Open Transactions</a></div>
-        </article>
-
-        <article class="surface-card">
-          <div class="pill-row"><span class="pill blue">Artifacts</span></div>
-          <div class="surface-title">Document Vault</div>
-          <div class="surface-copy">Use for invoices, receipts, delivery proof, and downloadable proof packets.</div>
-          <div class="link-row"><a class="link-chip blue" href="/documents">Open Documents</a></div>
-        </article>
-
-        <article class="surface-card">
-          <div class="pill-row"><span class="pill warn">Outcomes</span></div>
-          <div class="surface-title">Execution History</div>
-          <div class="surface-copy">Use for closed actions, PnL, execution reasons, and supporting links.</div>
-          <div class="link-row"><a class="link-chip blue" href="/execution">Open Execution History</a></div>
-        </article>
-
-        <article class="surface-card">
-          <div class="pill-row"><span class="pill good">Workflow</span></div>
-          <div class="surface-title">Commerce Studio</div>
-          <div class="surface-copy">Use for the Gemini-led document workflow and live proof-settlement experience.</div>
-          <div class="link-row"><a class="link-chip green" href="/commerce">Open Commerce</a></div>
-        </article>
       </div>
     </section>
   </main>
 
   <script>
-    function el(id) {
-      return document.getElementById(id);
-    }
+    const TRACK_META = [
+      { key: "track1", title: "Track 01", link: "/transactions", label: "Transactions" },
+      { key: "track2", title: "Track 02", link: "/transactions", label: "Transactions" },
+      { key: "track3", title: "Track 03", link: "/transactions", label: "Transactions" },
+      { key: "track4", title: "Track 04", link: "/commerce", label: "Commerce" }
+    ];
+
+    function el(id) { return document.getElementById(id); }
 
     function escapeHtml(value) {
       return String(value ?? "").replace(/[&<>"']/g, function(ch) {
@@ -278,18 +153,11 @@
       return new Intl.NumberFormat("en-US").format(Number(value || 0));
     }
 
-    function fmtUsdc(value) {
-      const amount = Number(value || 0);
-      if (!amount) return "$0";
-      if (amount < 0.01) return "$" + amount.toFixed(4);
-      return "$" + amount.toFixed(3);
-    }
-
     function fmtTime(value) {
-      if (!value) return "No timestamp";
-      const date = new Date(value);
-      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " +
-        date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+      if (!value) return "-";
+      const d = new Date(value);
+      return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " +
+        d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
     }
 
     function shortHash(value) {
@@ -297,211 +165,139 @@
       return value.length > 18 ? value.slice(0, 8) + "..." + value.slice(-6) : value;
     }
 
-    function toneForState(state) {
-      const lower = String(state || "").toLowerCase();
-      if (lower.includes("fallback") || lower.includes("local") || lower.includes("no keys")) return "bad";
-      if (lower.includes("paper") || lower.includes("verifying") || lower.includes("pending")) return "warn";
+    function shortText(value, limit) {
+      const text = String(value || "").trim();
+      if (!text) return "No detail.";
+      return text.length > limit ? text.slice(0, limit - 3) + "..." : text;
+    }
+
+    function tone(state) {
+      const s = String(state || "").toLowerCase();
+      if (s.includes("fallback") || s.includes("local")) return "bad";
+      if (s.includes("paper") || s.includes("pending") || s.includes("verifying")) return "warn";
       return "good";
     }
 
-    function renderFeed(items, kind) {
-      if (!items || !items.length) {
-        return '<div class="empty-state">No items available.</div>';
-      }
-      return items.slice(0, 6).map(function(item) {
-        const name = item.eventName || item.asset || item.item || "Activity";
-        let summary = "";
-        const links = [];
-
-        if (kind === "confirmed") {
-          summary = (item.track || "Track") + " confirmed " + fmtUsdc(item.amountUsdc) + " at " + fmtTime(item.timestamp) + ".";
-          if (item.explorerUrl) links.push('<a class="link-chip blue" href="' + escapeHtml(item.explorerUrl) + '" target="_blank" rel="noopener">Arcscan ' + escapeHtml(shortHash(item.txHash)) + '</a>');
-          const docs = item.documentLinks || {};
-          if (docs.receiptUrl) links.push('<a class="link-chip green" href="' + escapeHtml(docs.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a>');
-        } else if (kind === "pending") {
-          summary = (item.track || "Track") + " is still waiting on settlement proof. Reference: " + (item.referenceId ? shortHash(item.referenceId) : "no ref") + ".";
-        } else {
-          summary = "Closed with " + (Number(item.pnl || 0) >= 0 ? "+" : "") + "$" + Number(item.pnl || 0).toFixed(2) + " PnL at " + fmtTime(item.closedAt) + ".";
-          if (item.txHash) links.push('<a class="link-chip blue" href="https://testnet.arcscan.app/tx/' + encodeURIComponent(item.txHash) + '" target="_blank" rel="noopener">Settlement ' + escapeHtml(shortHash(item.txHash)) + '</a>');
-          const docs = item.commerceDocuments || {};
-          if (docs.deliveryProofUrl) links.push('<a class="link-chip green" href="' + escapeHtml(docs.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a>');
-        }
-
+    function renderAttention(summary) {
+      const rows = [
+        { label: "Pending", value: summary.attention.pending, copy: "Receipts still resolving.", tone: "warn" },
+        { label: "Fallback", value: summary.attention.fallback, copy: "No verified hash yet.", tone: "bad" },
+        { label: "Local / Paper / Audit", value: Number(summary.attention.localOnly || 0) + Number(summary.attention.paper || 0) + Number(summary.attention.audit || 0), copy: "Operational, but not north-star proof.", tone: "bad" }
+      ];
+      return rows.map(function(row) {
         return '' +
-          '<div class="feed-item">' +
-            '<div class="feed-top">' +
-              '<div class="feed-name">' + escapeHtml(name) + '</div>' +
-              (kind === "execution"
-                ? '<span class="pill ' + (Number(item.pnl || 0) >= 0 ? 'good' : 'bad') + '">' + escapeHtml(item.side || "Action") + '</span>'
-                : '<span class="pill ' + (kind === "pending" ? 'warn' : 'good') + '">' + escapeHtml((item.track || "Track")) + '</span>') +
-            '</div>' +
-            '<div class="feed-meta">' + escapeHtml(summary) + '</div>' +
-            (links.length ? '<div class="link-row">' + links.join("") + '</div>' : '') +
+          '<div class="row-item">' +
+            '<div><div class="row-title">' + escapeHtml(row.label) + '</div><div class="row-copy">' + escapeHtml(row.copy) + '</div></div>' +
+            '<div><span class="pill ' + escapeHtml(row.tone) + '">' + escapeHtml(fmtNumber(row.value)) + '</span></div>' +
           '</div>';
       }).join("");
     }
 
-    function renderTrackDetails(summary) {
-      const cards = [];
-
-      cards.push(renderTrackDetailCard({
-        title: "Track 01 - Governed Decisions",
-        question: "Governance metering",
-        state: summary.tracks.track1.label,
-        note: summary.tracks.track1.note,
-        tone: toneForState(summary.tracks.track1.state),
-        open: true,
-        rows: [
-          ["Confirmed Arc", fmtNumber(summary.tracks.track1.realTxns)],
-          ["Pending", fmtNumber(summary.tracks.track1.pendingTxns)],
-          ["Events", fmtNumber(summary.tracks.track1.totalEvents)],
-          ["Spend", fmtUsdc(summary.tracks.track1.spend)]
-        ],
-        links: [
-          { href: "/transactions", label: "Transactions", tone: "green" },
-          { href: "/documents", label: "Documents", tone: "blue" }
-        ]
-      }));
-
-      cards.push(renderTrackDetailCard({
-        title: "Track 02 - Paid Data",
-        question: "Paid retrieval health",
-        state: summary.tracks.track2.label,
-        note: summary.tracks.track2.note,
-        tone: toneForState(summary.tracks.track2.state),
-        open: true,
-        rows: [
-          ["Confirmed Arc", fmtNumber(summary.tracks.track2.realTxns)],
-          ["Pending", fmtNumber(summary.tracks.track2.pendingTxns)],
-          ["Events", fmtNumber(summary.tracks.track2.totalEvents)],
-          ["Mode", summary.tracks.track2.mode || "unknown"]
-        ],
-        links: [
-          { href: "/transactions", label: "Transactions", tone: "green" },
-          { href: "/kairos", label: "Current Kairos", tone: "blue" }
-        ]
-      }));
-
-      cards.push(renderTrackDetailCard({
-        title: "Track 03 - Metered AI",
-        question: "Inference and reflection",
-        state: summary.tracks.track3.label,
-        note: summary.tracks.track3.note,
-        tone: toneForState(summary.tracks.track3.state),
-        open: false,
-        rows: [
-          ["Confirmed Arc", fmtNumber(summary.tracks.track3.realTxns)],
-          ["Pending", fmtNumber(summary.tracks.track3.pendingTxns)],
-          ["Events", fmtNumber(summary.tracks.track3.totalEvents)],
-          ["SAGE reflections", fmtNumber(summary.tracks.track3.sage && summary.tracks.track3.sage.reflectionCount)]
-        ],
-        links: [
-          { href: "/transactions", label: "Transactions", tone: "green" },
-          { href: "/judge-preview", label: "Judge Preview", tone: "blue" }
-        ]
-      }));
-
-      cards.push(renderTrackDetailCard({
-        title: "Track 04 - Proof Settlement",
-        question: "Execution to proof loop",
-        state: summary.tracks.track4.label,
-        note: summary.tracks.track4.note,
-        tone: toneForState(summary.tracks.track4.state),
-        open: true,
-        rows: [
-          ["Arc settled", fmtNumber(summary.tracks.track4.counts.arcSettled)],
-          ["Local only", fmtNumber(summary.tracks.track4.counts.localOnly)],
-          ["Paper", fmtNumber(summary.tracks.track4.counts.krakenPaper)],
-          ["Settled volume", fmtUsdc(summary.tracks.track4.settledVolumeUsd)]
-        ],
-        links: [
-          { href: "/execution", label: "Execution", tone: "blue" },
-          { href: "/commerce", label: "Commerce", tone: "green" },
-          { href: "/documents", label: "Documents", tone: "blue" }
-        ]
-      }));
-
-      el("track-details").innerHTML = cards.join("");
-    }
-
-    function renderTrackDetailCard(config) {
+    function renderTrackRow(meta, track) {
+      const confirmed = meta.key === "track4" ? (track.counts && track.counts.arcSettled) || 0 : track.realTxns || 0;
+      const pending = meta.key === "track4"
+        ? ((track.microCommerce && track.microCommerce.pending) || (track.counts && track.counts.skipped) || 0)
+        : track.pendingTxns || 0;
       return '' +
-        '<details class="details-card" ' + (config.open ? 'open' : '') + '>' +
-          '<summary>' +
-            '<div>' +
-              '<div class="pill-row">' +
-                '<span class="pill ' + escapeHtml(config.tone) + '">' + escapeHtml(config.question) + '</span>' +
-                '<span class="pill ' + escapeHtml(config.tone) + '">' + escapeHtml(config.state || "Live") + '</span>' +
-              '</div>' +
-              '<div class="track-title" style="margin:10px 0 0;">' + escapeHtml(config.title) + '</div>' +
-            '</div>' +
-            '<div class="summary-label">Open details</div>' +
-          '</summary>' +
-          '<div class="details-body">' +
-            '<div class="track-copy">' + escapeHtml(config.note || "No note available.") + '</div>' +
-            '<div class="meta-grid">' +
-              config.rows.map(function(row) {
-                return '<div class="meta-item"><div class="meta-label">' + escapeHtml(row[0]) + '</div><div class="meta-value">' + escapeHtml(row[1]) + '</div></div>';
-              }).join("") +
-            '</div>' +
-            '<div class="link-row">' +
-              config.links.map(function(link) {
-                return '<a class="link-chip ' + escapeHtml(link.tone) + '" href="' + escapeHtml(link.href) + '">' + escapeHtml(link.label) + '</a>';
-              }).join("") +
-            '</div>' +
+        '<div class="row-item">' +
+          '<div>' +
+            '<div class="row-title">' + escapeHtml(meta.title) + '</div>' +
+            '<div class="row-copy">' + escapeHtml(shortText(track.note, 110)) + '</div>' +
           '</div>' +
-        '</details>';
+          '<div>' +
+            '<div class="pill-row"><span class="pill ' + tone(track.state || track.label) + '">' + escapeHtml(track.label || track.state || "LIVE") + '</span></div>' +
+            '<div class="row-copy">Confirmed ' + escapeHtml(fmtNumber(confirmed)) + ' · Pending ' + escapeHtml(fmtNumber(pending)) + '</div>' +
+            '<div class="link-row"><a class="link-chip green" href="' + escapeHtml(meta.link) + '">' + escapeHtml(meta.label) + '</a></div>' +
+          '</div>' +
+        '</div>';
     }
 
-    function renderSummary(summary) {
-      const attentionCount = Number(summary.attention.pending || 0)
-        + Number(summary.attention.fallback || 0)
-        + Number(summary.attention.localOnly || 0)
-        + Number(summary.attention.paper || 0)
-        + Number(summary.attention.audit || 0);
+    function buildActivity(summary) {
+      const items = [];
 
-      el("runtime-mode").textContent = (summary.runtime.mode && summary.runtime.mode.mode ? summary.runtime.mode.mode : "runtime") +
-        " / " + (summary.runtime.running ? "running" : "paused");
-      el("runtime-pair").textContent = (summary.runtime.pair || "WETH/USDC") + " with trust score " + fmtNumber(summary.runtime.trustScore || 0);
-      el("runtime-cycles").textContent = fmtNumber(summary.runtime.totalCycles || 0) + " cycles and " + fmtNumber(summary.runtime.openPositions || 0) + " open positions";
-      el("runtime-mcp").textContent = fmtNumber(summary.runtime.mcp.tools || 0) + " tools, " + fmtNumber(summary.runtime.mcp.resources || 0) + " resources, " + fmtNumber(summary.runtime.mcp.prompts || 0) + " prompts";
+      (summary.transactions.recentConfirmedProofs || []).slice(0, 3).forEach(function(item) {
+        items.push({
+          time: item.timestamp,
+          title: item.eventName || "Confirmed proof",
+          copy: (item.track || "-") + " confirmed",
+          link: item.explorerUrl || null,
+          linkLabel: item.txHash ? shortHash(item.txHash) : null,
+          tone: "good"
+        });
+      });
 
-      el("metric-real").textContent = fmtNumber(summary.northStar.realTxns);
-      el("metric-pending").textContent = fmtNumber(summary.northStar.pendingTxns);
-      el("metric-attention").textContent = fmtNumber(attentionCount);
-      el("metric-capital").textContent = fmtUsdc(summary.runtime.capital) + " / " + fmtNumber(summary.runtime.openPositions);
+      (summary.transactions.recentPendingProofs || []).slice(0, 2).forEach(function(item) {
+        items.push({
+          time: item.timestamp,
+          title: item.eventName || "Pending proof",
+          copy: (item.track || "-") + " pending " + (item.referenceId ? shortHash(item.referenceId) : ""),
+          link: null,
+          linkLabel: null,
+          tone: "warn"
+        });
+      });
 
-      el("attention-pending").textContent = fmtNumber(summary.attention.pending);
-      el("attention-fallback").textContent = fmtNumber(summary.attention.fallback);
-      el("attention-local-paper").textContent = fmtNumber(Number(summary.attention.localOnly || 0) + Number(summary.attention.paper || 0));
-      el("attention-audit").textContent = fmtNumber(summary.attention.audit);
+      (summary.executions.recent || []).slice(0, 3).forEach(function(item) {
+        items.push({
+          time: item.closedAt,
+          title: item.asset || "Execution",
+          copy: ((Number(item.pnl || 0) >= 0 ? "+" : "") + "$" + Number(item.pnl || 0).toFixed(2)) + " PnL",
+          link: item.txHash ? ("https://testnet.arcscan.app/tx/" + encodeURIComponent(item.txHash)) : null,
+          linkLabel: item.txHash ? shortHash(item.txHash) : null,
+          tone: Number(item.pnl || 0) >= 0 ? "good" : "bad"
+        });
+      });
 
-      renderTrackDetails(summary);
-      el("confirmed-feed").innerHTML = renderFeed(summary.transactions.recentConfirmedProofs, "confirmed");
-      el("pending-feed").innerHTML = renderFeed(summary.transactions.recentPendingProofs, "pending");
-      el("execution-feed").innerHTML = renderFeed(summary.executions.recent, "execution");
+      return items.sort(function(a, b) {
+        return Date.parse(b.time || 0) - Date.parse(a.time || 0);
+      }).slice(0, 8);
     }
 
-    async function loadSummary() {
+    function renderActivity(summary) {
+      const items = buildActivity(summary);
+      if (!items.length) {
+        return '<div class="empty-state">No recent activity.</div>';
+      }
+      return items.map(function(item) {
+        return '' +
+          '<div class="row-item">' +
+            '<div>' +
+              '<div class="row-title">' + escapeHtml(item.title) + '</div>' +
+              '<div class="row-copy">' + escapeHtml(item.copy) + ' · ' + escapeHtml(fmtTime(item.time)) + '</div>' +
+            '</div>' +
+            '<div>' +
+              '<div class="pill-row"><span class="pill ' + escapeHtml(item.tone) + '">' + escapeHtml(fmtTime(item.time)) + '</span></div>' +
+              (item.link ? '<div class="link-row"><a class="link-chip blue" href="' + escapeHtml(item.link) + '" target="_blank" rel="noopener">' + escapeHtml(item.linkLabel) + '</a></div>' : '') +
+            '</div>' +
+          '</div>';
+      }).join("");
+    }
+
+    function render(summary) {
+      el("runtime-mode").textContent = (summary.runtime.running ? "RUNNING" : "PAUSED") + " / " + (summary.runtime.mode.mode || "mode");
+      el("runtime-pair").textContent = summary.runtime.pair || "-";
+      el("runtime-cycles").textContent = fmtNumber(summary.runtime.totalCycles) + " / " + fmtNumber(summary.runtime.openPositions);
+      el("attention-rows").innerHTML = renderAttention(summary);
+      el("track-rows").innerHTML = TRACK_META.map(function(meta) {
+        return renderTrackRow(meta, summary.tracks[meta.key]);
+      }).join("");
+      el("activity-rows").innerHTML = renderActivity(summary);
+    }
+
+    async function load() {
       try {
-        const response = await fetch("/api/experience/summary");
-        if (!response.ok) throw new Error("Summary request failed");
-        const summary = await response.json();
-        renderSummary(summary);
+        const res = await fetch("/api/experience/summary");
+        if (!res.ok) throw new Error("summary failed");
+        render(await res.json());
       } catch (error) {
-        el("runtime-mode").textContent = "Summary unavailable";
-        el("runtime-pair").textContent = "Summary unavailable";
-        el("runtime-cycles").textContent = "Summary unavailable";
-        el("runtime-mcp").textContent = "Summary unavailable";
-        el("track-details").innerHTML = '<div class="empty-state">Console preview could not load the live runtime summary.</div>';
-        el("confirmed-feed").innerHTML = '<div class="empty-state">Confirmed proof feed unavailable.</div>';
-        el("pending-feed").innerHTML = '<div class="empty-state">Pending proof feed unavailable.</div>';
-        el("execution-feed").innerHTML = '<div class="empty-state">Execution feed unavailable.</div>';
+        el("attention-rows").innerHTML = '<div class="empty-state">Unable to load console summary.</div>';
+        el("track-rows").innerHTML = '<div class="empty-state">Unable to load track summary.</div>';
+        el("activity-rows").innerHTML = '<div class="empty-state">Unable to load activity.</div>';
       }
     }
 
-    loadSummary();
-    setInterval(loadSummary, 15000);
+    load();
+    setInterval(load, 15000);
   </script>
 </body>
 </html>
