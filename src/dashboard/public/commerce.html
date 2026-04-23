@@ -32,26 +32,45 @@
     }
     a { color: inherit; text-decoration: none; }
     button, input, textarea { font: inherit; }
-    header {
-      position: sticky; top: 0; z-index: 10;
-      display: flex; align-items: center; gap: 14px; padding: 12px 18px;
-      border-bottom: 1px solid var(--line);
-      background: rgba(7,16,13,.86); backdrop-filter: blur(18px);
+    .layout-shell { position: relative; z-index: 1; min-height: 100vh; }
+    .bg-grid {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: linear-gradient(rgba(53,224,161,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(111,183,255,0.035) 1px, transparent 1px);
+      background-size: 48px 48px; animation: gridDrift 40s linear infinite;
     }
-    .mark {
-      width: 28px; height: 28px; border-radius: 9px;
-      display: grid; place-items: center; color: var(--ink); font-weight: 800;
-      background: linear-gradient(135deg, var(--green), var(--blue));
-      box-shadow: 0 0 24px rgba(53,224,161,.22);
+    @keyframes gridDrift { 0% { background-position: 0 0; } 100% { background-position: 48px 48px; } }
+    .bg-glow-1 { position: fixed; top: -200px; left: -200px; width: 600px; height: 600px; border-radius: 50%; pointer-events: none; z-index: 0; background: radial-gradient(circle, rgba(53,224,161,0.10) 0%, transparent 70%); animation: g1 8s ease-in-out infinite alternate; }
+    .bg-glow-2 { position: fixed; bottom: -200px; right: -100px; width: 500px; height: 500px; border-radius: 50%; pointer-events: none; z-index: 0; background: radial-gradient(circle, rgba(111,183,255,0.08) 0%, transparent 70%); animation: g2 10s ease-in-out infinite alternate; }
+    @keyframes g1 { from { opacity: .5; } to { opacity: 1; } }
+    @keyframes g2 { from { opacity: .4; } to { opacity: .9; } }
+
+    .hdr {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; gap: 14px; padding: 0 24px; min-height: 52px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(7,16,13,0.92); backdrop-filter: blur(16px);
     }
-    .brand { font-family: "Space Grotesk", sans-serif; font-size: 16px; font-weight: 700; letter-spacing: .08em; }
-    .brand-sub { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .16em; }
-    nav { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-    nav a {
-      color: var(--muted); border: 1px solid transparent; border-radius: 999px;
-      padding: 6px 10px; font-size: 10px; font-weight: 700;
+    .hdr-logo { font-family: "Space Grotesk", sans-serif; font-size: 18px; font-weight: 700; letter-spacing: .12em; }
+    .hdr-logo span { color: var(--blue); }
+    .hdr-tags { display: flex; gap: 8px; margin-left: 4px; flex-wrap: wrap; }
+    .tag { font-size: 10px; letter-spacing: .1em; padding: 3px 9px; border-radius: 2px; font-weight: 500; text-transform: uppercase; }
+    .tag-p { background: rgba(108,99,255,.12); color: var(--blue); border: 1px solid rgba(108,99,255,.25); }
+    .tag-t { background: rgba(0,229,160,.1); color: var(--green); border: 1px solid rgba(0,229,160,.2); }
+    .tag-b { background: rgba(39,117,202,.1); color: #2775ca; border: 1px solid rgba(39,117,202,.2); }
+    .tag-arc { background: rgba(255,255,255,.04); color: var(--muted); border: 1px solid rgba(255,255,255,.12); }
+    .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .nav-btn {
+      font-size: 11px; letter-spacing: .08em; border-radius: 2px; padding: 3px 10px;
+      border: 1px solid rgba(255,255,255,.16); transition: .16s ease; white-space: nowrap;
     }
-    nav a:hover, nav a.active { color: var(--green); border-color: var(--line-strong); background: rgba(53,224,161,.08); }
+    .nav-btn:hover { background: rgba(255,255,255,.08); transform: translateY(-1px); }
+    .nav-btn.active { background: rgba(255,255,255,.08); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+    .nav-dashboard { color: var(--text); border-color: rgba(255,255,255,.2); }
+    .nav-history { color: var(--green); border-color: rgba(53,224,161,.24); }
+    .nav-docs { color: var(--blue); border-color: rgba(111,183,255,.26); }
+    .nav-exec { color: var(--amber); border-color: rgba(255,204,102,.26); }
+    .nav-commerce { color: var(--blue); border-color: rgba(108,99,255,.28); }
+    .nav-mcp { color: #2775ca; border-color: rgba(39,117,202,.24); }
 
     main { max-width: 1480px; margin: 0 auto; padding: 22px 18px 48px; }
     .hero {
@@ -213,28 +232,36 @@
     @media (max-width: 1120px) {
       .hero, .grid, .media-grid, .stats, .field-grid { grid-template-columns: 1fr; }
     }
+    @media (max-width: 900px) {
+      .hdr { padding: 10px 14px; }
+      .hdr-right { margin-left: 0; width: 100%; }
+    }
     @media (max-width: 640px) {
-      header { align-items: flex-start; }
-      nav { width: 100%; margin-left: 0; }
       .hero-card, .panel-body { padding: 18px; }
       .panel-head { padding: 16px; }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="mark">K</div>
-    <div>
-      <div class="brand">KAIROS</div>
-      <div class="brand-sub">Commerce Studio</div>
+  <div class="bg-grid"></div>
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+  <div class="layout-shell">
+  <header class="hdr">
+    <div class="hdr-logo">K<span>AIROS</span></div>
+    <div class="hdr-tags">
+      <span class="tag tag-arc">Circle Wallets</span>
+      <span class="tag tag-b">Arc Testnet</span>
+      <span class="tag tag-t">Circle Platform</span>
+      <span class="tag tag-p">Kairos Runtime</span>
     </div>
-    <nav>
-      <a href="/kairos">Proof Dashboard</a>
-      <a href="/transactions">Transaction History</a>
-      <a href="/documents">Document Vault</a>
-      <a href="/execution">Execution History</a>
-      <a href="/commerce" class="active">Commerce Studio</a>
-      <a href="/mcp" target="_blank" rel="noopener">MCP</a>
+    <nav class="hdr-right">
+      <a class="nav-btn nav-dashboard" href="/kairos">Proof Dashboard</a>
+      <a class="nav-btn nav-history" href="/transactions">Transaction History</a>
+      <a class="nav-btn nav-docs" href="/documents">Document Vault</a>
+      <a class="nav-btn nav-exec" href="/execution">Execution History</a>
+      <a class="nav-btn nav-commerce active" href="/commerce">Commerce Studio</a>
+      <a class="nav-btn nav-mcp" href="/mcp" target="_blank" rel="noopener">MCP</a>
     </nav>
   </header>
 
@@ -401,6 +428,7 @@
       Gemini function calling here is live, not mocked. The assistant can inspect real Kairos state through backend tools. Multimodal analysis uses the supplied image, then prepares a safe proof receipt preview capped below one cent. That proof amount is the Arc settlement evidence for the commerce event, not the original invoice or order notional.
     </div>
   </main>
+  </div>
 
   <script>
     const ARC_TX = "https://testnet.arcscan.app/tx/";

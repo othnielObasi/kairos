@@ -17,15 +17,46 @@
       --up: #34d399; --dn: #f87171; --warn: #fbbf24; --info: #60a5fa; --cyan: #22d3ee;
     }
 
-    header { display: flex; align-items: center; height: 40px; padding: 0 16px; border-bottom: 1px solid var(--brd); background: var(--s2); gap: 16px; }
-    header .logo { width: 22px; height: 22px; border-radius: 4px; background: linear-gradient(135deg, var(--up), var(--cyan)); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: var(--bg); }
-    header .brand { font-size: 13px; font-weight: 800; color: var(--w); letter-spacing: 1px; }
-    header .sub { font-size: 8px; color: var(--fg3); letter-spacing: 1.5px; }
-    header nav { margin-left: auto; display: flex; gap: 12px; }
-    header nav a { color: var(--fg2); text-decoration: none; font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 4px; transition: all .15s; }
-    header nav a:hover { color: var(--fg); background: #ffffff08; }
-    header nav a.active { color: var(--cyan); background: #22d3ee10; }
-    header nav a.judge-link { color: #f59e0b; background: #f59e0b15; }
+    .layout-shell { position: relative; z-index: 1; min-height: 100vh; }
+    .bg-grid {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background-image: linear-gradient(rgba(53,224,161,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(111,183,255,0.035) 1px, transparent 1px);
+      background-size: 48px 48px; animation: gridDrift 40s linear infinite;
+    }
+    @keyframes gridDrift { 0% { background-position: 0 0; } 100% { background-position: 48px 48px; } }
+    .bg-glow-1 { position: fixed; top: -200px; left: -200px; width: 600px; height: 600px; border-radius: 50%; pointer-events: none; z-index: 0; background: radial-gradient(circle, rgba(53,224,161,0.10) 0%, transparent 70%); animation: g1 8s ease-in-out infinite alternate; }
+    .bg-glow-2 { position: fixed; bottom: -200px; right: -100px; width: 500px; height: 500px; border-radius: 50%; pointer-events: none; z-index: 0; background: radial-gradient(circle, rgba(111,183,255,0.08) 0%, transparent 70%); animation: g2 10s ease-in-out infinite alternate; }
+    @keyframes g1 { from { opacity: .5; } to { opacity: 1; } }
+    @keyframes g2 { from { opacity: .4; } to { opacity: .9; } }
+
+    .hdr {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; gap: 14px; padding: 0 24px; min-height: 52px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      background: rgba(7,16,13,0.92); backdrop-filter: blur(16px);
+    }
+    .hdr-logo { font-size: 18px; font-weight: 800; color: var(--w); letter-spacing: .12em; }
+    .hdr-logo span { color: #6fb7ff; }
+    .hdr-tags { display: flex; gap: 8px; margin-left: 4px; flex-wrap: wrap; }
+    .tag { font-size: 10px; letter-spacing: .1em; padding: 3px 9px; border-radius: 2px; font-weight: 500; text-transform: uppercase; }
+    .tag-p { background: rgba(108,99,255,.12); color: #6fb7ff; border: 1px solid rgba(108,99,255,.25); }
+    .tag-t { background: rgba(52,211,153,.1); color: var(--up); border: 1px solid rgba(52,211,153,.2); }
+    .tag-b { background: rgba(96,165,250,.1); color: var(--info); border: 1px solid rgba(96,165,250,.2); }
+    .tag-arc { background: rgba(255,255,255,.04); color: var(--fg2); border: 1px solid rgba(255,255,255,.12); }
+    .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .nav-btn {
+      font-size: 11px; letter-spacing: .08em; border-radius: 2px; padding: 3px 10px;
+      border: 1px solid rgba(255,255,255,.16); transition: .16s ease; white-space: nowrap;
+      color: var(--fg2); text-decoration: none;
+    }
+    .nav-btn:hover { background: #ffffff08; transform: translateY(-1px); color: var(--w); }
+    .nav-btn.active { background: #ffffff08; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+    .nav-dashboard { color: var(--w); border-color: rgba(255,255,255,.2); }
+    .nav-history { color: var(--up); border-color: rgba(52,211,153,.24); }
+    .nav-docs { color: #6fb7ff; border-color: rgba(111,183,255,.26); }
+    .nav-exec { color: var(--warn); border-color: rgba(251,191,36,.26); }
+    .nav-commerce { color: #6fb7ff; border-color: rgba(108,99,255,.28); }
+    .nav-mcp { color: var(--info); border-color: rgba(96,165,250,.24); }
 
     .container { padding: 12px 16px 40px; max-width: 1400px; margin: 0 auto; }
     .stats-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 14px; }
@@ -69,19 +100,25 @@
   </style>
 </head>
 <body>
-  <header>
-    <div style="display:flex;align-items:center;gap:8px">
-      <div class="logo">K</div>
-      <span class="brand">KAIROS</span>
-      <span class="sub">Execution History</span>
+  <div class="bg-grid"></div>
+  <div class="bg-glow-1"></div>
+  <div class="bg-glow-2"></div>
+  <div class="layout-shell">
+  <header class="hdr">
+    <div class="hdr-logo">K<span>AIROS</span></div>
+    <div class="hdr-tags">
+      <span class="tag tag-arc">Circle Wallets</span>
+      <span class="tag tag-b">Arc Testnet</span>
+      <span class="tag tag-t">Circle Platform</span>
+      <span class="tag tag-p">Kairos Runtime</span>
     </div>
-    <nav>
-      <a href="/kairos">Proof Dashboard</a>
-      <a href="/transactions">Transaction History</a>
-      <a href="/documents">Document Vault</a>
-      <a href="/execution" class="active">Execution History</a>
-      <a href="/commerce">Commerce Studio</a>
-      <a href="/mcp">MCP</a>
+    <nav class="hdr-right">
+      <a class="nav-btn nav-dashboard" href="/kairos">Proof Dashboard</a>
+      <a class="nav-btn nav-history" href="/transactions">Transaction History</a>
+      <a class="nav-btn nav-docs" href="/documents">Document Vault</a>
+      <a class="nav-btn nav-exec active" href="/execution">Execution History</a>
+      <a class="nav-btn nav-commerce" href="/commerce">Commerce Studio</a>
+      <a class="nav-btn nav-mcp" href="/mcp">MCP</a>
     </nav>
   </header>
 
@@ -126,6 +163,7 @@
         </table>
       </div>
     </div>
+  </div>
   </div>
 
   <script>
