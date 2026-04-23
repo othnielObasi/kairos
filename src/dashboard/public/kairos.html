@@ -190,6 +190,7 @@ html, body {
 .tr-dir  { font-size:9px; font-weight:600; padding:2px 7px; border-radius:2px; letter-spacing:.08em; }
 .tr-dir.long  { background:rgba(0,229,160,.1); color:var(--teal); }
 .tr-dir.short { background:rgba(255,68,68,.1);  color:var(--red); }
+.tr-dir.micro { background:rgba(39,117,202,.12); color:var(--blue); }
 .tr-pair { font-size:11px; color:var(--text); font-weight:500; flex:1; }
 .tr-size { font-size:11px; color:var(--teal); font-weight:600; font-variant-numeric:tabular-nums; }
 .tr-row2 { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
@@ -599,6 +600,17 @@ function receiptVerificationBadge(e, confirmedLabel) {
   return '<span class="ev-badge fb">PENDING</span>';
 }
 
+function latestArcReceipt(billing) {
+  const events = [
+    ...(billing.t1Events || []),
+    ...(billing.t2Events || []),
+    ...(billing.t3Events || []),
+  ];
+  return events
+    .filter(e => typeof e.txHash === "string" && /^0x[a-fA-F0-9]{64}$/.test(e.txHash))
+    .sort((a,b) => Number(b.confirmedAt || 0) - Number(a.confirmedAt || 0))[0] || null;
+}
+
 if (window.location.href.endsWith("#")) {
   window.history.replaceState(null, "", window.location.pathname + window.location.search);
 }
@@ -790,20 +802,24 @@ function renderT3(data, track) {
 // ── T4 ──────────────────────────────────────────────────────────────────────
 function renderT4(checkpoints, track) {
   const trades = (checkpoints || []).filter(c => c.execution && c.execution.requested && (c.direction || c.signal) !== "NEUTRAL");
+  const commerceEvents = (track && track.recentEvents) || [];
   const body = el("t4-body");
   setTrackStatus("t4", track);
   const settledTrades = trades.filter(t => t.execution && t.execution.executionMode === "arc_settled");
+  const settledCommerce = commerceEvents.filter(e => e.status === "confirmed");
   const settledVolume = settledTrades.reduce((sum, t) => sum + Number(t.positionSizeUsd || t.size || 0), 0);
+  const actionCount = trades.length + commerceEvents.length;
+  const settledCount = settledTrades.length + settledCommerce.length;
   setTrackMetrics("t4-metrics", [
-    { label:"Actions", value:trades.length, tone:trades.length ? "proof" : "" },
-    { label:"Arc settled", value:settledTrades.length, tone:settledTrades.length ? "live" : "warn" },
+    { label:"Actions", value:actionCount, tone:actionCount ? "proof" : "" },
+    { label:"Arc settled", value:settledCount, tone:settledCount ? "live" : "warn" },
     { label:"Volume", value:fU2(track?.settledVolumeUsd ?? settledVolume), tone:"live" },
   ]);
 
-  if (!trades.length) {
+  if (!trades.length && !commerceEvents.length) {
     const emptyCopy = track && track.state === "local_only"
       ? "Approved actions recorded locally<br>No confirmed external settlement yet"
-      : "Awaiting approved actions<br>All governance stages must clear";
+      : "Awaiting micro-commerce checkout<br>Arc receipt will appear here";
     body.innerHTML = `<div class="empty"><div class="empty-dot"></div>${emptyCopy}</div>`;
     el("t4-total").textContent = "$0.00 USDC";
     return;
@@ -811,6 +827,29 @@ function renderT4(checkpoints, track) {
 
   body.innerHTML = "";
   let vol = 0;
+  commerceEvents.slice(0,4).forEach(e => {
+    const refHtml = e.explorerUrl && e.txHash
+      ? `<a class="tr-hash" href="${e.explorerUrl}" target="_blank" rel="noopener">${esc(e.txHash)}</a>`
+      : `<span class="tr-hash">${esc(e.referenceId || e.status || "pending...")}</span>`;
+    const modeClass = e.status === "confirmed" ? "arc" : e.status === "pending" ? "paper" : "local";
+    const div = document.createElement("div");
+    div.className = "trade-item";
+    div.innerHTML = `
+      <div class="tr-row1">
+        <span class="tr-dir micro">MICRO</span>
+        <span class="tr-pair">${esc(e.item || "Proof capsule access")}</span>
+        <span class="tr-size">${fU2(e.amountUsdc || 0)}</span>
+      </div>
+      <div class="tr-row2">
+        ${refHtml}
+        <span class="tr-arc ${modeClass}">${e.status === "confirmed" ? "Arc settled" : e.status}</span>
+        <span class="ev-badge usdc">USDC</span>
+        <span class="tr-time">${fTs(e.timestamp)}</span>
+      </div>
+    `;
+    body.appendChild(div);
+  });
+
   trades.slice(0,8).forEach(t => {
     const dir = (t.direction || t.signal || "LONG").toLowerCase();
     const pair = t.pair || t.tradingPair || "WETH/USDC";
@@ -866,8 +905,12 @@ function updateBars(billing, status) {
     : "configured runtime · root domain";
   const cpd    = totalEvents > 0 ? spend / totalEvents : 0;
   const pct    = Math.min(100, (txns / target) * 100);
+  const latestReceipt = latestArcReceipt(billing);
+  const latestArcscan = latestReceipt
+    ? ` · <a href="${ARC_EXPLORER + latestReceipt.txHash}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none">latest Arcscan</a>`
+    : "";
   const txnLabel = pending > 0
-    ? txns + " / " + target + " required · " + pending + " pending/fallback"
+    ? txns + " / " + target + " required · " + pending + " pending hash"
     : txns + " / " + target + " required";
 
   el("mb-cycles").textContent = cycles;
@@ -876,13 +919,13 @@ function updateBars(billing, status) {
   el("mb-spend").textContent  = fU(spend);
   el("mb-cpd").textContent    = fU(cpd);
   el("mb-txbar").style.width  = pct + "%";
-  el("mb-txreq").innerHTML  = txnLabel + ' · <a href="/transactions" style="color:var(--teal);text-decoration:none">proof</a>';
+  el("mb-txreq").innerHTML  = txnLabel + ' · <a href="/transactions" style="color:var(--teal);text-decoration:none">History proof</a>' + latestArcscan;
   el("mb-trust").textContent  = runtimeLabel;
   el("mb-tsub").textContent   = runtimeSub;
 
   el("p-txns").textContent    = txns;
   el("p-tsub").textContent    = pending > 0
-    ? txns + " / " + target + "+ required · " + pending + " pending/fallback"
+    ? txns + " / " + target + "+ required · " + pending + " pending hash"
     : txns + " / " + target + "+ required";
   el("p-spend").textContent   = fU(spend);
   el("p-cpd").textContent     = fU(cpd);

@@ -57,6 +57,7 @@ import { getOperatorControlState, getLatestOperatorAction } from './operator-con
 import { recordClosedTrade, getRecentTrades, getTradeStats, loadClosedTrades, type ClosedTrade } from './trade-log.js';
 import { billEvent, hasVerifiedTxHash, settleMicroCommerceEvent } from '../services/nanopayments.js';
 import { billingStore } from '../services/billing-store.js';
+import { getMicroCommerceStats, recordMicroCommerceEvent } from '../services/micro-commerce-store.js';
 import { pathToFileURL } from 'url';
 
 const log = createLogger('AGENT');
@@ -68,6 +69,11 @@ const MICRO_COMMERCE_SETTLEMENT_ADDRESS =
   || process.env.GOVERNANCE_BILLING_ADDRESS
   || process.env.AGENT_WALLET_ADDRESS
   || null;
+const TRACK4_PROOF_COMMERCE_ENABLED = process.env.TRACK4_PROOF_COMMERCE_ENABLED !== 'false';
+const TRACK4_PROOF_COMMERCE_INTERVAL_CYCLES = Math.max(
+  1,
+  parseInt(process.env.TRACK4_PROOF_COMMERCE_INTERVAL_CYCLES || '5', 10),
+);
 
 // ──── Agent State ────
 const INITIAL_CAPITAL = 10000;
@@ -88,6 +94,7 @@ const LOSS_STREAK_COOLDOWN_MS = 15 * 60 * 1000; // 15 minutes
 const LOSS_STREAK_THRESHOLD = 3;
 let recentCloseTimestamps: { time: number; win: boolean }[] = [];
 let lossStreakCooldownUntil = 0;
+let lastTrack4ProofCommerceCycle = 0;
 
 
 let marketData: MarketData;
@@ -907,6 +914,12 @@ async function runCycle(): Promise<void> {
       checkpoint.execution.microSettlement.amountUsdc = settlement.amount;
       checkpoint.execution.microSettlement.referenceId = settlement.referenceId ?? null;
       checkpoint.execution.microSettlement.mode = settlement.mode ?? null;
+      recordMicroCommerceEvent(settlement, {
+        item: 'Approved action settlement',
+        trigger: 'governed trade approval',
+        checkpointId: checkpoint.id,
+        description: `Kairos settled an approved ${strategyOutput.signal.direction} action as real-time micro-commerce on Arc.`,
+      });
 
       if (hasVerifiedTxHash(settlement)) {
         checkpoint.onChainTxHash = settlement.txHash;
@@ -992,6 +1005,13 @@ async function runCycle(): Promise<void> {
     }
 
     flushCheckpoint(checkpoint);
+
+    if (!shouldExecute) {
+      await settleTrack4ProofCommerce(
+        checkpoint.id,
+        riskDecision.approved ? 'execution gates held the trade, but the audit interaction was approved' : riskDecision.explanation,
+      );
+    }
 
     // Step 8c: Record trade on-chain in KairosRiskPolicy
     if (shouldExecute) {
@@ -1257,6 +1277,47 @@ function persistState(): void {
 }
 
 // ──── Public Accessors (for Dashboard/MCP) ────
+
+async function settleTrack4ProofCommerce(checkpointId: number, reason: string): Promise<void> {
+  if (MODE !== 'live' || !TRACK4_PROOF_COMMERCE_ENABLED) return;
+
+  const operatorState = getOperatorControlState();
+  if (operatorState.mode === 'emergency_stop') return;
+
+  const stats = getMicroCommerceStats();
+  const hasPriorProof = stats.total > 0;
+  if (hasPriorProof && cycleCount - lastTrack4ProofCommerceCycle < TRACK4_PROOF_COMMERCE_INTERVAL_CYCLES) {
+    return;
+  }
+
+  const settlement = await settleMicroCommerceEvent('track4-proof-capsule', {
+    source: 'proof-capsule-marketplace',
+    model: `cycle-${cycleCount}`,
+    type: 'micro-commerce',
+  });
+
+  const event = recordMicroCommerceEvent(settlement, {
+    item: 'Proof capsule access',
+    trigger: 'post-cycle audit checkout',
+    checkpointId,
+    description: `Kairos purchased a per-interaction audit proof capsule after cycle ${cycleCount}: ${reason}`,
+  });
+  lastTrack4ProofCommerceCycle = cycleCount;
+
+  if (event.status === 'confirmed') {
+    log.info('Track 4 proof capsule settled on Arc', {
+      txHash: event.txHash,
+      amountUsdc: event.amountUsdc,
+      checkpointId,
+    });
+  } else {
+    log.warn('Track 4 proof capsule settlement not yet confirmed', {
+      status: event.status,
+      referenceId: event.referenceId,
+      checkpointId,
+    });
+  }
+}
 
 export function getAgentState() {
   return {

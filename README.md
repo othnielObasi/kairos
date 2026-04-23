@@ -133,6 +133,14 @@ GEMINI_REFLECTION_MODELS=gemini-3-pro-preview,gemini-3-flash-preview
 OPENAI_API_KEY=
 ```
 
+For Track 4 proof checkouts, the runtime can emit periodic Arc-settled micro-commerce receipts even when the market loop is neutral:
+
+```bash
+TRACK4_SETTLEMENT_AMOUNT_USDC=0.009
+TRACK4_PROOF_COMMERCE_ENABLED=true
+TRACK4_PROOF_COMMERCE_INTERVAL_CYCLES=5
+```
+
 Bootstrap Circle Wallet values when needed:
 
 ```bash

@@ -24,6 +24,7 @@ import { getKrakenFeedStatus, fetchKrakenTicker, fetchKrakenBalance, fetchKraken
 import { fetchPrismData } from '../data/prism-feed.js';
 import { billingStore } from '../services/billing-store.js';
 import { hasVerifiedTxHash, type NanopaymentReceipt } from '../services/nanopayments.js';
+import { getMicroCommerceEvents, getMicroCommerceStats, type MicroCommerceEvent } from '../services/micro-commerce-store.js';
 import { getCliStatus, checkCliHealth } from '../data/kraken-cli.js';
 import { getKrakenAccountSnapshot, krakenPreflight } from '../data/kraken-bridge.js';
 import { generateAttestationSummary } from '../security/tee-attestation.js';
@@ -304,6 +305,8 @@ function buildTrack3Status() {
 
 function buildTrack4Status(agentState: ReturnType<typeof getAgentState>) {
   const cliStatus = getCliStatus();
+  const microStats = getMicroCommerceStats();
+  const recentEvents = getMicroCommerceEvents(8);
   const actions = getTradeCheckpoints(50)
     .map((checkpoint) => {
       const execution = getCheckpointExecution(checkpoint);
@@ -352,11 +355,27 @@ function buildTrack4Status(agentState: ReturnType<typeof getAgentState>) {
   }
 
   const latestAction = actions.length > 0 ? actions[actions.length - 1] : null;
+  const latestCommerce = microStats.latest;
+  const latestActionTime = latestAction?.execution.settledAt || latestAction?.timestamp || null;
+  const latestCommerceTime = latestCommerce?.timestamp || null;
+  const commerceIsLatest = Boolean(
+    latestCommerceTime &&
+    (!latestActionTime || Date.parse(latestCommerceTime) >= Date.parse(latestActionTime)),
+  );
+  counts.arcSettled += microStats.confirmed;
+  counts.localOnly += microStats.fallback;
+  counts.skipped += microStats.pending;
+  settledVolumeUsd += microStats.confirmedVolumeUsdc;
+
   let state = 'idle';
   let label = 'IDLE';
   let note = 'Awaiting approved actions to settle.';
 
-  if (counts.arcSettled > 0) {
+  if (microStats.confirmed > 0) {
+    state = 'arc_settled';
+    label = 'ARC SETTLED';
+    note = `${microStats.confirmed} real micro-commerce checkout(s) settled on Arc in USDC.`;
+  } else if (counts.arcSettled > 0) {
     state = 'arc_settled';
     label = 'ARC SETTLED';
     note = arcMicroCommerceCount > 0
@@ -374,6 +393,10 @@ function buildTrack4Status(agentState: ReturnType<typeof getAgentState>) {
     state = 'local_only';
     label = 'LOCAL ONLY';
     note = 'Approved actions were recorded locally without confirmed external settlement.';
+  } else if (microStats.pending > 0) {
+    state = 'verifying';
+    label = 'VERIFYING';
+    note = 'A Track 4 micro-commerce checkout was submitted and is waiting for an Arc hash.';
   }
 
   return {
@@ -381,10 +404,12 @@ function buildTrack4Status(agentState: ReturnType<typeof getAgentState>) {
     label,
     note,
     counts,
-    actionsRecorded: actions.length,
+    actionsRecorded: actions.length + microStats.total,
     settledVolumeUsd,
-    lastSettlementAt: latestAction?.execution.settledAt ?? null,
-    latestMode: latestAction?.execution.executionMode ?? null,
+    lastSettlementAt: commerceIsLatest ? latestCommerceTime : (latestAction?.execution.settledAt ?? null),
+    latestMode: commerceIsLatest ? latestCommerce?.settlementMode ?? null : latestAction?.execution.executionMode ?? null,
+    recentEvents,
+    microCommerce: microStats,
     routerReady: Boolean((process.env.MODE || 'simulation') === 'live' && agentState.agentId && config.riskRouterAddress),
     kraken: {
       cliInstalled: cliStatus.installed,
@@ -420,7 +445,7 @@ function verifiedHash(txHash: string | null | undefined): string | null {
 
 function receiptStatus(receipt: NanopaymentReceipt): LedgerStatus {
   if (hasVerifiedTxHash(receipt)) return 'confirmed';
-  if (receipt.verificationState === 'fallback' || receipt.txHash?.startsWith('pending_')) return 'fallback';
+  if (receipt.verificationState === 'fallback' || receipt.mode === 'fallback') return 'fallback';
   if (receipt.referenceId) return 'pending';
   return 'pending';
 }
@@ -502,6 +527,25 @@ function checkpointLedgerEntries(limit: number): LedgerTransaction[] {
     });
 }
 
+function microCommerceLedgerEntries(limit: number): LedgerTransaction[] {
+  return getMicroCommerceEvents(limit).map((event: MicroCommerceEvent, index) => ({
+    id: `t4-mc-${event.id}-${index}`,
+    timestamp: event.timestamp,
+    trackKey: 't4' as const,
+    track: 'Track 04',
+    category: 'Real-time micro-commerce',
+    source: event.seller,
+    eventName: event.item,
+    amountUsdc: event.amountUsdc,
+    mode: event.settlementMode,
+    status: event.status,
+    txHash: event.txHash,
+    referenceId: event.referenceId,
+    explorerUrl: event.explorerUrl,
+    description: event.description,
+  }));
+}
+
 function operatorLedgerEntries(limit: number): LedgerTransaction[] {
   return getOperatorActionReceipts(limit).map((receipt, index) => ({
     id: `ops-${receipt.id}-${index}`,
@@ -527,6 +571,7 @@ function buildTransactionLedger(limit: number) {
     ...billingStore.t1Events.map((receipt, index) => receiptLedgerEntry(receipt, index, 't1', 'Track 01', 'Governance nanopayment')),
     ...billingStore.t2Events.map((receipt, index) => receiptLedgerEntry(receipt, index, 't2', 'Track 02', 'Paid data access')),
     ...billingStore.t3Events.map((receipt, index) => receiptLedgerEntry(receipt, index, 't3', 'Track 03', 'Usage-based compute')),
+    ...microCommerceLedgerEntries(cappedLimit),
     ...checkpointLedgerEntries(cappedLimit),
     ...operatorLedgerEntries(Math.min(cappedLimit, 200)),
   ].sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
