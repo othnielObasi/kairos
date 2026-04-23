@@ -91,7 +91,7 @@ html, body {
 .tx-req { font-size:9px; color:var(--text3); margin-top:3px; }
 
 /* ── MAIN GRID ── */
-.mcp-bar { padding:12px 24px; border-bottom:1px solid var(--border); background:rgba(255,255,255,.02); }
+.mcp-bar { display:none; }
 .mcp-card {
   display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
   border:1px solid var(--border); background:linear-gradient(90deg, rgba(39,117,202,.08), rgba(108,99,255,.06));
@@ -208,7 +208,8 @@ html, body {
 .empty-dot { width:4px; height:4px; border-radius:50%; background:var(--text3); margin:0 auto 8px; animation:lp 2s infinite; }
 
 /* ── PROOF BAR ── */
-.pbar { border-top:1px solid var(--border); display:grid; grid-template-columns:repeat(6,1fr); background:var(--bg2); }
+.pbar { border-top:1px solid var(--border); display:grid; grid-template-columns:repeat(3,1fr); background:var(--bg2); }
+.pbar .pi:nth-child(n+4) { display:none; }
 .pi { padding:14px 16px; border-right:1px solid var(--border); }
 .pi:last-child { border-right:none; }
 .pi-lbl { font-size:9px; letter-spacing:.16em; color:var(--text3); text-transform:uppercase; margin-bottom:6px; }
@@ -301,7 +302,7 @@ html, body {
     <div class="mi" style="flex:2">
       <div class="mi-lbl">Kairos · Circle platform stack</div>
       <div class="mi-val" style="font-size:11px;color:var(--text2);margin-top:2px" id="mb-stack">Arc · USDC · Nanopayments · Circle Wallets · x402</div>
-      <div class="mi-sub">Powered by the Kairos governed runtime</div>
+      <div class="mi-sub">Wallets · x402 · receipts</div>
     </div>
     <div class="mi">
       <div class="mi-lbl">x402 wallet</div>
@@ -348,7 +349,7 @@ html, body {
       <div class="trk-hdr">
         <div class="trk-num">TRACK 01 · PRIMARY</div>
         <div class="trk-title">Agent-to-Agent Loop</div>
-        <div class="trk-sub" title="Kairos pays each governance stage with Circle Nanopayments and batches verifiable settlement on Arc.">Governance stages paid as sub-cent USDC receipts.</div>
+        <div class="trk-sub" title="Kairos pays each governance stage with Circle Nanopayments and batches verifiable settlement on Arc.">Governed decisions billed per stage.</div>
         <div class="trk-metrics" id="t1-metrics"></div>
         <div class="trk-total-row">
           <span class="trk-total-lbl">Session spend</span>
@@ -357,7 +358,7 @@ html, body {
       </div>
       <div class="trk-body">
         <div id="t1-stages"></div>
-        <div id="t1-fhdr" style="display:none" class="feed-div">RECENT NANOPAYMENTS</div>
+        <div id="t1-fhdr" style="display:none" class="feed-div">RECENT RECEIPTS</div>
         <div id="t1-feed"></div>
       </div>
     </div>
@@ -367,7 +368,7 @@ html, body {
       <div class="trk-hdr">
         <div class="trk-num">TRACK 02</div>
         <div class="trk-title">Per-API Monetisation</div>
-        <div class="trk-sub" id="t2-sub" title="AIsa price, social, news, and PRISM calls are paid per request through x402 and Circle Gateway.">AIsa data calls paid per request through x402.</div>
+        <div class="trk-sub" id="t2-sub" title="AIsa price, social, news, and PRISM calls are paid per request through x402 and Circle Gateway.">Paid data access.</div>
         <div class="trk-status">
           <span class="trk-pill idle" id="t2-pill">IDLE</span>
           <div class="trk-note" id="t2-note">Awaiting paid data fetches.</div>
@@ -390,7 +391,7 @@ html, body {
       <div class="trk-hdr">
         <div class="trk-num">TRACK 03</div>
         <div class="trk-title">Usage-Based Compute</div>
-        <div class="trk-sub" id="t3-sub" title="Runtime inference prefers Gemini 3 Flash, SAGE reflection prefers Gemini 3 Pro, with OpenAI as fallback.">LLM inference and SAGE reflection billed per use.</div>
+        <div class="trk-sub" id="t3-sub" title="Runtime inference prefers Gemini 3 Flash, SAGE reflection prefers Gemini 3 Pro, with OpenAI as fallback.">Inference and reflection.</div>
         <div class="trk-status">
           <span class="trk-pill idle" id="t3-pill">IDLE</span>
           <div class="trk-note" id="t3-note">Awaiting billed inference.</div>
@@ -402,7 +403,7 @@ html, body {
         </div>
       </div>
       <div class="trk-body" id="t3-body">
-        <div class="empty"><div class="empty-dot"></div>Awaiting LLM reasoning<br>fires after governance clears</div>
+        <div class="empty"><div class="empty-dot"></div>No compute events yet</div>
       </div>
     </div>
 
@@ -411,7 +412,7 @@ html, body {
       <div class="trk-hdr">
         <div class="trk-num">TRACK 04</div>
         <div class="trk-title">Real-Time Micro-Commerce</div>
-        <div class="trk-sub" title="Approved governed actions settle in USDC on Arc through Circle Wallets.">Approved interactions settle as Arc USDC receipts.</div>
+        <div class="trk-sub" title="Approved governed actions settle in USDC on Arc through Circle Wallets.">Approved actions and settlement.</div>
         <div class="trk-status">
           <span class="trk-pill idle" id="t4-pill">IDLE</span>
           <div class="trk-note" id="t4-note">Awaiting approved actions to settle.</div>
@@ -423,7 +424,7 @@ html, body {
         </div>
       </div>
       <div class="trk-body" id="t4-body">
-        <div class="empty"><div class="empty-dot"></div>Awaiting approved actions<br>All governance stages must clear</div>
+        <div class="empty"><div class="empty-dot"></div>No approved actions yet</div>
       </div>
     </div>
 
@@ -530,11 +531,11 @@ function setTrackStatus(prefix, track) {
   pill.className = "trk-pill " + statusClass(track.state);
   pill.textContent = track.label || "IDLE";
   note.title = track.note || "";
-  note.textContent = clip(track.note || "");
+  note.textContent = clip(track.note || "", 58);
 }
 
 function renderMcp(mcp) {
-  if (!mcp) return;
+  if (!mcp || !el("mcp-tools")) return;
   el("mcp-tools").textContent = mcp.tools ?? 0;
   el("mcp-resources").textContent = mcp.resources ?? 0;
   el("mcp-prompts").textContent = mcp.prompts ?? 0;
@@ -638,7 +639,7 @@ function renderT1(data, track3) {
   }, 0);
   setTrackMetrics("t1-metrics", [
     { label:"Stages", value:activeStages + "/7", tone:activeStages >= 5 ? "live" : "warn" },
-    { label:"Receipts", value:events.length, tone:events.length ? "proof" : "" },
+    { label:"Gov receipts", value:events.length, tone:events.length ? "proof" : "" },
     { label:"Spend", value:fU(data.t1Spend), tone:"live" },
   ]);
   STAGE_NAMES.forEach((name,i) => {
@@ -705,13 +706,10 @@ function renderT2(data, track) {
   const noteEl = document.createElement("div");
   noteEl.style.cssText = "font-size:9px;color:#3D3B5A;padding:8px 0 4px;line-height:1.6;border-bottom:1px solid var(--border);margin-bottom:4px;";
   const events = data.t2Events || [];
-  const sourceRows = Object.values(breakdown);
-  const totalCalls = sourceRows.reduce((sum, info) => sum + Number(info.calls || 0), 0);
   const liveSources = API_SOURCES.filter(s => (breakdown[s.key]?.mode || s.mode) === "x402").length;
-  const x402Events = events.filter(e => e.mode === "x402").length;
   setTrackMetrics("t2-metrics", [
     { label:"Sources", value:liveSources + "/" + API_SOURCES.length, tone:liveSources === API_SOURCES.length ? "live" : "warn" },
-    { label:"x402 txns", value:x402Events || totalCalls, tone:x402Events || totalCalls ? "proof" : "" },
+    { label:"Data events", value:events.length, tone:events.length ? "proof" : "" },
     { label:"Spend", value:fU(data.t2Spend), tone:"live" },
   ]);
   const allTrack2X402 = events.length > 0 && events.every(e => e.mode === "x402");
@@ -723,7 +721,7 @@ function renderT2(data, track) {
     : "Fallback active - details in History.";
   sc.appendChild(noteEl);
 
-  el("t2-fhdr").textContent = allTrack2X402 ? "RECENT x402 PAYMENTS" : "RECENT TRACK 2 BILLING";
+  el("t2-fhdr").textContent = "RECENT EVENTS";
   el("t2-fhdr").style.display = events.length ? "block" : "none";
   const fc = el("t2-feed"); fc.innerHTML = "";
   events.slice(0,6).forEach(e => {
@@ -755,7 +753,7 @@ function renderT3(data, track) {
   const sage = track && track.sage ? track.sage : null;
   const geminiEvents = events.filter(e => /gemini/i.test(e.model || e.provider || e.eventName || "")).length;
   setTrackMetrics("t3-metrics", [
-    { label:"Compute", value:events.length, tone:events.length ? "proof" : "" },
+    { label:"Compute events", value:events.length, tone:events.length ? "proof" : "" },
     { label:"Model", value:geminiEvents ? "Gemini 3" : "Ready", tone:geminiEvents ? "live" : "warn" },
     { label:"Spend", value:fU(data.t3Spend), tone:"live" },
   ]);
@@ -763,7 +761,7 @@ function renderT3(data, track) {
   if (!events.length) {
     const emptyCopy = track && track.state === "no_keys"
       ? "No LLM API keys configured<br>Deterministic fallback reasoning active"
-      : "Awaiting billed inference<br>fires after governance clears";
+      : "No compute events yet";
     body.innerHTML = `<div class="empty"><div class="empty-dot"></div>${emptyCopy}</div>`;
     el("t3-total").textContent = "$0.000 USDC";
     return;
@@ -813,7 +811,7 @@ function renderT4(checkpoints, track) {
   const actionCount = trades.length + commerceEvents.length;
   const settledCount = settledTrades.length + settledCommerce.length;
   setTrackMetrics("t4-metrics", [
-    { label:"Actions", value:actionCount, tone:actionCount ? "proof" : "" },
+    { label:"Recorded actions", value:actionCount, tone:actionCount ? "proof" : "" },
     { label:"Arc settled", value:settledCount, tone:settledCount ? "live" : "warn" },
     { label:"Volume", value:fU2(track?.settledVolumeUsd ?? settledVolume), tone:"live" },
   ]);
@@ -821,7 +819,7 @@ function renderT4(checkpoints, track) {
   if (!trades.length && !commerceEvents.length) {
     const emptyCopy = track && track.state === "local_only"
       ? "Approved actions recorded locally<br>No confirmed external settlement yet"
-      : "Awaiting micro-commerce checkout<br>Arc receipt will appear here";
+      : "No approved actions yet";
     body.innerHTML = `<div class="empty"><div class="empty-dot"></div>${emptyCopy}</div>`;
     el("t4-total").textContent = "$0.00 USDC";
     return;
@@ -924,6 +922,11 @@ function updateBars(billing, status) {
   el("mb-txreq").innerHTML  = txnLabel + ' · <a href="/transactions" style="color:var(--teal);text-decoration:none">History proof</a>' + latestArcscan;
   el("mb-trust").textContent  = runtimeLabel;
   el("mb-tsub").textContent   = runtimeSub;
+  if (el("mb-stack")) {
+    el("mb-stack").textContent = "Arc · USDC · Circle";
+    if (el("mb-stack").previousElementSibling) el("mb-stack").previousElementSibling.textContent = "Settlement stack";
+    if (el("mb-stack").nextElementSibling) el("mb-stack").nextElementSibling.textContent = "Wallets · x402 · receipts";
+  }
 
   el("p-txns").textContent    = txns;
   el("p-tsub").textContent    = pending > 0
