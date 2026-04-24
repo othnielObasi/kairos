@@ -57,7 +57,7 @@ html, body {
 .tag-p { background:rgba(108,99,255,.12); color:var(--purple); border:1px solid rgba(108,99,255,.25); }
 .tag-t { background:rgba(0,229,160,.1);   color:var(--teal);   border:1px solid rgba(0,229,160,.2); }
 .tag-b { background:rgba(39,117,202,.1);  color:var(--blue);   border:1px solid rgba(39,117,202,.2); }
-.hdr-right { margin-left:auto; display:flex; align-items:center; gap:16px; }
+.hdr-right { margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
 .live-ind  { display:flex; align-items:center; gap:6px; }
 .live-dot  { width:7px; height:7px; border-radius:50%; background:var(--teal); animation:lp 1.4s ease-in-out infinite; }
 .live-dot.err  { background:var(--red); animation:none; }
@@ -67,8 +67,18 @@ html, body {
 .live-lbl.err  { color:var(--red); }
 .live-lbl.conn { color:var(--amber); }
 .poll-t { font-size:10px; color:var(--text3); }
-.back-lnk { font-size:11px; color:var(--text3); text-decoration:none; cursor:pointer; letter-spacing:.08em; }
-.back-lnk:hover { color:var(--text2); }
+.back-lnk {
+  font-size:10px;
+  color:var(--text2);
+  text-decoration:none;
+  cursor:pointer;
+  letter-spacing:.05em;
+  white-space:nowrap;
+  padding:2px 0;
+  border-bottom:1px solid transparent;
+  transition:color .14s ease, border-color .14s ease;
+}
+.back-lnk:hover { color:var(--text); border-bottom-color:rgba(255,255,255,.24); }
 
 /* ── MOMENT BAR ── */
 .mbar {
