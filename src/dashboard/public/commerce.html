@@ -842,9 +842,16 @@ initThemeToggle();
 
     function renderStatus(data) {
       state.status = data;
-      el("hero-proof-cap").textContent = "Proof cap " + formatMoney(data.settlement.proofCapUsdc, "USDC");
-      el("proof-function").textContent = data.gemini.functionModels.length ? data.gemini.functionModels.join(", ") : "Not configured";
-      el("proof-multimodal").textContent = data.gemini.multimodalModels.length ? data.gemini.multimodalModels.join(", ") : "Not configured";
+      const proofCapNode = el("hero-proof-cap");
+      if (proofCapNode) proofCapNode.textContent = "Proof cap " + formatMoney(data.settlement.proofCapUsdc, "USDC");
+      const proofFunctionNode = el("proof-function");
+      if (proofFunctionNode) {
+        proofFunctionNode.textContent = data.gemini.functionModels.length ? data.gemini.functionModels.join(", ") : "Not configured";
+      }
+      const proofMultimodalNode = el("proof-multimodal");
+      if (proofMultimodalNode) {
+        proofMultimodalNode.textContent = data.gemini.multimodalModels.length ? data.gemini.multimodalModels.join(", ") : "Not configured";
+      }
 
       el("stat-gemini").textContent = data.gemini.configured ? "READY" : "NO KEYS";
       el("stat-gemini").className = "stat-value " + (data.gemini.configured ? "good" : "warn");
