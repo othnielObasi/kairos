@@ -214,27 +214,58 @@
     }
   
 .theme-toggle {
-  border: 1px solid rgba(255,255,255,.18);
-  background: rgba(255,255,255,.04);
-  color: var(--text, var(--fg, #edf8f2));
+  border: 0;
+  background: transparent;
+  color: var(--text2, var(--muted, var(--fg2, #8aa698)));
   font: inherit;
   font-size: 10px;
   letter-spacing: .06em;
   line-height: 1.2;
-  padding: 3px 8px;
-  border-radius: 999px;
+  padding: 2px 0;
   cursor: pointer;
   white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-color: rgba(255,255,255,.22);
+  text-underline-offset: 3px;
 }
-.theme-toggle:hover { border-color: rgba(255,255,255,.3); }
+.theme-toggle:hover {
+  color: var(--text, var(--w, #edf8f2));
+  text-decoration-color: rgba(255,255,255,.45);
+}
+
+html[data-theme="light"] {
+  --bg: #f7f4ec;
+  --bg2: #f2ede2;
+  --bg3: #e9e2d4;
+  --panel: #f8f4ea;
+  --panel2: #f1ebdf;
+  --line: rgba(67,88,106,.18);
+  --line-strong: rgba(67,88,106,.28);
+  --border: rgba(67,88,106,.18);
+  --text: #162230;
+  --text2: #475c6d;
+  --text3: #6f8190;
+  --muted: #53697a;
+  --soft: #708495;
+  --fg: #162230;
+  --fg2: #53697a;
+  --fg3: #748896;
+  --w: #162230;
+  --brd: rgba(67,88,106,.18);
+  --s1: #f8f4ea;
+  --s2: #f1ebdf;
+  --s3: #e9e2d4;
+  --ink: #162230;
+  color: #162230;
+}
 
 html[data-theme="light"],
 html[data-theme="light"] body {
-  color: #1b2630;
+  color: #162230;
   background:
-    radial-gradient(circle at 16% 4%, rgba(118,161,204,.28), transparent 32%),
+    radial-gradient(circle at 16% 4%, rgba(118,161,204,.26), transparent 32%),
     radial-gradient(circle at 86% 10%, rgba(151,195,176,.22), transparent 30%),
-    linear-gradient(135deg, #f7f5ef 0%, #f3efe5 55%, #ede7da 100%);
+    linear-gradient(135deg, #f7f4ec 0%, #f1eadf 52%, #e9e2d4 100%);
 }
 html[data-theme="light"] .bg-grid {
   background-image: linear-gradient(rgba(86,118,156,0.11) 1px, transparent 1px), linear-gradient(90deg, rgba(122,154,132,0.10) 1px, transparent 1px);
@@ -248,17 +279,83 @@ html[data-theme="light"] .bg-glow-2 {
   background: radial-gradient(circle, rgba(150,189,165,0.20) 0%, transparent 70%);
   opacity: .55;
 }
+
 html[data-theme="light"] .hdr,
 html[data-theme="light"] .sub-nav,
 html[data-theme="light"] .hdr-subnav {
-  background: rgba(247,244,236,.88) !important;
-  border-bottom-color: rgba(48,70,86,.12) !important;
+  background: rgba(247,244,236,.92) !important;
+  border-bottom-color: rgba(48,70,86,.14) !important;
 }
+
+html[data-theme="light"] .mbar,
+html[data-theme="light"] .mcp-card,
+html[data-theme="light"] .track,
+html[data-theme="light"] .trk-hdr,
+html[data-theme="light"] .trk-status,
+html[data-theme="light"] .tm,
+html[data-theme="light"] .mi,
+html[data-theme="light"] .pi,
+html[data-theme="light"] .hero-card,
+html[data-theme="light"] .proof-card,
+html[data-theme="light"] .stat,
+html[data-theme="light"] .panel,
+html[data-theme="light"] .ledger,
+html[data-theme="light"] .stat-card,
+html[data-theme="light"] .proof-line,
+html[data-theme="light"] .tool-card,
+html[data-theme="light"] .analysis-grid,
+html[data-theme="light"] .analysis-card,
+html[data-theme="light"] .explain,
+html[data-theme="light"] .explain-card,
+html[data-theme="light"] .mobile-card,
+html[data-theme="light"] .filt,
+html[data-theme="light"] .field,
+html[data-theme="light"] .field input,
+html[data-theme="light"] .field textarea,
+html[data-theme="light"] input,
+html[data-theme="light"] textarea,
+html[data-theme="light"] select,
+html[data-theme="light"] table th,
+html[data-theme="light"] table td {
+  background: rgba(255,255,255,.64) !important;
+  border-color: rgba(67,88,106,.18) !important;
+  color: #162230 !important;
+}
+
+html[data-theme="light"] .tag,
+html[data-theme="light"] .pill,
+html[data-theme="light"] .badge,
+html[data-theme="light"] .back-lnk,
+html[data-theme="light"] .sub-lnk,
+html[data-theme="light"] .poll-t,
+html[data-theme="light"] .hero-copy,
+html[data-theme="light"] .proof-label,
+html[data-theme="light"] .muted-copy,
+html[data-theme="light"] .stat-sub,
+html[data-theme="light"] .pi-sub,
+html[data-theme="light"] .mi-sub,
+html[data-theme="light"] .mi-lbl,
+html[data-theme="light"] .kicker,
+html[data-theme="light"] .explain-copy,
+html[data-theme="light"] .explain-k,
+html[data-theme="light"] .dim {
+  color: #53697a !important;
+}
+
 html[data-theme="light"] .theme-toggle {
-  border-color: rgba(32,52,68,.24);
-  background: rgba(255,255,255,.72);
-  color: #223140;
+  color: #3e5466;
+  text-decoration-color: rgba(62,84,102,.35);
 }
+html[data-theme="light"] .theme-toggle:hover {
+  color: #162230;
+  text-decoration-color: rgba(22,34,48,.5);
+}
+
+html[data-theme="light"] tr:hover td,
+html[data-theme="light"] .row:hover {
+  background: rgba(111,183,255,.18) !important;
+}
+
 
 </style>
 </head>
@@ -277,7 +374,7 @@ html[data-theme="light"] .theme-toggle {
     </div>
     <nav class="hdr-right">
       <div class="live-ind"><span class="live-dot"></span><span class="live-lbl">LIVE</span></div>
-      <button id="theme-toggle" class="theme-toggle" type="button">Theme: Dark</button>
+      <button id="theme-toggle" class="theme-toggle" type="button">☀ Light mode</button>
       <a class="back-lnk" href="/kairos">Dashboard</a>
       <a class="back-lnk" href="/transactions">Settlement Ledger</a>
       <a class="back-lnk active" href="/documents">Document Vault</a>
@@ -356,7 +453,8 @@ function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", safeTheme);
   const button = document.getElementById("theme-toggle");
   if (button) {
-    button.textContent = "Theme: " + (safeTheme === "light" ? "Off-White" : "Dark");
+    button.textContent = safeTheme === "light" ? "🌙 Dark mode" : "☀ Light mode";
+    button.setAttribute("aria-label", safeTheme === "light" ? "Switch to dark mode" : "Switch to light mode");
   }
 }
 function initThemeToggle() {
@@ -377,6 +475,7 @@ function initThemeToggle() {
   });
 }
 initThemeToggle();
+
 
     const state = { bundles: [], track: "all", status: "all", query: "" };
     const tracks = [["all", "All tracks"], ["t1", "Track 01"], ["t2", "Track 02"], ["t3", "Track 03"], ["t4", "Track 04"]];
