@@ -44,10 +44,10 @@ This is not a billing feature. It is a new economic primitive: governance enforc
 | Surface | URL | Purpose |
 |---|--- |---|
 | Dashboard | `https://kairos.nov-tia.com` | Judge-facing proof surface — all four tracks live |
-| Transaction audit trail | `https://kairos.nov-tia.com/transactions` | Every paid action, one audit trail — the judge proof surface |
+| Settlement Ledger | `https://kairos.nov-tia.com/transactions` | Every paid action, one audit trail — the judge proof surface |
 | Execution History | `https://kairos.nov-tia.com/execution` | Governed action and outcome log — entry, exit, PnL, artifacts (`/trades` also works) |
 | Document Vault | `https://kairos.nov-tia.com/documents` | Kairos-generated invoices, receipts, and proof files across all tracks |
-| Gemini Commerce Studio | `https://kairos.nov-tia.com/commerce` | Gemini Function Calling + multimodal receipt analysis + Arc proof settlement |
+| Commerce Studio | `https://kairos.nov-tia.com/commerce` | Gemini Function Calling + multimodal receipt analysis + Arc proof settlement |
 | MCP interface | `https://kairos.nov-tia.com/mcp` | JSON-RPC tools, resources, and prompts for agents and operators |
 | Agent card | `https://kairos.nov-tia.com/.well-known/agent-card.json` | Public agent discovery metadata |
 | Arc block explorer | `https://testnet.arcscan.app` | Independent verification of every Arc transaction hash |
@@ -64,7 +64,7 @@ Each cycle, the agent pays for:
 - The compute used to reason about the decision
 - The settlement of the action the decision approved
 
-The payment record is the audit trail. You cannot produce a Kairos transaction history that includes a governance stage without the corresponding Nanopayment appearing on Arc. The economic proof and the compliance proof are the same artifact.
+The payment record is the audit trail. You cannot produce a Kairos settlement ledger that includes a governance stage without the corresponding Nanopayment appearing on Arc. The economic proof and the compliance proof are the same artifact.
 
 This inverts the incentive structure of AI governance. Governance is no longer a cost that operators can reduce by buying cheaper oversight — it is a direct economic constraint on the agent for every action it takes.
 
