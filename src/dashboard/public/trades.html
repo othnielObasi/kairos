@@ -377,6 +377,19 @@ html[data-theme="light"] .mbar::before {
     .page-intro { margin-bottom: 12px; }
     .page-title { font-size: 18px; color: var(--w); font-weight: 700; letter-spacing: 0.3px; margin-bottom: 6px; }
     .page-copy { font-size: 10px; color: var(--fg2); line-height: 1.7; max-width: 860px; }
+    .judge-notes {
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .judge-note {
+      border-left: 2px solid var(--brd);
+      padding-left: 8px;
+      min-width: 0;
+    }
+    .judge-note-k { font-size: 8px; color: var(--fg3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .judge-note-v { font-size: 10px; color: var(--fg2); line-height: 1.6; }
     .quick-stats { display: grid; grid-template-columns: repeat(5, minmax(110px, 1fr)); gap: 10px; margin-bottom: 14px; }
     .quick-stat { border-bottom: 1px solid var(--brd); padding-bottom: 8px; min-width: 0; }
     .quick-k { font-size: 8px; color: var(--fg3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
@@ -403,6 +416,7 @@ html[data-theme="light"] .mbar::before {
     .refresh .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--up); box-shadow: 0 0 6px #34d39940; }
     @media (max-width: 900px) {
       .quick-stats { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+      .judge-notes { grid-template-columns: 1fr; }
       .sub-nav { justify-content: flex-start; padding: 8px 14px; }
     }
   </style>
@@ -442,6 +456,20 @@ html[data-theme="light"] .mbar::before {
     <section class="page-intro">
       <div class="page-title">Execution History</div>
       <p class="page-copy">Underlying execution and position audit log. Use this page for entry, exit, PnL, and artifact context; use Settlement Ledger for Arc proof counts.</p>
+    </section>
+    <section class="judge-notes" aria-label="Execution judge notes">
+      <div class="judge-note">
+        <div class="judge-note-k">What it proves</div>
+        <div class="judge-note-v">Kairos is making bounded, rule-driven decisions in production, not replaying static demo data.</div>
+      </div>
+      <div class="judge-note">
+        <div class="judge-note-k">How to verify</div>
+        <div class="judge-note-v">Open Artifact and Commerce Docs links per row, then verify Settlement Ref against Arc Explorer and Circle Console.</div>
+      </div>
+      <div class="judge-note">
+        <div class="judge-note-k">Do not confuse</div>
+        <div class="judge-note-v">Execution count is not proof count. On-chain proof is in confirmed Arc receipts on Dashboard and Settlement Ledger.</div>
+      </div>
     </section>
     <div class="quick-stats" id="stats">
       <div class="quick-stat"><div class="quick-k">Executions</div><div class="quick-v" id="s-total">-</div><div class="quick-sub">closed trades</div></div>

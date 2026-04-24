@@ -114,6 +114,15 @@
     .page-intro { margin-bottom: 12px; }
     .page-title { font-family: "IBM Plex Sans", sans-serif; font-size: 26px; font-weight: 600; letter-spacing: -.02em; margin-bottom: 6px; }
     .page-copy { color: var(--muted); font-size: 12px; line-height: 1.7; max-width: 920px; }
+    .page-guidance {
+      margin-top: 10px;
+      display: grid;
+      gap: 6px;
+      max-width: 980px;
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.7;
+    }
     .quick-stats {
       display: grid;
       grid-template-columns: repeat(4, minmax(120px, 1fr));
@@ -617,6 +626,10 @@ html[data-theme="light"] .mbar::before {
       <div class="page-intro">
         <div class="page-title">Commerce Studio</div>
         <p class="page-copy">Use Gemini tools and multimodal review to inspect or settle Track 4 proof receipts.</p>
+        <div class="page-guidance">
+          <div>Judge view: this page validates Gemini tool-use and multimodal proof workflow; Arc proof counts remain in Settlement Ledger.</div>
+          <div>Proof receipts are intentionally capped below one cent and represent verification proof events, not invoice notional settlement.</div>
+        </div>
       </div>
       <div class="quick-stats">
         <div class="quick-stat"><div class="quick-k">Gemini</div><div class="quick-v" id="stat-gemini">-</div><div class="quick-sub" id="stat-gemini-sub">loading models</div></div>
