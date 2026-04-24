@@ -323,26 +323,26 @@ html[data-theme="dark"] .bg-glow-2 {
 }
 
 html[data-theme="light"] {
-  --bg: #ffffff;
-  --bg2: #f6f2ff;
-  --bg3: #ffffff;
+  --bg: #f7f9fc;
+  --bg2: #f7f9fc;
+  --bg3: #f7f9fc;
   --panel: #ffffff;
-  --panel2: #f6f2ff;
-  --line: rgba(55,76,98,.22);
-  --line-strong: rgba(55,76,98,.34);
-  --border: rgba(55,76,98,.22);
+  --panel2: #ffffff;
+  --line: rgba(42,60,82,.20);
+  --line-strong: rgba(42,60,82,.32);
+  --border: rgba(42,60,82,.20);
   --text: #0b1623;
-  --text2: #172f45;
-  --text3: #29445c;
-  --muted: #1d364b;
-  --soft: #2c4760;
+  --text2: #152a3f;
+  --text3: #263f59;
+  --muted: #1e3750;
+  --soft: #2b4963;
   --fg: #0b1623;
-  --fg2: #172f45;
-  --fg3: #29445c;
+  --fg2: #152a3f;
+  --fg3: #263f59;
   --w: #0b1623;
-  --brd: rgba(55,76,98,.22);
+  --brd: rgba(42,60,82,.20);
   --s1: #ffffff;
-  --s2: #f6f2ff;
+  --s2: #ffffff;
   --s3: #ffffff;
   --ink: #0b1623;
   color: #0b1623;
@@ -351,30 +351,20 @@ html[data-theme="light"] {
 html[data-theme="light"],
 html[data-theme="light"] body {
   color: #0b1623;
-  background: linear-gradient(180deg, #ffffff 21.86%, #f6f2ff 27.04%, #f6f2ff 36.74%, #ffffff 40.41%);
+  background: #f7f9fc;
 }
-html[data-theme="light"] .bg-grid {
-  background-image: linear-gradient(rgba(86,118,156,0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(122,154,132,0.08) 1px, transparent 1px);
-  opacity: .08;
-}
-html[data-theme="light"] .bg-glow-1 {
-  background: radial-gradient(circle, rgba(181,225,255,0.16) 0%, transparent 70%);
-  opacity: .4;
-}
+
+html[data-theme="light"] .bg-grid,
+html[data-theme="light"] .bg-glow-1,
 html[data-theme="light"] .bg-glow-2 {
-  background: radial-gradient(circle, rgba(241,235,255,0.18) 0%, transparent 70%);
-  opacity: .4;
+  display: none !important;
 }
 
 html[data-theme="light"] .hdr,
 html[data-theme="light"] .sub-nav,
-html[data-theme="light"] .hdr-subnav {
-  background: rgba(255,255,255,.96) !important;
-  border-bottom-color: rgba(48,70,86,.18) !important;
-}
-
+html[data-theme="light"] .hdr-subnav,
 html[data-theme="light"] .mbar,
-html[data-theme="light"] .mcp-card,
+html[data-theme="light"] .main,
 html[data-theme="light"] .track,
 html[data-theme="light"] .trk-hdr,
 html[data-theme="light"] .trk-status,
@@ -385,10 +375,12 @@ html[data-theme="light"] .hero-card,
 html[data-theme="light"] .proof-card,
 html[data-theme="light"] .stat,
 html[data-theme="light"] .panel,
+html[data-theme="light"] .panel-header,
 html[data-theme="light"] .ledger,
 html[data-theme="light"] .stat-card,
 html[data-theme="light"] .proof-line,
 html[data-theme="light"] .tool-card,
+html[data-theme="light"] .tool-head,
 html[data-theme="light"] .analysis-grid,
 html[data-theme="light"] .analysis-card,
 html[data-theme="light"] .explain,
@@ -398,13 +390,21 @@ html[data-theme="light"] .filt,
 html[data-theme="light"] .field,
 html[data-theme="light"] .field input,
 html[data-theme="light"] .field textarea,
+html[data-theme="light"] .issue,
+html[data-theme="light"] .issue.bad,
+html[data-theme="light"] .issue.good,
+html[data-theme="light"] .hero-note,
+html[data-theme="light"] .mcp-metric,
+html[data-theme="light"] .api-row,
 html[data-theme="light"] input,
 html[data-theme="light"] textarea,
 html[data-theme="light"] select,
+html[data-theme="light"] table,
 html[data-theme="light"] table th,
 html[data-theme="light"] table td {
-  background: rgba(255,255,255,.92) !important;
-  border-color: rgba(55,76,98,.22) !important;
+  background: #ffffff !important;
+  background-image: none !important;
+  border-color: rgba(42,60,82,.20) !important;
   color: #0b1623 !important;
 }
 
@@ -425,13 +425,13 @@ html[data-theme="light"] .kicker,
 html[data-theme="light"] .explain-copy,
 html[data-theme="light"] .explain-k,
 html[data-theme="light"] .dim {
-  color: #172f45 !important;
+  color: #152a3f !important;
 }
 
 html[data-theme="light"] .theme-toggle {
-  color: #1f3446;
-  border-color: rgba(31,52,70,.34);
-  background: rgba(255,255,255,.96);
+  color: #0f2740;
+  border-color: rgba(15,39,64,.34);
+  background: #ffffff;
 }
 html[data-theme="light"] .theme-toggle:hover {
   color: #0b1623;
@@ -441,8 +441,9 @@ html[data-theme="light"] .theme-toggle:hover {
 
 html[data-theme="light"] tr:hover td,
 html[data-theme="light"] .row:hover {
-  background: rgba(111,183,255,.20) !important;
+  background: #eef3f9 !important;
 }
+
 
 
 
