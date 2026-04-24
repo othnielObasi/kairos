@@ -8,14 +8,14 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #07100d;
-      --panel: #0c1713;
-      --panel2: #111f19;
-      --line: rgba(53,224,161,.16);
-      --line-strong: rgba(53,224,161,.28);
-      --text: #edf8f2;
-      --muted: #8aa698;
-      --soft: #4f6d61;
+      --bg: #0b1118;
+      --panel: #111a24;
+      --panel2: #172231;
+      --line: rgba(111,183,255,.18);
+      --line-strong: rgba(111,183,255,.30);
+      --text: #edf3fb;
+      --muted: #97a9be;
+      --soft: #5f738b;
       --green: #35e0a1;
       --blue: #6fb7ff;
       --amber: #ffcc66;
@@ -26,21 +26,21 @@
     html, body { min-height: 100%; background: var(--bg); color: var(--text); font-family: "IBM Plex Mono", monospace; font-size: 12px; }
     body {
       background:
-        radial-gradient(circle at 15% 5%, rgba(53,224,161,.20), transparent 30%),
-        radial-gradient(circle at 88% 12%, rgba(111,183,255,.16), transparent 28%),
-        linear-gradient(135deg, #07100d 0%, #0a120f 45%, #050908 100%);
+        radial-gradient(circle at 14% 6%, rgba(111,183,255,.18), transparent 32%),
+        radial-gradient(circle at 88% 10%, rgba(53,224,161,.10), transparent 28%),
+        linear-gradient(135deg, #0b1118 0%, #101826 45%, #090f16 100%);
     }
     a { color: inherit; text-decoration: none; }
     button, input, textarea { font: inherit; }
     .layout-shell { position: relative; z-index: 1; min-height: 100vh; }
     .bg-grid {
       position: fixed; inset: 0; z-index: 0; pointer-events: none;
-      background-image: linear-gradient(rgba(53,224,161,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(111,183,255,0.035) 1px, transparent 1px);
+      background-image: linear-gradient(rgba(111,183,255,0.032) 1px, transparent 1px), linear-gradient(90deg, rgba(53,224,161,0.028) 1px, transparent 1px);
       background-size: 48px 48px; animation: gridDrift 40s linear infinite;
     }
     @keyframes gridDrift { 0% { background-position: 0 0; } 100% { background-position: 48px 48px; } }
-    .bg-glow-1 { position: fixed; top: -200px; left: -200px; width: 600px; height: 600px; border-radius: 50%; pointer-events: none; z-index: 0; background: radial-gradient(circle, rgba(53,224,161,0.10) 0%, transparent 70%); animation: g1 8s ease-in-out infinite alternate; }
-    .bg-glow-2 { position: fixed; bottom: -200px; right: -100px; width: 500px; height: 500px; border-radius: 50%; pointer-events: none; z-index: 0; background: radial-gradient(circle, rgba(111,183,255,0.08) 0%, transparent 70%); animation: g2 10s ease-in-out infinite alternate; }
+    .bg-glow-1 { position: fixed; top: -200px; left: -200px; width: 600px; height: 600px; border-radius: 50%; pointer-events: none; z-index: 0; background: radial-gradient(circle, rgba(111,183,255,0.11) 0%, transparent 70%); animation: g1 8s ease-in-out infinite alternate; }
+    .bg-glow-2 { position: fixed; bottom: -200px; right: -100px; width: 500px; height: 500px; border-radius: 50%; pointer-events: none; z-index: 0; background: radial-gradient(circle, rgba(53,224,161,0.07) 0%, transparent 70%); animation: g2 10s ease-in-out infinite alternate; }
     @keyframes g1 { from { opacity: .5; } to { opacity: 1; } }
     @keyframes g2 { from { opacity: .4; } to { opacity: .9; } }
 
@@ -48,7 +48,7 @@
       position: sticky; top: 0; z-index: 100;
       display: flex; align-items: center; gap: 14px; padding: 0 24px; min-height: 52px;
       border-bottom: 1px solid rgba(255,255,255,0.06);
-      background: rgba(7,16,13,0.92); backdrop-filter: blur(16px);
+      background: rgba(11,17,24,0.92); backdrop-filter: blur(16px);
     }
     .hdr-logo { font-family: "IBM Plex Sans", sans-serif; font-size: 18px; font-weight: 600; letter-spacing: .12em; }
     .hdr-logo span { color: var(--blue); }
@@ -99,7 +99,7 @@
       gap: 14px;
       padding: 6px 24px;
       border-bottom: 1px solid rgba(255,255,255,.06);
-      background: rgba(6,13,11,.55);
+      background: rgba(11,17,24,.58);
       backdrop-filter: blur(12px);
     }
     .sub-nav .back-lnk {
@@ -116,7 +116,7 @@
     }
     .hero-card, .proof-card, .stat, .panel {
       border: 1px solid var(--line);
-      background: linear-gradient(180deg, rgba(17,31,25,.92), rgba(9,18,15,.92));
+      background: linear-gradient(180deg, rgba(22,34,49,.92), rgba(13,22,33,.92));
       box-shadow: var(--shadow);
       border-radius: 20px;
     }
@@ -124,7 +124,7 @@
     .hero-card::after {
       content: "";
       position: absolute; inset: auto -80px -130px auto; width: 280px; height: 280px; border-radius: 50%;
-      background: radial-gradient(circle, rgba(53,224,161,.22), transparent 62%);
+      background: radial-gradient(circle, rgba(111,183,255,.20), transparent 62%);
       pointer-events: none;
     }
     .kicker { color: var(--green); font-size: 10px; text-transform: uppercase; letter-spacing: .24em; margin-bottom: 10px; }
@@ -501,6 +501,10 @@
       if (code === "USDC") return amount.toFixed(3) + " USDC";
       return amount.toFixed(2) + " " + code;
     }
+    function formatUsdcTwoDecimals(value) {
+      if (value === null || value === undefined || value === "" || Number.isNaN(Number(value))) return "N/A";
+      return Number(value).toFixed(2) + " USDC";
+    }
     function setStatus(id, text, tone) {
       const node = el(id);
       node.textContent = text;
@@ -530,7 +534,9 @@
       el("stat-gemini").className = "stat-value " + (data.gemini.configured ? "good" : "warn");
       el("stat-gemini-sub").textContent = "Function: " + data.gemini.functionModels.join(", ") + " | Multimodal: " + data.gemini.multimodalModels.join(", ") + (data.gemini.fallbackProvider ? " | Fallback: " + data.gemini.fallbackProvider : "");
 
-      el("stat-gateway").textContent = data.settlement.gatewayBalance.formatted + " USDC";
+      el("stat-gateway").textContent = formatUsdcTwoDecimals(
+        data.settlement.gatewayBalance.balance ?? data.settlement.gatewayBalance.formatted
+      );
       el("stat-gateway-sub").textContent = data.settlement.gatewayBalance.warning || data.settlement.gatewayBalance.kind;
 
       el("stat-track4").textContent = data.track4.label;
