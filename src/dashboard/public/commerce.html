@@ -279,7 +279,55 @@
       .hero-card, .panel-body { padding: 18px; }
       .panel-head { padding: 16px; }
     }
-  </style>
+  
+.theme-toggle {
+  border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.04);
+  color: var(--text, var(--fg, #edf8f2));
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: .06em;
+  line-height: 1.2;
+  padding: 3px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.theme-toggle:hover { border-color: rgba(255,255,255,.3); }
+
+html[data-theme="light"],
+html[data-theme="light"] body {
+  color: #1b2630;
+  background:
+    radial-gradient(circle at 16% 4%, rgba(118,161,204,.28), transparent 32%),
+    radial-gradient(circle at 86% 10%, rgba(151,195,176,.22), transparent 30%),
+    linear-gradient(135deg, #f7f5ef 0%, #f3efe5 55%, #ede7da 100%);
+}
+html[data-theme="light"] .bg-grid {
+  background-image: linear-gradient(rgba(86,118,156,0.11) 1px, transparent 1px), linear-gradient(90deg, rgba(122,154,132,0.10) 1px, transparent 1px);
+  opacity: .35;
+}
+html[data-theme="light"] .bg-glow-1 {
+  background: radial-gradient(circle, rgba(126,162,200,0.24) 0%, transparent 70%);
+  opacity: .55;
+}
+html[data-theme="light"] .bg-glow-2 {
+  background: radial-gradient(circle, rgba(150,189,165,0.20) 0%, transparent 70%);
+  opacity: .55;
+}
+html[data-theme="light"] .hdr,
+html[data-theme="light"] .sub-nav,
+html[data-theme="light"] .hdr-subnav {
+  background: rgba(247,244,236,.88) !important;
+  border-bottom-color: rgba(48,70,86,.12) !important;
+}
+html[data-theme="light"] .theme-toggle {
+  border-color: rgba(32,52,68,.24);
+  background: rgba(255,255,255,.72);
+  color: #223140;
+}
+
+</style>
 </head>
 <body>
   <div class="bg-grid"></div>
@@ -299,6 +347,7 @@
         <div class="live-dot"></div>
         <span class="live-lbl">LIVE</span>
       </div>
+      <button id="theme-toggle" class="theme-toggle" type="button">Theme: Dark</button>
       <a class="back-lnk" href="/kairos" style="color:var(--text);">Dashboard</a>
       <a class="back-lnk" href="/transactions" style="color:var(--green);">Settlement Ledger</a>
       <a class="back-lnk" href="/documents" style="color:var(--blue);">Document Vault</a>
@@ -477,6 +526,35 @@
   </div>
 
   <script>
+
+const THEME_STORAGE_KEY = "kairos-theme";
+function applyTheme(theme) {
+  const safeTheme = theme === "light" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", safeTheme);
+  const button = document.getElementById("theme-toggle");
+  if (button) {
+    button.textContent = "Theme: " + (safeTheme === "light" ? "Off-White" : "Dark");
+  }
+}
+function initThemeToggle() {
+  let storedTheme = "dark";
+  try {
+    storedTheme = localStorage.getItem(THEME_STORAGE_KEY) || "dark";
+  } catch (_) {}
+  applyTheme(storedTheme);
+  const button = document.getElementById("theme-toggle");
+  if (!button) return;
+  button.addEventListener("click", function() {
+    const currentTheme = document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
+    const nextTheme = currentTheme === "light" ? "dark" : "light";
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    } catch (_) {}
+    applyTheme(nextTheme);
+  });
+}
+initThemeToggle();
+
     const ARC_TX = "https://testnet.arcscan.app/tx/";
     const state = {
       status: null,
