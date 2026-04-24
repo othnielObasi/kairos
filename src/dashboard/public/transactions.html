@@ -182,23 +182,25 @@
     }
   
 .theme-toggle {
-  border: 0;
-  background: transparent;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(255,255,255,.04);
   color: var(--text2, var(--muted, var(--fg2, #8aa698)));
   font: inherit;
-  font-size: 10px;
-  letter-spacing: .06em;
-  line-height: 1.2;
-  padding: 2px 0;
+  font-size: 12px;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
   cursor: pointer;
-  white-space: nowrap;
-  text-decoration: underline;
-  text-decoration-color: rgba(255,255,255,.22);
-  text-underline-offset: 3px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 .theme-toggle:hover {
   color: var(--text, var(--w, #edf8f2));
-  text-decoration-color: rgba(255,255,255,.45);
+  border-color: rgba(255,255,255,.4);
+  background: rgba(255,255,255,.10);
 }
 
 html[data-theme="light"] {
@@ -210,26 +212,26 @@ html[data-theme="light"] {
   --line: rgba(95,110,145,.18);
   --line-strong: rgba(95,110,145,.28);
   --border: rgba(95,110,145,.18);
-  --text: #162230;
-  --text2: #475c6d;
-  --text3: #6f8190;
-  --muted: #53697a;
-  --soft: #708495;
-  --fg: #162230;
-  --fg2: #53697a;
-  --fg3: #748896;
-  --w: #162230;
+  --text: #0f1d2c;
+  --text2: #2f4355;
+  --text3: #415a6e;
+  --muted: #31475b;
+  --soft: #3e5669;
+  --fg: #0f1d2c;
+  --fg2: #2f4355;
+  --fg3: #415a6e;
+  --w: #0f1d2c;
   --brd: rgba(67,88,106,.18);
   --s1: #ffffff;
   --s2: #f6f2ff;
   --s3: #ffffff;
   --ink: #162230;
-  color: #162230;
+  color: #0f1d2c;
 }
 
 html[data-theme="light"],
 html[data-theme="light"] body {
-  color: #162230;
+  color: #0f1d2c;
   background: linear-gradient(180deg, #ffffff 21.86%, #f6f2ff 27.04%, #f6f2ff 36.74%, #ffffff 40.41%);
 }
 html[data-theme="light"] .bg-grid {
@@ -304,7 +306,7 @@ html[data-theme="light"] .kicker,
 html[data-theme="light"] .explain-copy,
 html[data-theme="light"] .explain-k,
 html[data-theme="light"] .dim {
-  color: #53697a !important;
+  color: #2f4355 !important;
 }
 
 html[data-theme="light"] .theme-toggle {
@@ -312,7 +314,7 @@ html[data-theme="light"] .theme-toggle {
   text-decoration-color: rgba(62,84,102,.35);
 }
 html[data-theme="light"] .theme-toggle:hover {
-  color: #162230;
+  color: #0f1d2c;
   text-decoration-color: rgba(22,34,48,.5);
 }
 
@@ -342,7 +344,7 @@ html[data-theme="light"] .row:hover {
         <div class="live-dot"></div>
         <span class="live-lbl">LIVE</span>
       </div>
-      <button id="theme-toggle" class="theme-toggle" type="button">☀ Light mode</button>
+      <button id="theme-toggle" class="theme-toggle" type="button">☀</button>
       <a class="back-lnk" href="/kairos" style="color:var(--text);">Dashboard</a>
       <a class="back-lnk active" href="/transactions" style="color:var(--green);">Settlement Ledger</a>
       <a class="back-lnk" href="/documents" style="color:var(--blue);">Document Vault</a>
@@ -420,7 +422,7 @@ function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", safeTheme);
   const button = document.getElementById("theme-toggle");
   if (button) {
-    button.textContent = safeTheme === "light" ? "🌙 Dark mode" : "☀ Light mode";
+    button.textContent = safeTheme === "light" ? "🌙" : "☀";
     button.setAttribute("aria-label", safeTheme === "light" ? "Switch to dark mode" : "Switch to light mode");
   }
 }
