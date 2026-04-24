@@ -58,15 +58,6 @@ html, body {
 .tag-t { background:rgba(0,229,160,.1);   color:var(--teal);   border:1px solid rgba(0,229,160,.2); }
 .tag-b { background:rgba(39,117,202,.1);  color:var(--blue);   border:1px solid rgba(39,117,202,.2); }
 .hdr-right { margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
-.live-ind  { display:flex; align-items:center; gap:6px; }
-.live-dot  { width:7px; height:7px; border-radius:50%; background:var(--teal); animation:lp 1.4s ease-in-out infinite; }
-.live-dot.err  { background:var(--red); animation:none; }
-.live-dot.conn { background:var(--amber); }
-@keyframes lp { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,229,160,.4)} 50%{opacity:.6;box-shadow:0 0 0 4px rgba(0,229,160,0)} }
-.live-lbl { font-size:11px; color:var(--teal); letter-spacing:.1em; }
-.live-lbl.err  { color:var(--red); }
-.live-lbl.conn { color:var(--amber); }
-.poll-t { font-size:10px; color:var(--text3); }
 .back-lnk {
   font-size:10px;
   color:var(--text2);
@@ -410,7 +401,6 @@ html[data-theme="light"] .pill,
 html[data-theme="light"] .badge,
 html[data-theme="light"] .back-lnk,
 html[data-theme="light"] .sub-lnk,
-html[data-theme="light"] .poll-t,
 html[data-theme="light"] .hero-copy,
 html[data-theme="light"] .proof-label,
 html[data-theme="light"] .muted-copy,
@@ -566,11 +556,6 @@ html[data-theme="light"] .mbar::before {
       <span class="tag tag-p">Kairos Runtime</span>
     </div>
     <div class="hdr-right">
-      <div class="live-ind">
-        <div class="live-dot conn" id="conn-dot"></div>
-        <span class="live-lbl conn" id="conn-lbl">CONNECTING</span>
-      </div>
-      <span class="poll-t" id="poll-t">—</span>
       <span id="gw-warn" style="display:none;font-size:10px;color:var(--amber);letter-spacing:.06em;">⚠ Gateway low</span>
       <button id="theme-toggle" class="theme-toggle" type="button">☀</button>
       <a class="back-lnk" href="/transactions" style="color:var(--teal);">Settlement Ledger</a>
@@ -850,13 +835,6 @@ function setTrackMetrics(id, metrics) {
   const target = el(id);
   if (!target) return;
   target.innerHTML = metrics.map(m => metricHtml(m.label, m.value, m.tone)).join("");
-}
-
-function setConn(s) {
-  const d = el("conn-dot"), l = el("conn-lbl");
-  d.className = "live-dot" + (s==="live"?"":" "+(s==="error"?"err":"conn"));
-  l.className = "live-lbl" + (s==="live"?"":" "+(s==="error"?"err":"conn"));
-  l.textContent = s==="live"?"LIVE":s==="error"?"ERROR":"CONNECTING";
 }
 
 function statusClass(state) {
@@ -1292,9 +1270,6 @@ async function poll() {
       fetch("/api/gateway-balance").then(r => r.ok ? r.json() : null).catch(() => null),
     ]);
 
-    setConn("live");
-    el("poll-t").textContent = "Updated " + new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
-
     renderT1(billing, status.tracks?.track3 || null);
     renderT2(billing, status.tracks?.track2 || null);
     renderT3(billing, status.tracks?.track3 || null);
@@ -1319,12 +1294,10 @@ async function poll() {
     polls++;
 
   } catch(err) {
-    setConn(polls === 0 ? "connecting" : "error");
     console.warn("Poll failed:", err.message);
   }
 }
 
-setConn("connecting");
 poll();
 setInterval(poll, POLL);
 </script>
