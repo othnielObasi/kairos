@@ -397,7 +397,7 @@ function buildTrack3Status() {
 
 function buildTrack4Status(agentState: ReturnType<typeof getAgentState>) {
   const cliStatus = getCliStatus();
-  const actions = getTradeCheckpoints(50)
+  const actions = getTradeCheckpoints(200)
     .map((checkpoint) => {
       const execution = getCheckpointExecution(checkpoint);
       return {
@@ -410,15 +410,17 @@ function buildTrack4Status(agentState: ReturnType<typeof getAgentState>) {
     })
     .filter((entry) => entry.execution.requested && entry.direction !== 'NEUTRAL');
 
-  const settlementRefs = new Set(
-    actions
-      .map((action) => action.execution.settlementTxHash || action.execution.microSettlement.referenceId || null)
-      .filter((value): value is string => Boolean(value)),
-  );
-  const recentEvents = getMicroCommerceEvents(50)
+  // Keep both txHash and referenceId so hydration transitions do not cause
+  // temporary double-counting (and visible up/down swings in Track 4 totals).
+  const settlementRefs = new Set<string>();
+  for (const action of actions) {
+    if (action.execution.settlementTxHash) settlementRefs.add(action.execution.settlementTxHash);
+    if (action.execution.microSettlement.referenceId) settlementRefs.add(action.execution.microSettlement.referenceId);
+  }
+  const recentEvents = getMicroCommerceEvents(200)
     .filter((event) => {
-      const ref = event.txHash || event.referenceId || '';
-      return ref ? !settlementRefs.has(ref) : true;
+      const refs = [event.txHash, event.referenceId].filter((value): value is string => Boolean(value));
+      return refs.length > 0 ? refs.every((ref) => !settlementRefs.has(ref)) : true;
     });
   const microStats = {
     total: recentEvents.length,
