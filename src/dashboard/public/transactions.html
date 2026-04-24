@@ -62,7 +62,7 @@
     @keyframes lp { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(53,224,161,.4)} 50%{opacity:.6;box-shadow:0 0 0 4px rgba(53,224,161,0)} }
     .back-lnk {
       font-size:10px;
-      color:var(--soft);
+      color:#9aa3af;
       text-decoration:none;
       cursor:pointer;
       letter-spacing:.05em;
@@ -71,8 +71,17 @@
       border-bottom:1px solid transparent;
       transition:border-color .14s ease, color .14s ease;
     }
-    .back-lnk:hover { color:var(--text); border-bottom-color:rgba(255,255,255,.2); }
-    .back-lnk.active { color:var(--text); border-bottom-color:rgba(255,255,255,.40); }
+    .back-lnk:hover { color:#d6dbe1; border-bottom-color:rgba(214,219,225,.28); }
+    .back-lnk.active {
+      color:#f3f5f7;
+      border-bottom-color:#f3f5f7;
+      border-bottom-width:2px;
+      font-weight:600;
+      text-decoration:underline;
+      text-underline-offset:3px;
+      text-decoration-thickness:2px;
+      text-decoration-color:rgba(255,255,255,.55);
+    }
     .sub-nav {
       display: flex;
       justify-content: flex-end;
@@ -90,9 +99,15 @@
       border-bottom: 1px solid transparent;
       transition: color .14s ease, border-color .14s ease;
     }
-    .sub-lnk:hover { border-bottom-color: rgba(255,255,255,.24); }
-    .sub-lnk.arc { color: var(--green); }
-    .sub-lnk.circle { color: #2775ca; }
+    .sub-lnk:hover { color:#d6dbe1; border-bottom-color: rgba(214,219,225,.28); }
+    .sub-lnk.arc { color: #9aa3af; }
+    .sub-lnk.circle { color: #9aa3af; }
+    .sub-lnk.active {
+      color:#f3f5f7;
+      border-bottom-color:#f3f5f7;
+      border-bottom-width:2px;
+      font-weight:600;
+    }
     main { max-width: 1480px; margin: 0 auto; padding: 22px 18px 48px; }
     .page-intro { margin-bottom: 12px; }
     .page-title {
@@ -488,15 +503,15 @@ html[data-theme="light"] .mbar::before {
         <span class="live-lbl">LIVE</span>
       </div>
       <button id="theme-toggle" class="theme-toggle" type="button">☀</button>
-      <a class="back-lnk" href="/kairos" style="color:var(--text);">Dashboard</a>
-      <a class="back-lnk active" href="/transactions" style="color:var(--green);">Settlement Ledger</a>
-      <a class="back-lnk" href="/documents" style="color:var(--blue);">Document Vault</a>
-      <a class="back-lnk" href="/execution" style="color:var(--amber);">Execution History</a>
-      <a class="back-lnk" href="/commerce" style="color:var(--blue);">Commerce Studio</a>
+      <a class="back-lnk" href="/kairos">Dashboard</a>
+      <a class="back-lnk active" href="/transactions">Settlement Ledger</a>
+      <a class="back-lnk" href="/documents">Document Vault</a>
+      <a class="back-lnk" href="/execution">Execution History</a>
+      <a class="back-lnk" href="/commerce">Commerce Studio</a>
     </nav>
   </header>
   <div class="sub-nav">
-    <a class="sub-lnk arc" href="https://testnet.arcscan.app" target="_blank" rel="noopener">Arc Explorer ↗</a>
+    <a class="sub-lnk arc active" href="https://testnet.arcscan.app" target="_blank" rel="noopener">Arc Explorer ↗</a>
     <a class="sub-lnk circle" href="https://console.circle.com/wallets/dev/transactions" target="_blank" rel="noopener" title="Click to open Circle Console. Login to view transactions with: email: kairosagentpay@gmail.com | password: ArcVali8ationPJ&$">Circle Console ↗</a>
   </div>
 

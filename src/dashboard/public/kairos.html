@@ -60,7 +60,7 @@ html, body {
 .hdr-right { margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
 .back-lnk {
   font-size:10px;
-  color:var(--text2);
+  color:#9aa3af;
   text-decoration:none;
   cursor:pointer;
   letter-spacing:.06em;
@@ -70,7 +70,13 @@ html, body {
   border-bottom:1px solid transparent;
   transition:color .14s ease, border-color .14s ease;
 }
-.back-lnk:hover { color:var(--text); border-bottom-color:rgba(255,255,255,.24); }
+.back-lnk:hover { color:#d4d9e1; border-bottom-color:rgba(212,217,225,.35); }
+.back-lnk.active {
+  color:var(--text);
+  border-bottom-color:rgba(237,248,242,.78);
+  border-bottom-width:2px;
+  font-weight:600;
+}
 .sub-nav {
   display:flex;
   justify-content:flex-end;
@@ -80,7 +86,8 @@ html, body {
   border-bottom:1px solid var(--border);
   background:rgba(7,16,13,0.7);
 }
-.sub-nav .back-lnk { font-size:10px; letter-spacing:.06em; line-height:1.2; color:var(--text3); }
+.sub-nav .back-lnk { font-size:10px; letter-spacing:.06em; line-height:1.2; color:#9aa3af; }
+.sub-nav .back-lnk:hover { color:#d4d9e1; border-bottom-color:rgba(212,217,225,.35); }
 
 /* ── MOMENT BAR ── */
 .mbar {
@@ -420,6 +427,17 @@ html[data-theme="light"] .theme-toggle {
   border-color: rgba(15,39,64,.34);
   background: #ffffff;
 }
+html[data-theme="light"] .back-lnk {
+  color: #6b7280 !important;
+}
+html[data-theme="light"] .back-lnk:hover {
+  color: #1f2937 !important;
+  border-bottom-color: rgba(31,41,55,.35) !important;
+}
+html[data-theme="light"] .back-lnk.active {
+  color: #0b1623 !important;
+  border-bottom-color: rgba(11,22,35,.55) !important;
+}
 html[data-theme="light"] .theme-toggle:hover {
   color: #0b1623;
   border-color: rgba(11,22,35,.46);
@@ -558,15 +576,16 @@ html[data-theme="light"] .mbar::before {
     <div class="hdr-right">
       <span id="gw-warn" style="display:none;font-size:10px;color:var(--amber);letter-spacing:.06em;">⚠ Gateway low</span>
       <button id="theme-toggle" class="theme-toggle" type="button">☀</button>
-      <a class="back-lnk" href="/transactions" style="color:var(--teal);">Settlement Ledger</a>
-      <a class="back-lnk" href="/documents" style="color:var(--blue);">Document Vault</a>
-      <a class="back-lnk" href="/execution" style="color:var(--amber);">Execution History</a>
-      <a class="back-lnk" href="/commerce" style="color:var(--purple);">Commerce Studio</a>
+      <a class="back-lnk active" href="/kairos">Dashboard</a>
+      <a class="back-lnk" href="/transactions">Settlement Ledger</a>
+      <a class="back-lnk" href="/documents">Document Vault</a>
+      <a class="back-lnk" href="/execution">Execution History</a>
+      <a class="back-lnk" href="/commerce">Commerce Studio</a>
     </div>
   </header>
   <div class="sub-nav">
-    <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener" style="color:var(--teal);">Arc Explorer ↗</a>
-    <a class="back-lnk" href="https://console.circle.com/wallets/dev/transactions" target="_blank" rel="noopener" style="color:var(--blue);" title="Click to open Circle Console and log in to view transactions. Email: kairosagentpay@gmail.com | Password: ArcVali8ationPJ&amp;$">Circle Console ↗</a>
+    <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener">Arc Explorer ↗</a>
+    <a class="back-lnk" href="https://console.circle.com/wallets/dev/transactions" target="_blank" rel="noopener" title="Click to open Circle Console and log in to view transactions. Email: kairosagentpay@gmail.com | Password: ArcVali8ationPJ&amp;$">Circle Console ↗</a>
   </div>
 
   <!-- MOMENT BAR -->
