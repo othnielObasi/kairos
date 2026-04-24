@@ -65,6 +65,7 @@
       gap: 12px;
       flex-wrap: wrap;
       row-gap: 6px;
+      justify-content: flex-end;
     }
     .live-ind  { display: flex; align-items: center; gap: 6px; }
     .live-dot  { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: lp 1.4s ease-in-out infinite; }
@@ -89,6 +90,22 @@
       text-decoration-thickness: 2px;
       text-decoration-color: rgba(255,255,255,.55);
     }
+    .sub-nav {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 14px;
+      padding: 6px 24px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      background: rgba(6,13,11,.55);
+      backdrop-filter: blur(12px);
+    }
+    .sub-nav .back-lnk {
+      font-size: 10px;
+      letter-spacing: .07em;
+      color: var(--soft);
+    }
+    .sub-nav .back-lnk:hover { color: var(--text); }
 
     main { max-width: 1480px; margin: 0 auto; padding: 22px 18px 48px; }
     .hero {
@@ -252,7 +269,8 @@
     }
     @media (max-width: 900px) {
       .hdr { padding: 10px 14px; }
-      .hdr-right { margin-left: 0; width: 100%; gap: 10px; }
+      .hdr-right { margin-left: 0; width: 100%; gap: 10px; justify-content: flex-start; }
+      .sub-nav { justify-content: flex-start; padding: 6px 14px; }
       .back-lnk { letter-spacing: .06em; }
     }
     @media (max-width: 640px) {
@@ -279,8 +297,6 @@
         <div class="live-dot"></div>
         <span class="live-lbl">LIVE</span>
       </div>
-      <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener" style="color:var(--green);">Arc Explorer ↗</a>
-      <a class="back-lnk" href="https://console.circle.com/wallets/dev/transactions" target="_blank" rel="noopener" style="color:#2775ca;">Circle Console ↗</a>
       <a class="back-lnk" href="/kairos" style="color:var(--text);">Dashboard</a>
       <a class="back-lnk" href="/transactions" style="color:var(--green);">Settlement Ledger</a>
       <a class="back-lnk" href="/documents" style="color:var(--blue);">Document Vault</a>
@@ -288,6 +304,10 @@
       <a class="back-lnk active" href="/commerce" style="color:var(--blue);">Commerce Studio</a>
     </nav>
   </header>
+  <div class="sub-nav">
+    <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener" style="color:var(--green);">Arc Explorer ↗</a>
+    <a class="back-lnk" href="https://console.circle.com/wallets/dev/transactions" target="_blank" rel="noopener" style="color:#2775ca;">Circle Console ↗</a>
+  </div>
 
   <main>
     <section class="hero">

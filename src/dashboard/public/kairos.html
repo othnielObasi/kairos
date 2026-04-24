@@ -79,6 +79,16 @@ html, body {
   transition:color .14s ease, border-color .14s ease;
 }
 .back-lnk:hover { color:var(--text); border-bottom-color:rgba(255,255,255,.24); }
+.sub-nav {
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:14px;
+  padding:8px 24px;
+  border-bottom:1px solid var(--border);
+  background:rgba(7,16,13,0.7);
+}
+.sub-nav .back-lnk { font-size:10px; letter-spacing:.08em; color:var(--text3); }
 
 /* ── MOMENT BAR ── */
 .mbar {
@@ -231,6 +241,7 @@ html, body {
 .pi-bar  { height:2px; background:rgba(255,255,255,.06); border-radius:1px; margin-top:6px; }
 .pi-fill { height:2px; background:linear-gradient(90deg,var(--purple),var(--teal)); border-radius:1px; transition:width .8s ease; max-width:100%; }
 @media (max-width: 980px) {
+  .sub-nav { justify-content:flex-start; flex-wrap:wrap; }
   .mbar { flex-wrap:wrap; }
   .mi { min-width:50%; }
   .pbar { grid-template-columns:repeat(2,1fr); }
@@ -238,6 +249,7 @@ html, body {
 @media (max-width: 560px) {
   .hdr { height:auto; min-height:52px; flex-wrap:wrap; padding:10px 14px; }
   .hdr-right { width:100%; flex-wrap:wrap; margin-left:0; gap:8px; }
+  .sub-nav { padding:8px 14px; gap:10px; }
   .mi { min-width:100%; }
   .trk-metrics { grid-template-columns:1fr; }
   .main { grid-template-columns:1fr; }
@@ -269,14 +281,16 @@ html, body {
       </div>
       <span class="poll-t" id="poll-t">—</span>
       <span id="gw-warn" style="display:none;font-size:10px;color:var(--amber);letter-spacing:.06em;">⚠ Gateway low</span>
-      <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener" style="color:var(--teal);">Arc Explorer ↗</a>
-      <a class="back-lnk" href="https://console.circle.com/wallets/dev/transactions" target="_blank" rel="noopener" style="color:var(--blue);">Circle Console ↗</a>
       <a class="back-lnk" href="/transactions" style="color:var(--teal);">Settlement Ledger</a>
       <a class="back-lnk" href="/documents" style="color:var(--blue);">Document Vault</a>
       <a class="back-lnk" href="/execution" style="color:var(--amber);">Execution Journal</a>
       <a class="back-lnk" href="/commerce" style="color:var(--purple);">Commerce Studio</a>
     </div>
   </header>
+  <div class="sub-nav">
+    <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener" style="color:var(--teal);">Arc Explorer ↗</a>
+    <a class="back-lnk" href="https://console.circle.com/wallets/dev/transactions" target="_blank" rel="noopener" style="color:var(--blue);">Circle Console ↗</a>
+  </div>
 
   <!-- MOMENT BAR -->
   <div class="mbar">

@@ -58,6 +58,11 @@
     .tag-b { background: rgba(39,117,202,.1); color: #2775ca; border: 1px solid rgba(39,117,202,.2); }
     .tag-arc { background: rgba(255,255,255,.04); color: var(--muted); border: 1px solid rgba(255,255,255,.12); }
     .hdr-right { margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap:wrap; row-gap:6px; max-width:74vw; justify-content:flex-end; }
+    .hdr-subnav {
+      display:flex; align-items:center; justify-content:flex-end; gap:10px;
+      padding: 7px 24px; border-bottom:1px solid rgba(255,255,255,.05);
+      background: rgba(7,16,13,.72);
+    }
     .live-ind  { display: flex; align-items: center; gap: 6px; margin-right: 2px; }
     .live-dot  { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: lp 1.4s ease-in-out infinite; }
     .live-lbl { font-size: 11px; color: var(--green); letter-spacing: .1em; }
@@ -200,6 +205,7 @@
     @media (max-width: 900px) {
       .hdr { padding: 10px 14px; }
       .hdr-right { margin-left: 0; width: 100%; max-width:none; gap:8px; justify-content:flex-start; }
+      .hdr-subnav { padding: 7px 14px; justify-content:flex-start; }
     }
     @media (max-width: 560px) {
       .stats { grid-template-columns: 1fr; }
@@ -222,8 +228,6 @@
     </div>
     <nav class="hdr-right">
       <div class="live-ind"><span class="live-dot"></span><span class="live-lbl">LIVE</span></div>
-      <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener">Arc Explorer ↗</a>
-      <a class="back-lnk" href="https://console.circle.com/wallets/dev/transactions" target="_blank" rel="noopener">Circle Console ↗</a>
       <a class="back-lnk" href="/kairos">Dashboard</a>
       <a class="back-lnk" href="/transactions">Settlement Ledger</a>
       <a class="back-lnk active" href="/documents">Document Vault</a>
@@ -231,6 +235,10 @@
       <a class="back-lnk" href="/commerce">Commerce Studio</a>
     </nav>
   </header>
+  <div class="hdr-subnav">
+    <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener">Arc Explorer ↗</a>
+    <a class="back-lnk" href="https://console.circle.com/wallets/dev/transactions" target="_blank" rel="noopener">Circle Console ↗</a>
+  </div>
 
   <main>
     <section class="hero">

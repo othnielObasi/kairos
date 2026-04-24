@@ -72,6 +72,25 @@
     }
     .back-lnk:hover { color:var(--text); border-bottom-color:rgba(255,255,255,.2); }
     .back-lnk.active { color:var(--text); border-bottom-color:rgba(255,255,255,.40); }
+    .sub-nav {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 14px;
+      padding: 7px 24px 8px;
+      border-bottom: 1px solid rgba(255,255,255,.05);
+      background: rgba(7,16,13,0.68);
+    }
+    .sub-lnk {
+      font-size: 10px;
+      letter-spacing: .08em;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: color .14s ease, border-color .14s ease;
+    }
+    .sub-lnk:hover { border-bottom-color: rgba(255,255,255,.24); }
+    .sub-lnk.arc { color: var(--green); }
+    .sub-lnk.circle { color: #2775ca; }
     main { max-width: 1480px; margin: 0 auto; padding: 22px 18px 48px; }
     .hero {
       display: grid; grid-template-columns: 1.3fr .7fr; gap: 18px; align-items: stretch;
@@ -154,7 +173,7 @@
       table { display: none; }
       .mobile-list { display: grid; }
     }
-    @media (max-width: 900px) { .hdr { padding: 10px 14px; } .hdr-right { margin-left: 0; width: 100%; } }
+    @media (max-width: 900px) { .hdr { padding: 10px 14px; } .hdr-right { margin-left: 0; width: 100%; } .sub-nav { justify-content: flex-start; padding: 7px 14px 8px; } }
     @media (max-width: 560px) {
       .stats { grid-template-columns: 1fr; }
       .hero-card { padding: 18px; }
@@ -179,8 +198,6 @@
         <div class="live-dot"></div>
         <span class="live-lbl">LIVE</span>
       </div>
-      <a class="back-lnk" href="https://testnet.arcscan.app" target="_blank" rel="noopener" style="color:var(--green);">Arc Explorer ↗</a>
-      <a class="back-lnk" href="https://console.circle.com/wallets/dev/transactions" target="_blank" rel="noopener" style="color:#2775ca;">Circle Console ↗</a>
       <a class="back-lnk" href="/kairos" style="color:var(--text);">Dashboard</a>
       <a class="back-lnk active" href="/transactions" style="color:var(--green);">Settlement Ledger</a>
       <a class="back-lnk" href="/documents" style="color:var(--blue);">Document Vault</a>
@@ -188,6 +205,10 @@
       <a class="back-lnk" href="/commerce" style="color:var(--blue);">Commerce Studio</a>
     </nav>
   </header>
+  <div class="sub-nav">
+    <a class="sub-lnk arc" href="https://testnet.arcscan.app" target="_blank" rel="noopener">Arc Explorer ↗</a>
+    <a class="sub-lnk circle" href="https://console.circle.com/wallets/dev/transactions" target="_blank" rel="noopener">Circle Console ↗</a>
+  </div>
 
   <main>
     <section class="hero">

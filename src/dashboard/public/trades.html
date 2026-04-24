@@ -46,7 +46,7 @@
     .tag-t { background: rgba(52,211,153,.1); color: var(--up); border: 1px solid rgba(52,211,153,.2); }
     .tag-b { background: rgba(96,165,250,.1); color: var(--info); border: 1px solid rgba(96,165,250,.2); }
     .tag-arc { background: rgba(255,255,255,.04); color: var(--fg2); border: 1px solid rgba(255,255,255,.12); }
-    .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
     .live-ind  { display: flex; align-items: center; gap: 6px; }
     .live-dot  { width: 7px; height: 7px; border-radius: 50%; background: var(--up); animation: lp 1.4s ease-in-out infinite; }
     .live-lbl { font-size: 11px; color: var(--up); letter-spacing: .1em; }
@@ -64,6 +64,16 @@
       transition: border-color .14s ease, color .14s ease;
     }
     .back-lnk:hover { color: var(--w); border-bottom-color: rgba(255,255,255,.2); }
+    .sub-nav {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 24px;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+      background: rgba(7,16,13,.78);
+    }
+    .sub-nav .back-lnk { font-size: 10px; letter-spacing: .06em; }
     .nav-dashboard { color: var(--w); }
     .nav-history { color: var(--up); }
     .nav-docs { color: #6fb7ff; }
@@ -111,7 +121,10 @@
     .explain-card { border: 1px solid var(--brd); border-radius: 5px; background: #ffffff05; padding: 10px; }
     .explain-k { font-size: 8px; color: var(--fg3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
     .explain-v { font-size: 10px; color: var(--fg); line-height: 1.6; }
-    @media (max-width: 900px) { .explain-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) {
+      .explain-grid { grid-template-columns: 1fr; }
+      .sub-nav { justify-content: flex-start; padding: 8px 14px; }
+    }
   </style>
 </head>
 <body>
@@ -132,8 +145,6 @@
         <div class="live-dot"></div>
         <span class="live-lbl">LIVE</span>
       </div>
-      <a class="back-lnk nav-arcscan" href="https://testnet.arcscan.app" target="_blank" rel="noopener">Arc Explorers ↗</a>
-      <a class="back-lnk nav-circle" href="https://console.circle.com/wallets/dev/transactions" target="_blank" rel="noopener">Circle Console ↗</a>
       <a class="back-lnk nav-dashboard" href="/kairos">Dashboard</a>
       <a class="back-lnk nav-history" href="/transactions">Settlement Ledger</a>
       <a class="back-lnk nav-docs" href="/documents">Document Vault</a>
@@ -141,6 +152,10 @@
       <a class="back-lnk nav-commerce" href="/commerce">Commerce Studio</a>
     </nav>
   </header>
+  <div class="sub-nav">
+    <a class="back-lnk nav-arcscan" href="https://testnet.arcscan.app" target="_blank" rel="noopener">Arc Explorer ↗</a>
+    <a class="back-lnk nav-circle" href="https://console.circle.com/wallets/dev/transactions" target="_blank" rel="noopener">Circle Console ↗</a>
+  </div>
 
   <div class="container">
     <div class="stats-bar" id="stats">
