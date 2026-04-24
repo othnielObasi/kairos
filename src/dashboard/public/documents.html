@@ -84,16 +84,36 @@
     .hdr-subnav .back-lnk { font-size:10px; letter-spacing:.06em; line-height:1.25; }
 
     main { max-width: 1480px; margin: 0 auto; padding: 22px 18px 48px; }
-    .hero {
-      display: grid; grid-template-columns: 1.15fr .85fr; gap: 18px; align-items: stretch;
-      margin-bottom: 16px;
+    .page-intro { margin-bottom: 12px; }
+    .page-title {
+      font-family: "IBM Plex Sans", sans-serif;
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: -.02em;
+      margin-bottom: 6px;
     }
+    .page-copy { color: var(--muted); font-size: 12px; line-height: 1.7; }
+    .quick-stats {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .quick-stat {
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      padding-bottom: 8px;
+      min-width: 0;
+    }
+    .quick-k { color: var(--soft); font-size: 9px; text-transform: uppercase; letter-spacing: .14em; margin-bottom: 4px; }
+    .quick-v { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .quick-sub { color: var(--muted); font-size: 10px; margin-top: 2px; line-height: 1.5; }
     .hero-card, .proof-card, .stat, .panel {
       border: 1px solid var(--line);
       background: linear-gradient(180deg, rgba(17,31,25,.92), rgba(9,18,15,.92));
       box-shadow: var(--shadow);
       border-radius: 20px;
     }
+    .hero, .proof-card, .stats, .hero-card, .kicker, .hero-copy, .hero-note { display: none !important; }
     .hero-card { padding: 24px; position: relative; overflow: hidden; }
     .hero-card::after {
       content: "";
@@ -117,7 +137,7 @@
     .proof-label { color: var(--soft); text-transform: uppercase; letter-spacing: .14em; font-size: 9px; }
     .proof-val { color: var(--text); text-align: right; font-weight: 800; }
 
-    .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stats { display: none; }
     .stat { padding: 16px; min-height: 106px; }
     .stat-label { color: var(--soft); text-transform: uppercase; letter-spacing: .14em; font-size: 9px; margin-bottom: 8px; }
     .stat-value { font-size: 24px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -196,7 +216,7 @@
     .mobile-kv { display: grid; gap: 6px; color: var(--muted); }
     .mobile-kv strong { color: var(--text); font-size: 11px; }
     @media (max-width: 1120px) {
-      .hero, .toolbar { grid-template-columns: 1fr; }
+      .toolbar { grid-template-columns: 1fr; }
       .stats { grid-template-columns: repeat(2, 1fr); }
     }
     @media (max-width: 900px) {
@@ -210,7 +230,6 @@
     }
     @media (max-width: 560px) {
       .stats { grid-template-columns: 1fr; }
-      .hero-card { padding: 18px; }
     }
   
 .theme-toggle {
@@ -533,28 +552,18 @@ html[data-theme="light"] .mbar::before {
   </div>
 
   <main>
-    <section class="hero">
-      <div class="hero-card">
-        <div class="kicker">Vault</div>
-        <h1>Document Vault</h1>
-        <p class="hero-copy">
-          Open Kairos invoice, receipt, and proof files in one place.
-        </p>
-      </div>
-      <div class="proof-card">
-        <div class="proof-line"><span class="proof-label">Access</span><span class="proof-val">Invoice, receipt, proof</span></div>
-        <div class="proof-line"><span class="proof-label">Verification</span><span class="proof-val">Arcscan links when confirmed</span></div>
-        <div class="proof-line"><span class="proof-label">Scope</span><span class="proof-val">All four tracks</span></div>
-      </div>
+    <section class="page-intro">
+      <div class="page-title">Document Vault</div>
+      <p class="page-copy">Open Kairos invoice, receipt, and proof files in one place.</p>
     </section>
 
-    <section class="stats">
-      <div class="stat"><div class="stat-label">Bundles</div><div class="stat-value good" id="s-total">-</div><div class="stat-sub">all generated bundles, not Arc txns</div></div>
-      <div class="stat"><div class="stat-label">Confirmed Arc</div><div class="stat-value good" id="s-confirmed">-</div><div class="stat-sub">bundles with verified Arc receipts</div></div>
-      <div class="stat"><div class="stat-label">Track 01</div><div class="stat-value blue" id="s-t1">-</div><div class="stat-sub">governance invoices and receipts</div></div>
-      <div class="stat"><div class="stat-label">Track 02</div><div class="stat-value good" id="s-t2">-</div><div class="stat-sub">paid API usage documents</div></div>
-      <div class="stat"><div class="stat-label">Track 03</div><div class="stat-value warn" id="s-t3">-</div><div class="stat-sub">compute invoices and worklogs</div></div>
-      <div class="stat"><div class="stat-label">Track 04</div><div class="stat-value" id="s-t4">-</div><div class="stat-sub">native commerce bundles</div></div>
+    <section class="quick-stats">
+      <div class="quick-stat"><div class="quick-k">Bundles</div><div class="quick-v" id="s-total">-</div><div class="quick-sub">generated bundles</div></div>
+      <div class="quick-stat"><div class="quick-k">Confirmed Arc</div><div class="quick-v" id="s-confirmed">-</div><div class="quick-sub">verified Arc receipts</div></div>
+      <div class="quick-stat"><div class="quick-k">Track 01</div><div class="quick-v" id="s-t1">-</div><div class="quick-sub">governance docs</div></div>
+      <div class="quick-stat"><div class="quick-k">Track 02</div><div class="quick-v" id="s-t2">-</div><div class="quick-sub">API usage docs</div></div>
+      <div class="quick-stat"><div class="quick-k">Track 03</div><div class="quick-v" id="s-t3">-</div><div class="quick-sub">compute docs</div></div>
+      <div class="quick-stat"><div class="quick-k">Track 04</div><div class="quick-v" id="s-t4">-</div><div class="quick-sub">commerce docs</div></div>
     </section>
 
     <section class="toolbar">

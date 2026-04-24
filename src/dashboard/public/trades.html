@@ -374,11 +374,14 @@ html[data-theme="light"] .mbar::before {
     .nav-circle { color: var(--info); }
 
     .container { padding: 12px 16px 40px; max-width: 1400px; margin: 0 auto; }
-    .stats-bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 14px; }
-    .stat-card { background: var(--s1); border: 1px solid var(--brd); border-radius: 6px; padding: 10px 14px; }
-    .stat-label { font-size: 8px; color: var(--fg3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-    .stat-value { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
-    .stat-sub { font-size: 9px; color: var(--fg2); margin-top: 2px; }
+    .page-intro { margin-bottom: 12px; }
+    .page-title { font-size: 18px; color: var(--w); font-weight: 700; letter-spacing: 0.3px; margin-bottom: 6px; }
+    .page-copy { font-size: 10px; color: var(--fg2); line-height: 1.7; max-width: 860px; }
+    .quick-stats { display: grid; grid-template-columns: repeat(5, minmax(110px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .quick-stat { border-bottom: 1px solid var(--brd); padding-bottom: 8px; min-width: 0; }
+    .quick-k { font-size: 8px; color: var(--fg3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+    .quick-v { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .quick-sub { font-size: 9px; color: var(--fg2); margin-top: 2px; }
 
     .panel { background: var(--s1); border: 1px solid var(--brd); border-radius: 6px; overflow: hidden; }
     .panel-header { display: flex; justify-content: space-between; align-items: center; padding: 7px 12px; border-bottom: 1px solid var(--brd); background: var(--s2); }
@@ -398,21 +401,8 @@ html[data-theme="light"] .mbar::before {
     .loading { padding: 40px 20px; text-align: center; color: var(--fg3); }
     .refresh { display: flex; align-items: center; gap: 6px; font-size: 9px; color: var(--fg3); }
     .refresh .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--up); box-shadow: 0 0 6px #34d39940; }
-    .explain {
-      margin-bottom: 14px;
-      background: linear-gradient(180deg, #0d1320, #0b111b);
-      border: 1px solid var(--brd);
-      border-radius: 6px;
-      padding: 12px 14px;
-    }
-    .explain-title { font-size: 10px; color: var(--w); font-weight: 700; letter-spacing: 0.4px; margin-bottom: 6px; }
-    .explain-copy { font-size: 10px; color: var(--fg2); line-height: 1.7; }
-    .explain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; }
-    .explain-card { border: 1px solid var(--brd); border-radius: 5px; background: #ffffff05; padding: 10px; }
-    .explain-k { font-size: 8px; color: var(--fg3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
-    .explain-v { font-size: 10px; color: var(--fg); line-height: 1.6; }
     @media (max-width: 900px) {
-      .explain-grid { grid-template-columns: 1fr; }
+      .quick-stats { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
       .sub-nav { justify-content: flex-start; padding: 8px 14px; }
     }
   </style>
@@ -449,30 +439,16 @@ html[data-theme="light"] .mbar::before {
   </div>
 
   <div class="container">
-    <section class="explain">
-      <div class="explain-title">Execution History</div>
-      <div class="explain-copy">This page is the decision audit trail. It shows how and why Kairos entered and exited actions, then links each closed execution to proof artifacts and settlement references.</div>
-      <div class="explain-grid">
-        <div class="explain-card">
-          <div class="explain-k">What it proves</div>
-          <div class="explain-v">Kairos is making bounded, rule-driven decisions in production rather than replaying static demo data.</div>
-        </div>
-        <div class="explain-card">
-          <div class="explain-k">How to verify</div>
-          <div class="explain-v">Open Artifact and Commerce Docs links for each row, then check Settlement Ref against Arc Explorer and Circle Console.</div>
-        </div>
-        <div class="explain-card">
-          <div class="explain-k">What not to confuse</div>
-          <div class="explain-v">Execution count is not proof count. On-chain proof is tracked by confirmed Arc receipts in Dashboard and Settlement Ledger.</div>
-        </div>
-      </div>
+    <section class="page-intro">
+      <div class="page-title">Execution History</div>
+      <p class="page-copy">Underlying execution and position audit log. Use this page for entry, exit, PnL, and artifact context; use Settlement Ledger for Arc proof counts.</p>
     </section>
-    <div class="stats-bar" id="stats">
-      <div class="stat-card"><div class="stat-label">Total Executions</div><div class="stat-value" id="s-total">-</div></div>
-      <div class="stat-card"><div class="stat-label">Total PnL</div><div class="stat-value" id="s-pnl">-</div><div class="stat-sub" id="s-pnl-sub"></div></div>
-      <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value" id="s-winrate">-</div><div class="stat-sub" id="s-winrate-sub"></div></div>
-      <div class="stat-card"><div class="stat-label">Best Outcome</div><div class="stat-value" id="s-best">-</div></div>
-      <div class="stat-card"><div class="stat-label">Worst Outcome</div><div class="stat-value" id="s-worst">-</div></div>
+    <div class="quick-stats" id="stats">
+      <div class="quick-stat"><div class="quick-k">Executions</div><div class="quick-v" id="s-total">-</div><div class="quick-sub">closed trades</div></div>
+      <div class="quick-stat"><div class="quick-k">Total PnL</div><div class="quick-v" id="s-pnl">-</div><div class="quick-sub" id="s-pnl-sub"></div></div>
+      <div class="quick-stat"><div class="quick-k">Win Rate</div><div class="quick-v" id="s-winrate">-</div><div class="quick-sub" id="s-winrate-sub"></div></div>
+      <div class="quick-stat"><div class="quick-k">Best</div><div class="quick-v" id="s-best">-</div><div class="quick-sub">top outcome</div></div>
+      <div class="quick-stat"><div class="quick-k">Worst</div><div class="quick-v" id="s-worst">-</div><div class="quick-sub">lowest outcome</div></div>
     </div>
 
     <div class="panel">
