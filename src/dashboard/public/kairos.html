@@ -930,7 +930,7 @@ function updateBars(billing, status) {
     ? ` · <a href="${ARC_EXPLORER + latestReceipt.txHash}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none">latest Arcscan</a>`
     : "";
   const txnLabel = pending > 0
-    ? txns + " / " + target + " required · " + pending + " pending hash"
+    ? txns + " / " + target + " required · " + pending + " pending (not verified yet)"
     : txns + " / " + target + " required";
 
   el("mb-cycles").textContent = cycles;
@@ -950,7 +950,7 @@ function updateBars(billing, status) {
 
   el("p-txns").textContent    = txns;
   el("p-tsub").textContent    = pending > 0
-    ? txns + " / " + target + "+ required · " + pending + " pending hash"
+    ? txns + " / " + target + "+ required · " + pending + " pending (not verified)"
     : txns + " / " + target + "+ required";
   el("p-spend").textContent   = fU(spend);
   el("p-cpd").textContent     = fU(cpd);

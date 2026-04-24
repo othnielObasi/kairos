@@ -1332,7 +1332,7 @@ export function getAgentState() {
   return {
     cycleCount,
     running: scheduler?.isRunning() ?? false,
-    agentId,
+    agentId: agentId ?? config.agentId ?? 338,
     risk: riskEngine?.getStatus() ?? null,
     market: marketData ? computeMarketState(marketData) : null,
     liveFeed: getLiveFeedStatus(),

@@ -225,14 +225,15 @@
         <div class="proof-line"><span class="proof-label">Settlement</span><span class="proof-val">Arc Testnet / USDC</span></div>
         <div class="proof-line"><span class="proof-label">Verifier</span><span class="proof-val">Arcscan links when confirmed</span></div>
         <div class="proof-line"><span class="proof-label">Scope</span><span class="proof-val">All four tracks</span></div>
+        <div class="proof-line"><span class="proof-label">Judge rule</span><span class="proof-val">Only confirmed + Arc hash count as proof</span></div>
       </div>
     </section>
 
     <section class="stats">
       <div class="stat"><div class="stat-label">Rows</div><div class="stat-value" id="s-total">-</div><div class="stat-sub">visible ledger entries</div></div>
       <div class="stat"><div class="stat-label">Confirmed</div><div class="stat-value" id="s-confirmed">-</div><div class="stat-sub">verifiable Arc tx hashes</div></div>
-      <div class="stat"><div class="stat-label">Pending</div><div class="stat-value" id="s-pending">-</div><div class="stat-sub">Circle refs resolving</div></div>
-      <div class="stat"><div class="stat-label">Fallback</div><div class="stat-value" id="s-fallback">-</div><div class="stat-sub">not counted as verified x402</div></div>
+      <div class="stat"><div class="stat-label">Pending</div><div class="stat-value" id="s-pending">-</div><div class="stat-sub">reference created; not verified yet</div></div>
+      <div class="stat"><div class="stat-label">Fallback</div><div class="stat-value" id="s-fallback">-</div><div class="stat-sub">record only; excluded from proof count</div></div>
       <div class="stat"><div class="stat-label">Spend</div><div class="stat-value" id="s-spend">-</div><div class="stat-sub">USDC across listed rows</div></div>
     </section>
 

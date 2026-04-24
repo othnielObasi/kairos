@@ -1337,6 +1337,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
   /** Agent overview */
   app.get('/api/status', (_req, res) => {
     const state = getAgentState();
+    const resolvedAgentId = state.agentId ?? config.agentId ?? 338;
     const schedulerState = state.scheduler;
     const recentTrades = getRecentTrades(1);
     const lastClosedAt = recentTrades.length > 0 ? recentTrades[0].closedAt : null;
@@ -1351,7 +1352,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
       .filter(Boolean)
       .sort()
       .pop() ?? null;
-    const effectiveTrustScore = getLastTrustScore(state.agentId) ?? 95;
+    const effectiveTrustScore = getLastTrustScore(resolvedAgentId) ?? 95;
     const trustTier = resolveTrustTier(effectiveTrustScore).tier;
     const track2 = buildTrack2Status();
     const track3 = buildTrack3Status();
@@ -1365,7 +1366,7 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
         running: state.running,
         cycleCount: state.cycleCount,
       },
-      agentId: state.agentId ?? config.agentId ?? null,
+      agentId: resolvedAgentId,
       totalCycles: state.cycleCount,
       trustScore: effectiveTrustScore,
       capitalTier: trustTier,
