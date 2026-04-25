@@ -94,20 +94,20 @@ html, body {
 .mbar {
   padding:0 24px; border-bottom:1px solid var(--border);
   display:flex; align-items:stretch; overflow:hidden; position:relative;
-  background:var(--bg2);
+  background:linear-gradient(90deg, rgba(108,99,255,.04), rgba(0,229,160,.02));
 }
-.mbar::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:rgba(255,255,255,.15); }
+.mbar::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--purple),var(--teal)); }
 .mi { display:flex; flex-direction:column; padding:14px 28px 14px 20px; border-right:1px solid var(--border); min-width:165px; }
 .mi:last-child { border-right:none; flex:1; }
 .mi-lbl { font-size:9px; letter-spacing:.16em; color:var(--text3); text-transform:uppercase; margin-bottom:4px; }
 .mi-val { font-size:22px; font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums; color:var(--text); }
-.mi-val.g { color:var(--text); }
-.mi-val.p { color:var(--text); }
-.mi-val.b { color:var(--text); }
+.mi-val.g { color:var(--teal); }
+.mi-val.p { color:var(--purple); }
+.mi-val.b { color:var(--blue); }
 .mi-sub { font-size:10px; color:var(--text3); margin-top:2px; }
 .tx-prog { margin-top:6px; }
 .tx-trk { height:3px; background:rgba(255,255,255,.06); border-radius:2px; width:180px; }
-.tx-fill { height:3px; background:rgba(255,255,255,.35); border-radius:2px; transition:width .8s ease; }
+.tx-fill { height:3px; background:linear-gradient(90deg,var(--purple),var(--teal)); border-radius:2px; transition:width .8s ease; }
 .tx-req { font-size:9px; color:var(--text3); margin-top:3px; }
 
 /* ── MAIN GRID ── */
@@ -126,7 +126,7 @@ html, body {
   min-width:auto; padding:0;
   border:none; background:transparent; border-radius:0;
 }
-.mcp-metric-val { font-size:16px; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
+.mcp-metric-val { font-size:16px; font-weight:600; color:var(--blue); font-variant-numeric:tabular-nums; }
 .mcp-metric-lbl { font-size:9px; color:var(--text3); margin-top:2px; letter-spacing:.1em; text-transform:uppercase; }
 .mcp-links { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 .mcp-meta { font-size:10px; color:var(--text2); }
@@ -143,9 +143,9 @@ html, body {
 .tm { min-width:0; padding:4px 0; border:none; border-radius:0; background:transparent; }
 .tm-lbl { display:block; font-size:8px; color:var(--text3); letter-spacing:.1em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .tm-val { display:block; margin-top:3px; font-size:12px; color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.tm.live .tm-val { color:var(--text); }
+.tm.live .tm-val { color:var(--teal); }
 .tm.warn .tm-val { color:var(--amber); }
-.tm.proof .tm-val { color:var(--text); }
+.tm.proof .tm-val { color:var(--blue); }
 .trk-total-row { display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:8px; border-top:1px solid var(--border); }
 .trk-total-lbl { font-size:9px; color:var(--text3); letter-spacing:.1em; }
 .trk-total-val { font-size:14px; font-weight:600; font-variant-numeric:tabular-nums; }
@@ -167,13 +167,13 @@ html, body {
 @keyframes rowIn { from{opacity:0;transform:translateY(-4px)} to{opacity:1;transform:translateY(0)} }
 .ev-tag  { font-size:9px; width:62px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .ev-amt  { font-size:9px; font-weight:500; width:42px; flex-shrink:0; font-variant-numeric:tabular-nums; }
-.ev-hash { font-size:9px; color:var(--text2); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
-.ev-hash:hover { color:var(--text); }
+.ev-hash { font-size:9px; color:var(--blue); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+.ev-hash:hover { color:#5599EE; }
 .ev-time { font-size:9px; color:var(--text3); flex-shrink:0; }
 .ev-badge { font-size:8px; padding:1px 5px; border-radius:2px; flex-shrink:0; }
-.ev-badge.x402 { background:transparent; color:var(--text2); border:none; }
-.ev-badge.nano { background:transparent; color:var(--text2); border:none; }
-.ev-badge.usdc { background:transparent; color:var(--text2); border:none; }
+.ev-badge.x402 { background:transparent; color:var(--purple); border:none; }
+.ev-badge.nano { background:transparent; color:var(--teal); border:none; }
+.ev-badge.usdc { background:transparent; color:var(--blue); border:none; }
 .ev-badge.fb { background:transparent; color:var(--amber); border:none; font-size:7px; }
 
 /* ── T1 STAGES ── */
@@ -181,7 +181,7 @@ html, body {
 .s-num  { font-size:9px; color:var(--text3); width:16px; flex-shrink:0; }
 .s-name { font-size:10px; flex:1; transition:color .3s; }
 .s-bar  { width:40px; height:2px; background:rgba(255,255,255,.06); border-radius:1px; flex-shrink:0; }
-.s-fill { height:100%; border-radius:1px; background:var(--text2); opacity:.8; transition:width .5s ease; }
+.s-fill { height:100%; border-radius:1px; background:var(--purple); opacity:.8; transition:width .5s ease; }
 .s-amt  { font-size:10px; width:64px; text-align:right; flex-shrink:0; font-variant-numeric:tabular-nums; transition:color .3s; }
 .s-icon { font-size:10px; width:12px; text-align:center; flex-shrink:0; transition:color .3s; }
 .feed-div { font-size:9px; color:var(--text3); letter-spacing:.12em; padding:8px 0 4px; border-bottom:1px solid var(--border); margin-bottom:4px; }
@@ -191,18 +191,18 @@ html, body {
 .api-dot  { width:6px; height:6px; border-radius:50%; flex-shrink:0; }
 .api-name { font-size:10px; color:var(--text2); flex:1; }
 .api-calls{ font-size:10px; color:var(--text3); width:48px; text-align:right; font-variant-numeric:tabular-nums; }
-.api-amt  { font-size:10px; color:var(--text); font-weight:500; width:74px; text-align:right; font-variant-numeric:tabular-nums; }
+.api-amt  { font-size:10px; color:var(--blue); font-weight:500; width:74px; text-align:right; font-variant-numeric:tabular-nums; }
 .api-mode { font-size:8px; width:40px; text-align:center; padding:1px 4px; border-radius:2px; flex-shrink:0; }
-.api-mode.live { background:transparent; color:var(--text2); border:none; }
+.api-mode.live { background:transparent; color:var(--teal); border:none; }
 .api-mode.fb   { background:transparent; color:var(--amber); border:none; }
 
 /* ── T3 COMPUTE ── */
 .cmp-item { display:flex; align-items:flex-start; gap:8px; padding:7px 0; border-bottom:1px solid rgba(255,255,255,.03); }
-.cmp-icon { font-size:9px; color:var(--text2); width:14px; flex-shrink:0; margin-top:1px; }
+.cmp-icon { font-size:9px; color:var(--amber); width:14px; flex-shrink:0; margin-top:1px; }
 .cmp-body { flex:1; min-width:0; }
 .cmp-name { font-size:10px; color:var(--text2); margin-bottom:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cmp-meta { font-size:9px; color:var(--text3); }
-.cmp-amt  { font-size:10px; color:var(--text); font-weight:500; flex-shrink:0; font-variant-numeric:tabular-nums; }
+.cmp-amt  { font-size:10px; color:var(--amber); font-weight:500; flex-shrink:0; font-variant-numeric:tabular-nums; }
 
 /* ── T4 TRADES ── */
 .trade-item { padding:10px 0; border-bottom:1px solid rgba(255,255,255,.03); overflow:hidden; }
@@ -210,17 +210,17 @@ html, body {
 .tr-dir  { font-size:9px; font-weight:600; padding:2px 7px; border-radius:2px; letter-spacing:.08em; }
 .tr-dir.long  { background:rgba(0,229,160,.1); color:var(--teal); }
 .tr-dir.short { background:rgba(255,68,68,.1);  color:var(--red); }
-.tr-dir.micro { background:rgba(255,255,255,.08); color:var(--text2); }
+.tr-dir.micro { background:rgba(39,117,202,.12); color:var(--blue); }
 .tr-pair { font-size:11px; color:var(--text); font-weight:500; flex:1; }
-.tr-size { font-size:11px; color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; }
+.tr-size { font-size:11px; color:var(--teal); font-weight:600; font-variant-numeric:tabular-nums; }
 .tr-row2 { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
-.tr-hash { font-size:9px; color:var(--text2); cursor:pointer; min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.tr-hash:hover { color:var(--text); }
+.tr-hash { font-size:9px; color:var(--blue); cursor:pointer; min-width:0; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.tr-hash:hover { color:#5599EE; }
 .tr-time { font-size:9px; color:var(--text3); margin-left:auto; }
 .tr-arc  { font-size:8px; letter-spacing:.08em; padding:0; border-radius:0; border:none; }
-.tr-arc.arc { color:var(--text2); }
+.tr-arc.arc { color:var(--teal2); }
 .tr-arc.paper { color:var(--amber); }
-.tr-arc.live { color:var(--text2); }
+.tr-arc.live { color:var(--blue); }
 .tr-arc.local { color:var(--red); }
 
 /* ── EMPTY ── */
@@ -234,12 +234,12 @@ html, body {
 .pi:last-child { border-right:none; }
 .pi-lbl { font-size:9px; letter-spacing:.16em; color:var(--text3); text-transform:uppercase; margin-bottom:6px; }
 .pi-val { font-size:19px; font-weight:600; letter-spacing:-.02em; font-variant-numeric:tabular-nums; line-height:1; margin-bottom:3px; color:var(--text); }
-.pi-val.g { color:var(--text); }
-.pi-val.p { color:var(--text); }
+.pi-val.g { color:var(--teal); }
+.pi-val.p { color:var(--purple); }
 .pi-val.r { color:var(--red); }
 .pi-sub { font-size:10px; color:var(--text3); line-height:1.4; }
 .pi-bar  { height:2px; background:rgba(255,255,255,.06); border-radius:1px; margin-top:6px; }
-.pi-fill { height:2px; background:rgba(255,255,255,.35); border-radius:1px; transition:width .8s ease; max-width:100%; }
+.pi-fill { height:2px; background:linear-gradient(90deg,var(--purple),var(--teal)); border-radius:1px; transition:width .8s ease; max-width:100%; }
 @media (max-width: 980px) {
   .sub-nav { justify-content:flex-start; flex-wrap:wrap; }
   .mbar { flex-wrap:wrap; }
@@ -805,11 +805,11 @@ initThemeToggle();
 
 const STAGE_NAMES = ["Mandate","Oracle","Simulator","Supervisory","Risk Router","LLM Reasoning","SAGE"];
 const API_SOURCES = [
-  { key:"coingecko",    name:"AIsa Spot A",      color:"var(--text3)", mode:"x402", price:"x402 spot" },
-  { key:"kraken",       name:"AIsa Spot B",      color:"var(--text3)", mode:"x402", price:"x402 spot" },
-  { key:"feargreed",    name:"AIsa Twitter",     color:"var(--text3)", mode:"x402", price:"$0.0022 endpoint" },
-  { key:"alphavantage", name:"AIsa Fin. News",   color:"var(--text3)", mode:"x402", price:"$0.048 endpoint" },
-  { key:"prism",        name:"AIsa Perplexity",  color:"var(--text3)", mode:"x402", price:"$0.012 endpoint" },
+  { key:"coingecko",    name:"AIsa Spot A",      color:"#6C63FF", mode:"x402", price:"x402 spot" },
+  { key:"kraken",       name:"AIsa Spot B",      color:"#2775CA", mode:"x402", price:"x402 spot" },
+  { key:"feargreed",    name:"AIsa Twitter",     color:"#F0A500", mode:"x402", price:"$0.0022 endpoint" },
+  { key:"alphavantage", name:"AIsa Fin. News",   color:"#00E5A0", mode:"x402", price:"$0.048 endpoint" },
+  { key:"prism",        name:"AIsa Perplexity",  color:"#FF6B9D", mode:"x402", price:"$0.012 endpoint" },
 ];
 const POLL = 2000;
 const ARC_EXPLORER = 'https://testnet.arcscan.app/tx/';
@@ -979,10 +979,10 @@ function renderT1(data, track3) {
     row.className = "stage-item";
     row.innerHTML = `
       <span class="s-num">0${i+1}</span>
-      <span class="s-name" style="color:${fired?"var(--text2)":"var(--text3)"}">${name}</span>
+      <span class="s-name" style="color:${fired?"#8884AA":"#3D3B5A"}">${name}</span>
       <div class="s-bar"><div class="s-fill" style="width:${fired?"100%":"0%"}"></div></div>
-      <span class="s-amt" style="color:${fired?"var(--text2)":"var(--text3)"}">${amountText}</span>
-      <span class="s-icon" style="color:${fired?"var(--text2)":"var(--text3)"}">${fired?"✓":"–"}</span>
+      <span class="s-amt" style="color:${fired?"#8884AA":"#3D3B5A"}">${amountText}</span>
+      <span class="s-icon" style="color:${fired?"var(--teal)":"#3D3B5A"}">${fired?"✓":"–"}</span>
     `;
     sc.appendChild(row);
   });
@@ -993,8 +993,8 @@ function renderT1(data, track3) {
     const row = document.createElement("div");
     row.className = "ev-row";
     row.innerHTML = `
-      <span class="ev-tag" style="color:var(--text2)">${e.source||e.eventName||"—"}</span>
-      <span class="ev-amt" style="color:var(--text)">${fU(e.amount||e.amt)}</span>
+      <span class="ev-tag" style="color:var(--purple)">${e.source||e.eventName||"—"}</span>
+      <span class="ev-amt" style="color:var(--teal)">${fU(e.amount||e.amt)}</span>
       ${receiptRef(e)}
       ${receiptVerificationBadge(e, "NANO")}
       <span class="ev-time">${e.time||fTs(e.confirmedAt)}</span>
@@ -1056,8 +1056,8 @@ function renderT2(data, track) {
     const row = document.createElement("div");
     row.className = "ev-row";
     row.innerHTML = `
-      <span class="ev-tag" style="color:var(--text2)">${e.source||e.eventName||"—"}</span>
-      <span class="ev-amt" style="color:var(--text)">${fU(e.amount||e.amt)}</span>
+      <span class="ev-tag" style="color:var(--blue)">${e.source||e.eventName||"—"}</span>
+      <span class="ev-amt" style="color:var(--blue)">${fU(e.amount||e.amt)}</span>
       ${receiptRef(e)}
       ${badge}
       <span class="ev-time">${e.time||fTs(e.confirmedAt)}</span>
@@ -1212,7 +1212,7 @@ function updateBars(billing, status) {
   const pct    = Math.min(100, (txns / target) * 100);
   const latestReceipt = latestArcReceipt(billing);
   const latestArcscan = latestReceipt
-    ? ` · <a href="${ARC_EXPLORER + latestReceipt.txHash}" target="_blank" rel="noopener" style="color:var(--text2);text-decoration:none">latest Arcscan</a>`
+    ? ` · <a href="${ARC_EXPLORER + latestReceipt.txHash}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none">latest Arcscan</a>`
     : "";
   const txnLabel = "History proof";
 
@@ -1222,7 +1222,7 @@ function updateBars(billing, status) {
   el("mb-spend").textContent  = fU(spend);
   el("mb-cpd").textContent    = fU(cpd);
   el("mb-txbar").style.width  = pct + "%";
-  el("mb-txreq").innerHTML  = '<a href="/transactions" style="color:var(--text2);text-decoration:none">' + txnLabel + '</a>' + latestArcscan;
+  el("mb-txreq").innerHTML  = '<a href="/transactions" style="color:var(--teal);text-decoration:none">' + txnLabel + '</a>' + latestArcscan;
   el("mb-trust").textContent  = runtimeLabel;
   el("mb-tsub").textContent   = runtimeSub;
   if (el("mb-stack")) {
@@ -1262,7 +1262,7 @@ async function poll() {
     if (gateway) {
       const bal = parseFloat(gateway.formatted || gateway.depositBalance || gateway.balance || 0);
       el("mb-gw").textContent = "$" + bal.toFixed(3);
-      el("mb-gw").style.color = bal < 0.5 ? "var(--amber)" : bal < 0.1 ? "var(--red)" : "var(--text)";
+      el("mb-gw").style.color = bal < 0.5 ? "var(--amber)" : bal < 0.1 ? "var(--red)" : "var(--blue)";
       el("mb-gw-sub").textContent = bal < 0.5 ? "top up soon" : "Circle wallet USDC";
       el("gw-warn").style.display = bal < 0.5 ? "inline" : "none";
       if (gateway.warning) {
