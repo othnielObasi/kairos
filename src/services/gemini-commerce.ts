@@ -400,6 +400,14 @@ function normalizeMimeType(value: string | null | undefined): string {
   const normalized = (value || '').split(';')[0].trim().toLowerCase();
   if (!normalized) return '';
   if (normalized === 'image/jpg') return 'image/jpeg';
+  if (
+    normalized === 'application/x-pdf'
+    || normalized === 'application/acrobat'
+    || normalized === 'applications/vnd.pdf'
+    || normalized === 'text/pdf'
+  ) {
+    return 'application/pdf';
+  }
   return normalized;
 }
 
