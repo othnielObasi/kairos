@@ -778,7 +778,34 @@ function operatorLedgerEntries(limit: number): LedgerTransaction[] {
   }));
 }
 
-function buildTransactionLedger(limit: number) {
+interface LedgerFilterOptions {
+  trackKey?: LedgerTransaction['trackKey'];
+  status?: LedgerStatus;
+  query?: string;
+}
+
+function applyLedgerFilters(records: LedgerTransaction[], filters: LedgerFilterOptions): LedgerTransaction[] {
+  const query = (filters.query || '').trim().toLowerCase();
+  return records.filter((row) => {
+    if (filters.trackKey && row.trackKey !== filters.trackKey) return false;
+    if (filters.status && row.status !== filters.status) return false;
+    if (!query) return true;
+    const haystack = [
+      row.track,
+      row.category,
+      row.source,
+      row.eventName,
+      row.mode,
+      row.status,
+      row.txHash,
+      row.referenceId,
+      row.description,
+    ].join(' ').toLowerCase();
+    return haystack.includes(query);
+  });
+}
+
+function buildTransactionLedger(limit: number, filters: LedgerFilterOptions = {}) {
   const cappedLimit = Math.min(Math.max(limit, 1), 1000);
   const checkpointEntries = checkpointLedgerEntries(cappedLimit);
   const settlementRefs = new Set(
@@ -799,8 +826,9 @@ function buildTransactionLedger(limit: number) {
     ...operatorLedgerEntries(Math.min(cappedLimit, 200)),
   ].sort((a, b) => Date.parse(b.timestamp) - Date.parse(a.timestamp));
 
-  const visible = records.slice(0, cappedLimit);
-  const summary = records.reduce(
+  const filteredRecords = applyLedgerFilters(records, filters);
+  const visible = filteredRecords.slice(0, cappedLimit);
+  const summary = filteredRecords.reduce(
     (acc, item) => {
       acc.total += 1;
       acc.totalSpendUsdc += item.amountUsdc;
@@ -827,6 +855,11 @@ function buildTransactionLedger(limit: number) {
   return {
     generatedAt: new Date().toISOString(),
     limit: cappedLimit,
+    filters: {
+      track: filters.trackKey || 'all',
+      status: filters.status || 'all',
+      query: filters.query || '',
+    },
     visibleCount: visible.length,
     summary,
     transactions: visible,
@@ -2158,7 +2191,17 @@ export function startDashboard(port: number = DASHBOARD_PORT): void {
   app.get('/api/transactions', (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string, 10) || 300;
-      res.json(buildTransactionLedger(limit));
+      const track = typeof req.query.track === 'string' ? req.query.track.trim() : '';
+      const status = typeof req.query.status === 'string' ? req.query.status.trim() : '';
+      const query = typeof req.query.query === 'string' ? req.query.query : '';
+      const allowedTracks = new Set<LedgerTransaction['trackKey']>(['t1', 't2', 't3', 't4', 'ops']);
+      const allowedStatus = new Set<LedgerStatus>(['confirmed', 'pending', 'fallback', 'local', 'paper', 'audit']);
+      const filters: LedgerFilterOptions = {
+        trackKey: allowedTracks.has(track as LedgerTransaction['trackKey']) ? (track as LedgerTransaction['trackKey']) : undefined,
+        status: allowedStatus.has(status as LedgerStatus) ? (status as LedgerStatus) : undefined,
+        query: query || undefined,
+      };
+      res.json(buildTransactionLedger(limit, filters));
     } catch (e) {
       res.status(500).json({ error: 'Failed to get transaction ledger' });
     }

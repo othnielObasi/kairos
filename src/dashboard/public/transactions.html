@@ -682,7 +682,10 @@ initThemeToggle();
       }).join("");
     }
     async function loadLedger() {
-      const res = await fetch("/api/transactions?limit=500", { cache: "no-store" });
+      const params = new URLSearchParams();
+      params.set("limit", "500");
+      if (state.track && state.track !== "all") params.set("track", state.track);
+      const res = await fetch("/api/transactions?" + params.toString(), { cache: "no-store" });
       if (!res.ok) throw new Error("ledger " + res.status);
       const data = await res.json();
       state.rows = data.transactions || [];
@@ -694,7 +697,10 @@ initThemeToggle();
       const btn = event.target.closest(".chip");
       if (!btn) return;
       state[btn.dataset.key] = btn.dataset.value;
-      renderRows();
+      loadLedger().catch(function(error) {
+        console.warn(error);
+        el("refresh").textContent = "Load failed";
+      });
     });
     el("search").addEventListener("input", function(event) {
       state.query = event.target.value;

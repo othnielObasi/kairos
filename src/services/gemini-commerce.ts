@@ -377,11 +377,40 @@ function parseDataUrl(dataUrl: string): { mimeType: string; base64: string } {
   };
 }
 
+type ResolvedCommercePayload =
+  | {
+      kind: 'image';
+      mimeType: string;
+      base64: string;
+    }
+  | {
+      kind: 'html';
+      text: string;
+      sourceUrl?: string;
+    };
+
 function normalizeMimeType(value: string | null | undefined): string {
   const normalized = (value || '').split(';')[0].trim().toLowerCase();
   if (!normalized) return '';
   if (normalized === 'image/jpg') return 'image/jpeg';
   return normalized;
+}
+
+function cleanHtmlForModel(html: string): string {
+  const stripped = html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return stripped.slice(0, 12_000);
 }
 
 function inferMimeTypeFromUrl(url: string): string {
@@ -422,10 +451,11 @@ function ensureSupportedImageMimeType(value: string, source: string): string {
   return mimeType;
 }
 
-async function resolveImagePayload(payload: CommerceDocumentPayload): Promise<{ mimeType: string; base64: string }> {
+async function resolveCommercePayload(payload: CommerceDocumentPayload): Promise<ResolvedCommercePayload> {
   if (payload.imageDataUrl) {
     const parsed = parseDataUrl(payload.imageDataUrl);
     return {
+      kind: 'image',
       mimeType: ensureSupportedImageMimeType(parsed.mimeType, 'imageDataUrl'),
       base64: parsed.base64,
     };
@@ -434,6 +464,7 @@ async function resolveImagePayload(payload: CommerceDocumentPayload): Promise<{ 
   if (payload.imageBase64) {
     if (!payload.mimeType) throw new Error('mimeType is required when using imageBase64');
     return {
+      kind: 'image',
       mimeType: ensureSupportedImageMimeType(payload.mimeType, 'imageBase64'),
       base64: payload.imageBase64,
     };
@@ -444,16 +475,36 @@ async function resolveImagePayload(payload: CommerceDocumentPayload): Promise<{ 
     if (!response.ok) throw new Error(`Failed to fetch image URL: ${response.status}`);
     const bytes = Buffer.from(await response.arrayBuffer());
     if (bytes.byteLength > MAX_IMAGE_BYTES) {
-      throw new Error('Image is too large for multimodal analysis');
+      throw new Error('Document is too large for analysis');
     }
     const headerMimeType = normalizeMimeType(response.headers.get('content-type'));
+    if (headerMimeType === 'text/html' || headerMimeType === 'application/xhtml+xml') {
+      const text = cleanHtmlForModel(bytes.toString('utf8'));
+      if (!text) throw new Error('imageUrl returned an empty HTML document');
+      return {
+        kind: 'html',
+        text,
+        sourceUrl: payload.imageUrl,
+      };
+    }
     if (headerMimeType && headerMimeType !== 'application/octet-stream' && !headerMimeType.startsWith('image/')) {
-      throw new Error(
-        `imageUrl returned non-image content-type "${headerMimeType}". Provide a direct image URL (PNG, JPEG, WEBP, or GIF).`,
-      );
+      throw new Error(`Unsupported imageUrl content-type "${headerMimeType}". Use an image URL or a Kairos document page URL.`);
     }
     const inferredMimeType = headerMimeType || inferMimeTypeFromBytes(bytes) || inferMimeTypeFromUrl(payload.imageUrl);
+    if (!inferredMimeType) {
+      const prefix = bytes.subarray(0, 512).toString('utf8').toLowerCase();
+      if (prefix.includes('<!doctype html') || prefix.includes('<html')) {
+        const text = cleanHtmlForModel(bytes.toString('utf8'));
+        if (!text) throw new Error('imageUrl returned an empty HTML document');
+        return {
+          kind: 'html',
+          text,
+          sourceUrl: payload.imageUrl,
+        };
+      }
+    }
     return {
+      kind: 'image',
       mimeType: ensureSupportedImageMimeType(inferredMimeType, 'imageUrl'),
       base64: bytes.toString('base64'),
     };
@@ -469,44 +520,51 @@ export async function analyzeCommerceDocument(
   const models = parseModelList(process.env.GEMINI_MULTIMODAL_MODELS, DEFAULT_MULTIMODAL_MODELS);
   if (keys.length === 0) throw new Error('No Gemini API key configured for multimodal analysis');
 
-  const image = await resolveImagePayload(payload);
-  const decodedBytes = Buffer.from(image.base64, 'base64');
-  if (decodedBytes.byteLength > MAX_IMAGE_BYTES) {
-    throw new Error('Image exceeds the maximum supported size for multimodal analysis');
+  const documentPayload = await resolveCommercePayload(payload);
+  if (documentPayload.kind === 'image') {
+    const decodedBytes = Buffer.from(documentPayload.base64, 'base64');
+    if (decodedBytes.byteLength > MAX_IMAGE_BYTES) {
+      throw new Error('Image exceeds the maximum supported size for multimodal analysis');
+    }
   }
 
-  const prompt = [
+  const promptBase = [
     'Analyze this commerce document for Kairos, an Arc-native agentic payments runtime.',
     'Return ONLY valid JSON.',
-    'Determine whether the image is an invoice, receipt, delivery proof, or unknown.',
+    'Determine whether the document is an invoice, receipt, delivery proof, or unknown.',
     'Extract merchant, invoice or receipt number, date, total, subtotal, tax, line items, and obvious issues.',
     'Recommend one of: approve, review, reject.',
-    'Set needsHumanReview to true whenever the image is blurry, incomplete, totals conflict, or confidence is low.',
+    'Set needsHumanReview to true whenever the document is blurry, incomplete, totals conflict, or confidence is low.',
     'proofSettlementAmountUsdc must be a safe proof amount at or below 0.01 USDC.',
     payload.expectedMerchant ? `Expected merchant: ${payload.expectedMerchant}` : '',
     Number.isFinite(payload.expectedAmount) ? `Expected total amount: ${payload.expectedAmount}` : '',
     payload.prompt ? `Operator note: ${payload.prompt}` : '',
     'JSON schema:',
     '{"documentType":"invoice|receipt|delivery_proof|unknown","merchantName":"string|null","invoiceNumber":"string|null","documentDate":"ISO-8601 string|null","currency":"string|null","totalAmount":0,"subtotalAmount":0,"taxAmount":0,"lineItems":[{"description":"string","quantity":0,"amount":0}],"confidence":0.0,"settlementIntent":"approve|review|reject","needsHumanReview":true,"issues":["string"],"summary":"string","settlementRationale":"string","proofSettlementAmountUsdc":0.009}',
-  ].filter(Boolean).join('\n');
+  ].filter(Boolean);
 
   let lastError: Error | null = null;
 
   for (const model of models) {
     for (const apiKey of keys) {
       try {
+        const prompt = documentPayload.kind === 'html'
+          ? `${promptBase.join('\n')}\nDocument source URL: ${documentPayload.sourceUrl || 'unknown'}\n\nDocument text:\n${documentPayload.text}`
+          : promptBase.join('\n');
         const response = await postGeminiGenerate(apiKey, model, {
           contents: [{
             role: 'user',
-            parts: [
-              { text: prompt },
-              {
-                inline_data: {
-                  mime_type: image.mimeType,
-                  data: image.base64,
-                },
-              },
-            ],
+            parts: documentPayload.kind === 'image'
+              ? [
+                  { text: prompt },
+                  {
+                    inline_data: {
+                      mime_type: documentPayload.mimeType,
+                      data: documentPayload.base64,
+                    },
+                  },
+                ]
+              : [{ text: prompt }],
           }],
           generationConfig: {
             temperature: 0.1,
@@ -535,7 +593,9 @@ export async function analyzeCommerceDocument(
   }
 
   if (process.env.OPENAI_API_KEY) {
-    const dataUrl = `data:${image.mimeType};base64,${image.base64}`;
+    const prompt = documentPayload.kind === 'html'
+      ? `${promptBase.join('\n')}\nDocument source URL: ${documentPayload.sourceUrl || 'unknown'}\n\nDocument text:\n${documentPayload.text}`
+      : promptBase.join('\n');
     const response = await postOpenAIChat(process.env.OPENAI_API_KEY, {
       model: OPENAI_FALLBACK_MODEL,
       max_tokens: 1600,
@@ -543,15 +603,17 @@ export async function analyzeCommerceDocument(
       response_format: { type: 'json_object' },
       messages: [{
         role: 'user',
-        content: [
-          { type: 'text', text: prompt },
-          {
-            type: 'image_url',
-            image_url: {
-              url: dataUrl,
-            },
-          },
-        ],
+        content: documentPayload.kind === 'image'
+          ? [
+              { type: 'text', text: prompt },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${documentPayload.mimeType};base64,${documentPayload.base64}`,
+                },
+              },
+            ]
+          : prompt,
       }],
     });
 
