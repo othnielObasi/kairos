@@ -187,6 +187,12 @@
       align-items: center;
       line-height: 1.2;
     }
+    .tx-doc-link {
+      font-size: 7px;
+      padding: 1px 4px;
+      border-radius: 6px;
+      letter-spacing: .01em;
+    }
     .empty { padding: 42px; text-align: center; color: var(--soft); }
     .mobile-list { display: none; padding: 10px; gap: 10px; }
     .mobile-card { padding: 13px; border: 1px solid rgba(255,255,255,.06); border-radius: 16px; background: rgba(255,255,255,.025); }
@@ -635,9 +641,9 @@ initThemeToggle();
       const docs = row.documentLinks;
       if (!docs) return '';
       const items = [];
-      if (docs.invoiceUrl) items.push('<a class="tx-link" href="' + esc(docs.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a>');
-      if (docs.receiptUrl) items.push('<a class="tx-link" href="' + esc(docs.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a>');
-      if (docs.deliveryProofUrl) items.push('<a class="tx-link" href="' + esc(docs.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a>');
+      if (docs.invoiceUrl) items.push('<a class="tx-link tx-doc-link" href="' + esc(docs.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a>');
+      if (docs.receiptUrl) items.push('<a class="tx-link tx-doc-link" href="' + esc(docs.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a>');
+      if (docs.deliveryProofUrl) items.push('<a class="tx-link tx-doc-link" href="' + esc(docs.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a>');
       return items.length
         ? '<div class="desc">Docs: ' + items.join(' · ') + '</div>'
         : '';
