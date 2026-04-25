@@ -377,22 +377,66 @@ function parseDataUrl(dataUrl: string): { mimeType: string; base64: string } {
   };
 }
 
+function normalizeMimeType(value: string | null | undefined): string {
+  const normalized = (value || '').split(';')[0].trim().toLowerCase();
+  if (!normalized) return '';
+  if (normalized === 'image/jpg') return 'image/jpeg';
+  return normalized;
+}
+
 function inferMimeTypeFromUrl(url: string): string {
   const lower = url.toLowerCase();
   if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg')) return 'image/jpeg';
   if (lower.endsWith('.webp')) return 'image/webp';
   if (lower.endsWith('.gif')) return 'image/gif';
-  return 'image/jpeg';
+  return '';
+}
+
+function inferMimeTypeFromBytes(bytes: Buffer): string {
+  if (bytes.length >= 8) {
+    const pngSig = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    if (pngSig.every((value, index) => bytes[index] === value)) return 'image/png';
+  }
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+  if (bytes.length >= 6) {
+    const header = bytes.subarray(0, 6).toString('ascii');
+    if (header === 'GIF87a' || header === 'GIF89a') return 'image/gif';
+  }
+  if (bytes.length >= 12) {
+    const riff = bytes.subarray(0, 4).toString('ascii');
+    const webp = bytes.subarray(8, 12).toString('ascii');
+    if (riff === 'RIFF' && webp === 'WEBP') return 'image/webp';
+  }
+  return '';
+}
+
+function ensureSupportedImageMimeType(value: string, source: string): string {
+  const mimeType = normalizeMimeType(value);
+  const supported = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
+  if (!supported.has(mimeType)) {
+    throw new Error(
+      `Unsupported ${source} MIME type "${mimeType || 'unknown'}". Use PNG, JPEG, WEBP, or GIF image files.`,
+    );
+  }
+  return mimeType;
 }
 
 async function resolveImagePayload(payload: CommerceDocumentPayload): Promise<{ mimeType: string; base64: string }> {
   if (payload.imageDataUrl) {
-    return parseDataUrl(payload.imageDataUrl);
+    const parsed = parseDataUrl(payload.imageDataUrl);
+    return {
+      mimeType: ensureSupportedImageMimeType(parsed.mimeType, 'imageDataUrl'),
+      base64: parsed.base64,
+    };
   }
 
   if (payload.imageBase64) {
     if (!payload.mimeType) throw new Error('mimeType is required when using imageBase64');
-    return { mimeType: payload.mimeType, base64: payload.imageBase64 };
+    return {
+      mimeType: ensureSupportedImageMimeType(payload.mimeType, 'imageBase64'),
+      base64: payload.imageBase64,
+    };
   }
 
   if (payload.imageUrl) {
@@ -402,8 +446,15 @@ async function resolveImagePayload(payload: CommerceDocumentPayload): Promise<{ 
     if (bytes.byteLength > MAX_IMAGE_BYTES) {
       throw new Error('Image is too large for multimodal analysis');
     }
+    const headerMimeType = normalizeMimeType(response.headers.get('content-type'));
+    if (headerMimeType && headerMimeType !== 'application/octet-stream' && !headerMimeType.startsWith('image/')) {
+      throw new Error(
+        `imageUrl returned non-image content-type "${headerMimeType}". Provide a direct image URL (PNG, JPEG, WEBP, or GIF).`,
+      );
+    }
+    const inferredMimeType = headerMimeType || inferMimeTypeFromBytes(bytes) || inferMimeTypeFromUrl(payload.imageUrl);
     return {
-      mimeType: (response.headers.get('content-type') || inferMimeTypeFromUrl(payload.imageUrl)).split(';')[0].trim(),
+      mimeType: ensureSupportedImageMimeType(inferredMimeType, 'imageUrl'),
       base64: bytes.toString('base64'),
     };
   }
