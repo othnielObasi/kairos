@@ -1126,28 +1126,7 @@ function renderT4(checkpoints, track) {
   const commerceEvents = (track && track.recentEvents) || [];
   const body = el("t4-body");
   setTrackStatus("t4", track);
-  const settledTrades = trades.filter(t => t.execution && t.execution.executionMode === "arc_settled");
-  const settledCommerce = commerceEvents.filter(e => e.status === "confirmed");
-  const actionCount = trades.length + commerceEvents.length;
-  const settledCount = settledTrades.length + settledCommerce.length;
-  const latestMode = track?.latestMode || null;
-  const lastProofAt = track?.lastSettlementAt ? fTs(track.lastSettlementAt) : "none";
-  const settlementModeLabel = latestMode === "arc_settled"
-    ? "Arc settled"
-    : latestMode === "kraken_live"
-      ? "Kraken live"
-      : latestMode === "kraken_paper"
-        ? "Paper execution"
-        : latestMode === "local_only"
-          ? "Local only"
-          : latestMode === "pending"
-            ? "Verifying"
-            : "Awaiting";
-  setTrackMetrics("t4-metrics", [
-    { label:"Actions", value:actionCount, tone:actionCount ? "live" : "warn" },
-    { label:"Last proof", value:lastProofAt, tone:track?.lastSettlementAt ? "live" : "warn" },
-    { label:"Latest mode", value:settlementModeLabel, tone:latestMode === "arc_settled" ? "live" : "warn" },
-  ]);
+  setTrackMetrics("t4-metrics", []);
 
   if (!trades.length && !commerceEvents.length) {
     const emptyCopy = track && track.state === "local_only"
