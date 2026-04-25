@@ -296,6 +296,15 @@
       align-items: center;
       line-height: 1.2;
     }
+    .receipt-doc-link {
+      font-size: 7px;
+      letter-spacing: .02em;
+      padding: 0;
+      border-radius: 0;
+      border: 0;
+      background: transparent;
+      line-height: 1.1;
+    }
     .footnote {
       margin-top: 16px; padding: 14px 16px; border-radius: 16px;
       border: 1px solid rgba(255,255,255,.06); background: rgba(255,255,255,.025); color: var(--muted); line-height: 1.8;
@@ -1108,9 +1117,9 @@ initThemeToggle();
           : '<span class="muted-copy">Receipt reference is still pending final Arc hash hydration.</span>';
         const docLinks = result.documents
           ? '<div style="height:8px"></div><div class="muted-copy">Documents: ' +
-              '<a class="receipt-link" href="' + esc(result.documents.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a> | ' +
-              '<a class="receipt-link" href="' + esc(result.documents.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a> | ' +
-              '<a class="receipt-link" href="' + esc(result.documents.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a> | ' +
+              '<a class="receipt-link receipt-doc-link" href="' + esc(result.documents.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a> | ' +
+              '<a class="receipt-link receipt-doc-link" href="' + esc(result.documents.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a> | ' +
+              '<a class="receipt-link receipt-doc-link" href="' + esc(result.documents.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a> | ' +
               '<a class="receipt-link" href="/documents" target="_blank" rel="noopener">Open vault</a>' +
             '</div>'
           : '';
