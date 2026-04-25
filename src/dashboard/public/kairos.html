@@ -671,10 +671,6 @@ html[data-theme="light"] .mbar::before {
         <div class="trk-title">Agent-to-Agent Loop</div>
         <div class="trk-sub" title="Kairos pays each governance stage with Circle Nanopayments and batches verifiable settlement on Arc.">Governed decisions billed per stage.</div>
         <div class="trk-metrics" id="t1-metrics"></div>
-        <div class="trk-total-row">
-          <span class="trk-total-lbl">Session spend</span>
-          <span class="trk-total-val c1" id="t1-total">$0.000 USDC</span>
-        </div>
       </div>
       <div class="trk-body">
         <div id="t1-stages"></div>
@@ -694,10 +690,6 @@ html[data-theme="light"] .mbar::before {
           <div class="trk-note" id="t2-note">Awaiting paid data fetches.</div>
         </div>
         <div class="trk-metrics" id="t2-metrics"></div>
-        <div class="trk-total-row">
-          <span class="trk-total-lbl">Session spend</span>
-          <span class="trk-total-val c2" id="t2-total">$0.000 USDC</span>
-        </div>
       </div>
       <div class="trk-body">
         <div id="t2-sources"></div>
@@ -717,10 +709,6 @@ html[data-theme="light"] .mbar::before {
           <div class="trk-note" id="t3-note">Awaiting billed inference.</div>
         </div>
         <div class="trk-metrics" id="t3-metrics"></div>
-        <div class="trk-total-row">
-          <span class="trk-total-lbl">Session spend</span>
-          <span class="trk-total-val c3" id="t3-total">$0.000 USDC</span>
-        </div>
       </div>
       <div class="trk-body" id="t3-body">
         <div class="empty"><div class="empty-dot"></div>No compute events yet</div>
@@ -738,10 +726,6 @@ html[data-theme="light"] .mbar::before {
           <div class="trk-note" id="t4-note">Awaiting approved actions to settle.</div>
         </div>
         <div class="trk-metrics" id="t4-metrics"></div>
-        <div class="trk-total-row">
-          <span class="trk-total-lbl">Settled volume</span>
-          <span class="trk-total-val c4" id="t4-total">$0.00 USDC</span>
-        </div>
       </div>
       <div class="trk-body" id="t4-body">
         <div class="empty"><div class="empty-dot"></div>No approved actions yet</div>
@@ -983,7 +967,7 @@ function renderT1(data, track3) {
   }, 0);
   setTrackMetrics("t1-metrics", [
     { label:"Stages", value:activeStages + "/7", tone:activeStages >= 5 ? "live" : "warn" },
-    { label:"Spend", value:fU(data.t1Spend), tone:"live" },
+    { label:"Receipts", value:events.length, tone:events.length ? "live" : "warn" },
   ]);
   STAGE_NAMES.forEach((name,i) => {
     const sagePersisted = i === 6 && sage && Number(sage.reflectionCount || 0) > 0;
@@ -1017,7 +1001,6 @@ function renderT1(data, track3) {
     `;
     fc.appendChild(row);
   });
-  el("t1-total").textContent = fU(data.t1Spend) + " USDC";
 }
 
 // ── T2 ──────────────────────────────────────────────────────────────────────
@@ -1052,7 +1035,7 @@ function renderT2(data, track) {
   const liveSources = API_SOURCES.filter(s => (breakdown[s.key]?.mode || s.mode) === "x402").length;
   setTrackMetrics("t2-metrics", [
     { label:"Sources", value:liveSources + "/" + API_SOURCES.length, tone:liveSources === API_SOURCES.length ? "live" : "warn" },
-    { label:"Spend", value:fU(data.t2Spend), tone:"live" },
+    { label:"Events", value:events.length, tone:events.length ? "live" : "warn" },
   ]);
   const allTrack2X402 = events.length > 0 && events.every(e => e.mode === "x402");
   noteEl.title = track && track.mode === "x402"
@@ -1081,7 +1064,6 @@ function renderT2(data, track) {
     `;
     fc.appendChild(row);
   });
-  el("t2-total").textContent = fU(data.t2Spend) + " USDC";
 }
 
 // ── T3 ──────────────────────────────────────────────────────────────────────
@@ -1096,7 +1078,7 @@ function renderT3(data, track) {
   const geminiEvents = events.filter(e => /gemini/i.test(e.model || e.provider || e.eventName || "")).length;
   setTrackMetrics("t3-metrics", [
     { label:"Model", value:geminiEvents ? "Gemini 3" : "Ready", tone:geminiEvents ? "live" : "warn" },
-    { label:"Spend", value:fU(data.t3Spend), tone:"live" },
+    { label:"Events", value:events.length, tone:events.length ? "live" : "warn" },
   ]);
 
   if (!events.length) {
@@ -1104,7 +1086,6 @@ function renderT3(data, track) {
       ? "No LLM API keys configured<br>Deterministic fallback reasoning active"
       : "No compute events yet";
     body.innerHTML = `<div class="empty"><div class="empty-dot"></div>${emptyCopy}</div>`;
-    el("t3-total").textContent = "$0.000 USDC";
     return;
   }
 
@@ -1137,7 +1118,6 @@ function renderT3(data, track) {
     `;
     body.appendChild(div);
   }
-  el("t3-total").textContent = fU(data.t3Spend) + " USDC";
 }
 
 // ── T4 ──────────────────────────────────────────────────────────────────────
@@ -1148,12 +1128,11 @@ function renderT4(checkpoints, track) {
   setTrackStatus("t4", track);
   const settledTrades = trades.filter(t => t.execution && t.execution.executionMode === "arc_settled");
   const settledCommerce = commerceEvents.filter(e => e.status === "confirmed");
-  const settledVolume = settledTrades.reduce((sum, t) => sum + Number(t.positionSizeUsd || t.size || 0), 0);
   const actionCount = trades.length + commerceEvents.length;
   const settledCount = settledTrades.length + settledCommerce.length;
   setTrackMetrics("t4-metrics", [
     { label:"Arc settled", value:settledCount, tone:settledCount ? "live" : "warn" },
-    { label:"Volume", value:fU2(track?.settledVolumeUsd ?? settledVolume), tone:"live" },
+    { label:"Actions", value:actionCount, tone:actionCount ? "live" : "warn" },
   ]);
 
   if (!trades.length && !commerceEvents.length) {
@@ -1161,12 +1140,10 @@ function renderT4(checkpoints, track) {
       ? "Approved actions recorded locally<br>No confirmed external settlement yet"
       : "No approved actions yet";
     body.innerHTML = `<div class="empty"><div class="empty-dot"></div>${emptyCopy}</div>`;
-    el("t4-total").textContent = "$0.00 USDC";
     return;
   }
 
   body.innerHTML = "";
-  let vol = 0;
   commerceEvents.slice(0,4).forEach(e => {
     const refHtml = e.explorerUrl && e.txHash
       ? `<a class="tr-hash" href="${e.explorerUrl}" target="_blank" rel="noopener">${esc(e.txHash)}</a>`
@@ -1203,10 +1180,6 @@ function renderT4(checkpoints, track) {
     const settlementTime = execution?.settledAt ? fTs(execution.settledAt) : fTs(t.timestamp);
     const isLong = dir === "long" || dir === "buy";
 
-    if (execution && execution.executionMode === "arc_settled") {
-      vol += size;
-    }
-
     const refHtml = execution && execution.executionMode === "arc_settled" && settlementRef.startsWith("0x")
       ? `<a class="tr-hash" href="${ARC_EXPLORER + settlementRef}" target="_blank" rel="noopener">${settlementRef}</a>`
       : `<span class="tr-hash">${settlementRef}</span>`;
@@ -1228,7 +1201,6 @@ function renderT4(checkpoints, track) {
     `;
     body.appendChild(div);
   });
-  el("t4-total").textContent = fU2(track?.settledVolumeUsd ?? vol) + " USDC";
 }
 
 // ── MOMENT + PROOF BARS ──────────────────────────────────────────────────────
