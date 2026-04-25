@@ -1,21 +1,55 @@
-# Kairos
+<p align="center">
+  <h1 align="center">Kairos</h1>
+  <p align="center"><strong>The agent pays for its own governance.</strong></p>
+  <p align="center">
+    <a href="#what-kairos-proves">What Kairos Proves</a> &bull;
+    <a href="#detailed-track-mapping">Track Mapping</a> &bull;
+    <a href="#commerce-studio">Commerce Studio</a> &bull;
+    <a href="#production-deployment">Production</a> &bull;
+    <a href="#runtime-api-highlights">API</a>
+  </p>
+  <p align="center">
+    Built for the <strong>Agentic Economy on Arc</strong> hackathon · Circle + LabLab.ai · April 2026<br>
+    <strong>Live:</strong> <a href="https://kairos.nov-tia.com">kairos.nov-tia.com</a>
+  </p>
+</p>
+
+---
 
 Kairos is an Arc-native agentic payments runtime built for high-frequency, usage-based USDC settlement. It is designed for the "Agentic Economy on Arc" hackathon and demonstrates that an autonomous system can pay for governance, paid data, compute, and micro-commerce actions one step at a time without gas overhead destroying the economics.
 
 Kairos is not presented as a generic trading bot. The market loop is the workload that produces repeated, economically meaningful actions. The product being demonstrated is the payment and proof runtime around that workload.
 
-## Live Surfaces
+## Key Capabilities
+
+| Capability | Description |
+|---|---|
+| **Payment-as-governance** | Every governance stage costs $0.001 USDC and the agent cannot act without paying for oversight |
+| **All four hackathon tracks** | One cycle fires paid events across governance, data, compute, and settlement |
+| **On-chain audit trail** | Every paid action has Circle attribution and Arc transaction proof |
+| **x402 native data layer** | Five paid data sources flow through AIsa x402 and Circle Gateway |
+| **Gemini-first reasoning** | Gemini 3 Flash runtime inference plus Gemini 3 Pro reflection with failover |
+| **Full Circle stack** | Arc, USDC, Circle Nanopayments, Circle Wallets, and Circle Gateway in one runtime |
+| **Production runtime** | Node.js + TypeScript + PM2 on Vultr with MCP and Kraken bridge surfaces |
+| **Two-surface proof** | `/transactions` (Settlement Ledger) for payment proof and `/execution` for action context |
+| **Commerce Studio** | Function Calling over live tools, multimodal invoice analysis, and Arc proof settlement |
+
+---
+
+## Live
 
 | Surface | URL | Purpose |
-| --- | --- | --- |
+|---|--- |---|
 | Dashboard | `https://kairos.nov-tia.com` | Judge-facing proof surface for the four hackathon tracks |
-| Transaction History | `https://kairos.nov-tia.com/transactions` | Consolidated payment and settlement ledger |
+| Settlement Ledger | `https://kairos.nov-tia.com/transactions` | Consolidated payment and settlement ledger |
 | Document Vault | `https://kairos.nov-tia.com/documents` | Direct access to Kairos-generated invoices, receipts, and proof files across tracks |
 | Execution History | `https://kairos.nov-tia.com/execution` | Underlying execution and position audit log |
-| Gemini Commerce Studio | `https://kairos.nov-tia.com/commerce` | Gemini function calling, multimodal receipt analysis, native commerce documents, and proof-settlement controls |
+| Commerce Studio | `https://kairos.nov-tia.com/commerce` | Gemini function calling, multimodal receipt analysis, native commerce documents, and proof-settlement controls |
 | MCP endpoint | `https://kairos.nov-tia.com/mcp` | JSON-RPC tools, resources, and prompts for external agents |
 | Agent card | `https://kairos.nov-tia.com/.well-known/agent-card.json` | Public metadata for agent discovery |
 | Arc explorer | `https://testnet.arcscan.app` | External verifier for confirmed Arc transaction hashes |
+
+---
 
 ## What Kairos Proves
 
@@ -31,7 +65,7 @@ Kairos is built to prove an economic model, not only to render a UI:
 - Cross-track invoice, receipt, and proof generation so Tracks 1 to 3 are inspectable without reading raw ledger rows.
 - A transparent margin story: this type of high-frequency agent activity works on Arc, but breaks on high-fee payment rails.
 
-Important: `Runtime cycles` on the dashboard are decision-loop counts. They are not the same thing as verified Arc transactions. Use `Real Arc txns`, the History page, and Arcscan links for on-chain proof.
+Important: `Runtime cycles` on the dashboard are decision-loop counts. They are not the same thing as verified Arc transactions. Use `Real Arc txns`, the Settlement Ledger page, and Arcscan links for on-chain proof.
 
 ## What Kairos Actually Is
 
@@ -41,7 +75,7 @@ Kairos has five layers working together:
 2. Governance plane: mandate, oracle, supervisory, simulator, risk-router, LLM, and SAGE stages that bill the runtime per action.
 3. Compute plane: runtime reasoning and reflective learning billed like metered infrastructure.
 4. Execution plane: approved actions can be settled on Arc, routed to Kraken, or recorded locally depending on readiness.
-5. Proof plane: dashboard, History, MCP, and Arcscan links expose what happened in a judge-friendly way.
+5. Proof plane: dashboard, Settlement Ledger, Document Vault, Execution History, MCP, and Arcscan links expose what happened in a judge-friendly way.
 
 At runtime, one long-running Node.js process owns the agent loop, dashboard API, and MCP interface:
 
@@ -65,8 +99,8 @@ Kairos runtime loop
 Arc USDC settlement and proof
         |
         +--> dashboard
-        +--> transaction history
-        +--> trade history
+        +--> settlement ledger
+        +--> execution history
         +--> MCP tools/resources/prompts
 ```
 
@@ -77,7 +111,7 @@ The dashboard is intentionally compact. These are the terms that matter:
 | Term | Meaning |
 | --- | --- |
 | `Real Arc txns` | Verified Arc receipts across all four tracks counted as live proof |
-| `Pending hash` | A receipt exists but the final Arc hash has not yet been hydrated |
+| `Pending (not verified yet)` | A receipt exists but the final Arc hash has not yet been hydrated |
 | `Fallback` | The runtime recorded the event without a verifiable on-chain receipt |
 | `Runtime cycles` | Decision loops completed by the agent, not on-chain transactions |
 | `Track status` | Current proof state for that track, such as `LIVE x402`, `COMPUTE BILLED`, or `ARC SETTLED` |
@@ -90,7 +124,7 @@ The main dashboard is optimized for judges. It should answer:
 - Is USDC actually being spent or settled?
 - Is there real Arc proof behind the claims?
 
-Long explanations belong in this README, `Transaction History`, or the docs under [`docs/`](docs).
+Long explanations belong in this README, `Settlement Ledger`, or the docs under [`docs/`](docs).
 
 ## Detailed Track Mapping
 
@@ -125,7 +159,7 @@ How the flow works:
 2. `billEvent("governance-*")` creates a nanopayment receipt.
 3. The receipt is stored in the billing store as a Track 1 event.
 4. The dashboard stage counters and Track 1 card update.
-5. `Transaction History` receives the corresponding payment row.
+5. `Settlement Ledger` receives the corresponding payment row.
 
 What settles:
 
@@ -138,7 +172,7 @@ What the dashboard proves:
 - How often they have been billed.
 - Track 1 spend and receipt status.
 
-What `Transaction History` shows:
+What `Settlement Ledger` shows:
 
 - Payment rows labeled for the governance stage that produced them.
 - Receipt amount, status, reference, and Arc verifier when confirmed.
@@ -167,7 +201,7 @@ What the flow does:
 4. The response is normalized into the shapes the strategy, oracle, and market-state logic expect.
 5. `billEvent("data-*")` creates the paid receipt.
 6. The receipt is added to Track 2 billing totals and source-level breakdowns.
-7. The dashboard Track 2 card and `Transaction History` update.
+7. The dashboard Track 2 card and `Settlement Ledger` update.
 
 What settles:
 
@@ -193,7 +227,7 @@ What the dashboard proves:
 - Spend by source.
 - Whether the data plane is running in `x402`, `fallback`, or `disabled` mode.
 
-What `Transaction History` shows:
+What `Settlement Ledger` shows:
 
 - One ledger row per paid data receipt.
 - The event name, source, amount, receipt state, and verifier.
@@ -269,7 +303,7 @@ What gets billed:
 
 - `compute-sage`
 
-What `Transaction History` shows for Track 3:
+What `Settlement Ledger` shows for Track 3:
 
 - Separate receipt rows for inference and reflection.
 - Model labels where available.
@@ -326,7 +360,7 @@ How the flow works:
 4. The checkpoint or micro-commerce store records the event.
 5. Kairos generates a native invoice, receipt, and delivery-proof bundle for the event.
 6. The dashboard Track 4 card updates.
-7. `Transaction History` receives the payment row and document links.
+7. `Settlement Ledger` receives the payment row and document links.
 8. If applicable, `Execution History` also receives the execution context for the underlying action and its commerce-document links.
 
 Track 4 state meanings:
@@ -356,7 +390,7 @@ What the dashboard proves:
 - Whether it is falling back to Kraken live, Kraken paper, or local-only execution
 - Recent proof links for the latest settled micro-commerce events
 
-What `Transaction History` shows:
+What `Settlement Ledger` shows:
 
 - The Track 4 payment or settlement receipt itself
 - Receipt amount, mode, status, reference, and Arc verifier
@@ -368,7 +402,7 @@ What `Execution History` shows:
 - Entry, exit, PnL, close reason, artifact, and related tx link if present
 - Commerce-document links when the execution produced a first-party Track 4 bundle
 
-Why Track 4 has both `Transaction History` and `Execution History`:
+Why Track 4 has both `Settlement Ledger` and `Execution History`:
 
 One approved Kairos action can generate two different records:
 
@@ -381,7 +415,7 @@ Why this matters:
 
 Track 4 proves the most visible part of the hackathon thesis: a user or agent interaction can trigger immediate USDC settlement per interaction instead of relying on subscriptions or batched invoices.
 
-## Gemini Commerce Studio
+## Commerce Studio
 
 The Google partner requirements are surfaced in production at `https://kairos.nov-tia.com/commerce`.
 
@@ -452,11 +486,11 @@ COMMERCE_PROOF_SETTLEMENT_AMOUNT_USDC=0.009
 COMMERCE_PROOF_SETTLEMENT_MAX_USDC=0.01
 ```
 
-## Transaction History vs Execution History
+## Settlement Ledger vs Execution History
 
 These two surfaces answer different questions.
 
-### Transaction History
+### Settlement Ledger
 
 Use `https://kairos.nov-tia.com/transactions` when the question is:
 
@@ -466,7 +500,7 @@ Use `https://kairos.nov-tia.com/transactions` when the question is:
 - Which invoice, receipt, or delivery-proof bundle belongs to that commerce event?
 - Which hackathon track does this support?
 
-`Transaction History` is the consolidated proof ledger across:
+`Settlement Ledger` is the consolidated proof ledger across:
 
 - Track 1 governance receipts
 - Track 2 paid API receipts
@@ -484,7 +518,7 @@ Use `https://kairos.nov-tia.com/documents` when the question is:
 
 `Document Vault` is the direct artifact surface. It complements:
 
-- `Transaction History` for the payment ledger
+- `Settlement Ledger` for the payment ledger
 - `Execution History` for the governed action log
 
 ### Execution History
@@ -670,7 +704,7 @@ Useful commands:
 | --- | --- |
 | `/api/status` | Runtime status, track state, MCP summary, provider readiness |
 | `/api/billing` | Billing totals, Arc transaction count, spend, and receipt summaries |
-| `/api/transactions` | Consolidated proof ledger used by `Transaction History` |
+| `/api/transactions` | Consolidated proof ledger used by `Settlement Ledger` |
 | `/api/checkpoints` | Governance checkpoints and execution outcomes |
 | `/api/health` | Health summary for monitoring |
 | `/api/feeds/status` | Data-feed and x402 readiness |
@@ -701,7 +735,7 @@ Use this checklist before demos or production reviews:
 7. Track 2 reports `x402` mode or explains fallback clearly.
 8. Track 3 shows Gemini readiness or clear provider failover state.
 9. Track 4 shows `ARC SETTLED` when live micro-commerce receipts are landing on Arc.
-10. `Transaction History` contains Arcscan-verifiable hashes for confirmed receipts.
+10. `Settlement Ledger` contains Arcscan-verifiable hashes for confirmed receipts.
 11. `/api/kraken/cli` and `/api/kraken/preflight` report healthy when Kraken execution is part of the demo story.
 12. PM2 shows `kairos-agent` online.
 
