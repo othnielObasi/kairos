@@ -46,7 +46,7 @@ This is not a billing feature. It is a new economic primitive: governance enforc
 | Dashboard | `https://kairos.nov-tia.com` | Judge-facing proof surface — all four tracks live |
 | Settlement Ledger | `https://kairos.nov-tia.com/transactions` | Every paid action, one audit trail — the judge proof surface |
 | Execution History | `https://kairos.nov-tia.com/execution` | Governed action and outcome log — entry, exit, PnL, artifacts (`/trades` also works) |
-| Document Vault | `https://kairos.nov-tia.com/documents` | Kairos-generated invoices, receipts, and proof files across all tracks |
+| Document Vault (auxiliary) | `https://kairos.nov-tia.com/documents` | Optional document-only view; invoice, receipt, and proof links are already available from Settlement Ledger rows |
 | Commerce Studio | `https://kairos.nov-tia.com/commerce` | Gemini Function Calling + multimodal receipt analysis + Arc proof settlement |
 | MCP interface | `https://kairos.nov-tia.com/mcp` | JSON-RPC tools, resources, and prompts for agents and operators |
 | Agent card | `https://kairos.nov-tia.com/.well-known/agent-card.json` | Public agent discovery metadata |
@@ -78,7 +78,7 @@ Kairos has five layers working together:
 2. **Governance plane** — mandate, oracle, supervisory, simulator, risk-router, LLM, and SAGE stages that bill the runtime per action
 3. **Compute plane** — runtime reasoning and reflective learning billed like metered infrastructure
 4. **Execution plane** — approved actions settled on Arc, routed to Kraken, or recorded locally depending on readiness
-5. **Proof plane** — dashboard, Settlement Ledger, Document Vault, MCP, and Arc explorer expose what happened in a judge-verifiable way
+5. **Proof plane** — dashboard, Settlement Ledger (including doc links), Execution History, MCP, and Arc explorer expose what happened in a judge-verifiable way
 
 ---
 

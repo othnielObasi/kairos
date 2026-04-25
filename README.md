@@ -42,7 +42,7 @@ Kairos is not presented as a generic trading bot. The market loop is the workloa
 |---|--- |---|
 | Dashboard | `https://kairos.nov-tia.com` | Judge-facing proof surface for the four hackathon tracks |
 | Settlement Ledger | `https://kairos.nov-tia.com/transactions` | Consolidated payment and settlement ledger |
-| Document Vault | `https://kairos.nov-tia.com/documents` | Direct access to Kairos-generated invoices, receipts, and proof files across tracks |
+| Document routes | `https://kairos.nov-tia.com/documents` | Auxiliary document route; invoice, receipt, and proof links are surfaced directly in Settlement Ledger rows |
 | Execution History | `https://kairos.nov-tia.com/execution` | Underlying execution and position audit log |
 | Commerce Studio | `https://kairos.nov-tia.com/commerce` | Gemini function calling, multimodal receipt analysis, native commerce documents, and proof-settlement controls |
 | MCP endpoint | `https://kairos.nov-tia.com/mcp` | JSON-RPC tools, resources, and prompts for external agents |
@@ -75,7 +75,7 @@ Kairos has five layers working together:
 2. Governance plane: mandate, oracle, supervisory, simulator, risk-router, LLM, and SAGE stages that bill the runtime per action.
 3. Compute plane: runtime reasoning and reflective learning billed like metered infrastructure.
 4. Execution plane: approved actions can be settled on Arc, routed to Kraken, or recorded locally depending on readiness.
-5. Proof plane: dashboard, Settlement Ledger, Document Vault, Execution History, MCP, and Arcscan links expose what happened in a judge-friendly way.
+5. Proof plane: dashboard, Settlement Ledger, Execution History, MCP, and Arcscan links expose what happened in a judge-friendly way.
 
 At runtime, one long-running Node.js process owns the agent loop, dashboard API, and MCP interface:
 
@@ -508,18 +508,11 @@ Use `https://kairos.nov-tia.com/transactions` when the question is:
 - Track 4 micro-commerce receipts
 - operator or audit receipts where applicable
 
-### Document Vault
+### Document routes
 
-Use `https://kairos.nov-tia.com/documents` when the question is:
+Use `https://kairos.nov-tia.com/documents` as an auxiliary document route when you want a doc-only view.
 
-- Where is the invoice for this billed event?
-- Where is the receipt for this billed event?
-- What proof file explains the governance, API, compute, or commerce action?
-
-`Document Vault` is the direct artifact surface. It complements:
-
-- `Settlement Ledger` for the payment ledger
-- `Execution History` for the governed action log
+For the primary judge workflow, use `Settlement Ledger` and open Invoice/Receipt/Proof links directly from each ledger row.
 
 ### Execution History
 
