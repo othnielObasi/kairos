@@ -717,16 +717,16 @@ html[data-theme="light"] .mbar::before {
           <div class="media-grid">
             <div class="drop">
               <div class="field">
-                <label for="doc-file">Receipt or invoice image</label>
-                <input id="doc-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+                <label for="doc-file">Receipt, invoice, or proof document</label>
+                <input id="doc-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif,application/pdf,.pdf" />
               </div>
               <div class="field">
-                <label for="doc-url">Optional image URL</label>
+                <label for="doc-url">Optional document URL</label>
                 <input id="doc-url" type="url" placeholder="https://..." />
               </div>
               <div class="preview" id="doc-preview">
                 <img id="doc-preview-img" alt="Commerce document preview" />
-                <div class="preview-note" id="doc-preview-note">Upload a PNG, JPG, WEBP, or GIF receipt or invoice to run Gemini multimodal analysis.</div>
+                <div class="preview-note" id="doc-preview-note">Upload a PNG, JPG, WEBP, GIF, or PDF receipt/invoice/proof to run Gemini multimodal analysis.</div>
               </div>
             </div>
 
@@ -757,7 +757,7 @@ html[data-theme="light"] .mbar::before {
 
           <div class="result">
             <div class="result-title">Multimodal Analysis</div>
-            <div id="analysis-empty" class="muted-copy">No document analysis yet. Upload a receipt or invoice to see Gemini's structured interpretation, review status, and proof-settlement preview.</div>
+            <div id="analysis-empty" class="muted-copy">No document analysis yet. Upload a receipt, invoice, or proof file to see Gemini's structured interpretation, review status, and proof-settlement preview.</div>
             <div id="analysis-content" style="display:none">
               <div class="row"><span class="row-label">Summary</span><span class="row-value" id="analysis-summary">-</span></div>
               <div class="row"><span class="row-label">Decision</span><span class="row-value" id="analysis-decision">-</span></div>
@@ -973,7 +973,14 @@ initThemeToggle();
         img.style.display = "none";
         img.src = "";
         note.style.display = "block";
-        note.textContent = "Upload a PNG, JPG, WEBP, or GIF receipt or invoice to run Gemini multimodal analysis.";
+        note.textContent = "Upload a PNG, JPG, WEBP, GIF, or PDF receipt/invoice/proof to run Gemini multimodal analysis.";
+        return;
+      }
+      if (dataUrl.startsWith("data:application/pdf")) {
+        img.style.display = "none";
+        img.src = "";
+        note.style.display = "block";
+        note.textContent = "PDF ready for Gemini analysis.";
         return;
       }
       img.src = dataUrl;
@@ -985,7 +992,7 @@ initThemeToggle();
       return new Promise(function(resolve, reject) {
         const reader = new FileReader();
         reader.onload = function() { resolve(reader.result); };
-        reader.onerror = function() { reject(new Error("Failed to read image file")); };
+        reader.onerror = function() { reject(new Error("Failed to read document file")); };
         reader.readAsDataURL(file);
       });
     }
@@ -1042,13 +1049,13 @@ initThemeToggle();
       const file = el("doc-file").files[0];
       const imageUrl = el("doc-url").value.trim();
       if (!file && !imageUrl) {
-        setStatus("analysis-status", "Add a receipt image file or image URL before running analysis.", "warn");
+        setStatus("analysis-status", "Add a document file or document URL before running analysis.", "warn");
         return;
       }
 
       const button = el("analyze-run");
       setButtonBusy(button, true, "Analyzing...", "Analyze with Gemini");
-      setStatus("analysis-status", "Sending image to Gemini multimodal analysis...", "");
+      setStatus("analysis-status", "Sending document to Gemini multimodal analysis...", "");
 
       try {
         let imageDataUrl = "";

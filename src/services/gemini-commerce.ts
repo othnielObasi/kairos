@@ -10,6 +10,7 @@ const DEFAULT_FUNCTION_MODELS = 'gemini-3-flash-preview';
 const DEFAULT_MULTIMODAL_MODELS = 'gemini-3-pro-preview,gemini-3-flash-preview';
 const MAX_TOOL_STEPS = 4;
 const MAX_IMAGE_BYTES = 6 * 1024 * 1024;
+const MAX_DOCUMENT_BYTES = 12 * 1024 * 1024;
 const OPENAI_CHAT_API_URL = 'https://api.openai.com/v1/chat/completions';
 const OPENAI_FALLBACK_MODEL = process.env.OPENAI_FALLBACK_MODEL || 'gpt-4o-mini';
 const DEFAULT_PROOF_SETTLEMENT_USDC = parseFloat(
@@ -384,6 +385,12 @@ type ResolvedCommercePayload =
       base64: string;
     }
   | {
+      kind: 'pdf';
+      mimeType: 'application/pdf';
+      base64: string;
+      sourceUrl?: string;
+    }
+  | {
       kind: 'html';
       text: string;
       sourceUrl?: string;
@@ -417,8 +424,10 @@ function inferMimeTypeFromUrl(url: string): string {
   const lower = url.toLowerCase();
   if (lower.endsWith('.png')) return 'image/png';
   if (lower.endsWith('.jpg')) return 'image/jpeg';
+  if (lower.endsWith('.jpeg')) return 'image/jpeg';
   if (lower.endsWith('.webp')) return 'image/webp';
   if (lower.endsWith('.gif')) return 'image/gif';
+  if (lower.endsWith('.pdf')) return 'application/pdf';
   return '';
 }
 
@@ -437,6 +446,10 @@ function inferMimeTypeFromBytes(bytes: Buffer): string {
     const webp = bytes.subarray(8, 12).toString('ascii');
     if (riff === 'RIFF' && webp === 'WEBP') return 'image/webp';
   }
+  if (bytes.length >= 5) {
+    const pdf = bytes.subarray(0, 5).toString('ascii');
+    if (pdf === '%PDF-') return 'application/pdf';
+  }
   return '';
 }
 
@@ -451,21 +464,48 @@ function ensureSupportedImageMimeType(value: string, source: string): string {
   return mimeType;
 }
 
+function ensureSupportedDocumentMimeType(value: string, source: string): string {
+  const mimeType = normalizeMimeType(value);
+  const supported = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'application/pdf']);
+  if (!supported.has(mimeType)) {
+    throw new Error(
+      `Unsupported ${source} MIME type "${mimeType || 'unknown'}". Use PNG, JPEG, WEBP, GIF, or PDF files.`,
+    );
+  }
+  return mimeType;
+}
+
 async function resolveCommercePayload(payload: CommerceDocumentPayload): Promise<ResolvedCommercePayload> {
   if (payload.imageDataUrl) {
     const parsed = parseDataUrl(payload.imageDataUrl);
+    const mimeType = ensureSupportedDocumentMimeType(parsed.mimeType, 'imageDataUrl');
+    if (mimeType === 'application/pdf') {
+      return {
+        kind: 'pdf',
+        mimeType: 'application/pdf',
+        base64: parsed.base64,
+      };
+    }
     return {
       kind: 'image',
-      mimeType: ensureSupportedImageMimeType(parsed.mimeType, 'imageDataUrl'),
+      mimeType: ensureSupportedImageMimeType(mimeType, 'imageDataUrl'),
       base64: parsed.base64,
     };
   }
 
   if (payload.imageBase64) {
     if (!payload.mimeType) throw new Error('mimeType is required when using imageBase64');
+    const mimeType = ensureSupportedDocumentMimeType(payload.mimeType, 'imageBase64');
+    if (mimeType === 'application/pdf') {
+      return {
+        kind: 'pdf',
+        mimeType: 'application/pdf',
+        base64: payload.imageBase64,
+      };
+    }
     return {
       kind: 'image',
-      mimeType: ensureSupportedImageMimeType(payload.mimeType, 'imageBase64'),
+      mimeType: ensureSupportedImageMimeType(mimeType, 'imageBase64'),
       base64: payload.imageBase64,
     };
   }
@@ -474,7 +514,7 @@ async function resolveCommercePayload(payload: CommerceDocumentPayload): Promise
     const response = await fetch(payload.imageUrl);
     if (!response.ok) throw new Error(`Failed to fetch image URL: ${response.status}`);
     const bytes = Buffer.from(await response.arrayBuffer());
-    if (bytes.byteLength > MAX_IMAGE_BYTES) {
+    if (bytes.byteLength > MAX_DOCUMENT_BYTES) {
       throw new Error('Document is too large for analysis');
     }
     const headerMimeType = normalizeMimeType(response.headers.get('content-type'));
@@ -487,8 +527,15 @@ async function resolveCommercePayload(payload: CommerceDocumentPayload): Promise
         sourceUrl: payload.imageUrl,
       };
     }
-    if (headerMimeType && headerMimeType !== 'application/octet-stream' && !headerMimeType.startsWith('image/')) {
-      throw new Error(`Unsupported imageUrl content-type "${headerMimeType}". Use an image URL or a Kairos document page URL.`);
+    if (
+      headerMimeType
+      && headerMimeType !== 'application/octet-stream'
+      && !headerMimeType.startsWith('image/')
+      && headerMimeType !== 'application/pdf'
+    ) {
+      throw new Error(
+        `Unsupported imageUrl content-type "${headerMimeType}". Use an image URL, PDF URL, or a Kairos document page URL.`,
+      );
     }
     const inferredMimeType = headerMimeType || inferMimeTypeFromBytes(bytes) || inferMimeTypeFromUrl(payload.imageUrl);
     if (!inferredMimeType) {
@@ -503,9 +550,18 @@ async function resolveCommercePayload(payload: CommerceDocumentPayload): Promise
         };
       }
     }
+    const documentMimeType = ensureSupportedDocumentMimeType(inferredMimeType, 'imageUrl');
+    if (documentMimeType === 'application/pdf') {
+      return {
+        kind: 'pdf',
+        mimeType: 'application/pdf',
+        base64: bytes.toString('base64'),
+        sourceUrl: payload.imageUrl,
+      };
+    }
     return {
       kind: 'image',
-      mimeType: ensureSupportedImageMimeType(inferredMimeType, 'imageUrl'),
+      mimeType: ensureSupportedImageMimeType(documentMimeType, 'imageUrl'),
       base64: bytes.toString('base64'),
     };
   }
@@ -525,6 +581,12 @@ export async function analyzeCommerceDocument(
     const decodedBytes = Buffer.from(documentPayload.base64, 'base64');
     if (decodedBytes.byteLength > MAX_IMAGE_BYTES) {
       throw new Error('Image exceeds the maximum supported size for multimodal analysis');
+    }
+  }
+  if (documentPayload.kind === 'pdf') {
+    const decodedBytes = Buffer.from(documentPayload.base64, 'base64');
+    if (decodedBytes.byteLength > MAX_DOCUMENT_BYTES) {
+      throw new Error('PDF exceeds the maximum supported size for multimodal analysis');
     }
   }
 
@@ -550,11 +612,13 @@ export async function analyzeCommerceDocument(
       try {
         const prompt = documentPayload.kind === 'html'
           ? `${promptBase.join('\n')}\nDocument source URL: ${documentPayload.sourceUrl || 'unknown'}\n\nDocument text:\n${documentPayload.text}`
-          : promptBase.join('\n');
+          : documentPayload.kind === 'pdf'
+            ? `${promptBase.join('\n')}\nThe attached file is a PDF document.${documentPayload.sourceUrl ? `\nDocument source URL: ${documentPayload.sourceUrl}` : ''}`
+            : promptBase.join('\n');
         const response = await postGeminiGenerate(apiKey, model, {
           contents: [{
             role: 'user',
-            parts: documentPayload.kind === 'image'
+            parts: documentPayload.kind === 'image' || documentPayload.kind === 'pdf'
               ? [
                   { text: prompt },
                   {
@@ -593,6 +657,9 @@ export async function analyzeCommerceDocument(
   }
 
   if (process.env.OPENAI_API_KEY) {
+    if (documentPayload.kind === 'pdf') {
+      throw new Error('Gemini multimodal is required for PDF analysis. Configure a working Gemini key/model for PDF documents.');
+    }
     const prompt = documentPayload.kind === 'html'
       ? `${promptBase.join('\n')}\nDocument source URL: ${documentPayload.sourceUrl || 'unknown'}\n\nDocument text:\n${documentPayload.text}`
       : promptBase.join('\n');
