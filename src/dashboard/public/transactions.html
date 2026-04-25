@@ -50,19 +50,15 @@
     .hdr-logo { font-family: "IBM Plex Sans", sans-serif; font-size: 18px; font-weight: 600; letter-spacing: .12em; }
     .hdr-logo span { color: var(--blue); }
     .hdr-tags { display: flex; gap: 8px; margin-left: 4px; flex-wrap: wrap; }
-    .tag { font-size: 10px; letter-spacing: .1em; padding: 3px 9px; border-radius: 2px; font-weight: 500; text-transform: uppercase; }
-    .tag-p { background: rgba(108,99,255,.12); color: var(--blue); border: 1px solid rgba(108,99,255,.25); }
-    .tag-t { background: rgba(0,229,160,.1); color: var(--green); border: 1px solid rgba(0,229,160,.2); }
-    .tag-b { background: rgba(39,117,202,.1); color: #2775ca; border: 1px solid rgba(39,117,202,.2); }
-    .tag-arc { background: rgba(255,255,255,.04); color: var(--muted); border: 1px solid rgba(255,255,255,.12); }
+    .tag { font-size: 10px; letter-spacing: .1em; padding: 3px 9px; border-radius: 2px; font-weight: 500; text-transform: uppercase; background: transparent; border: none; }
+    .tag-p { color: var(--blue); }
+    .tag-t { color: var(--green); }
+    .tag-b { color: #2775ca; }
+    .tag-arc { color: var(--muted); }
     .hdr-right { margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap: wrap; }
-    .live-ind  { display:flex; align-items:center; gap:6px; }
-    .live-dot  { width:7px; height:7px; border-radius:50%; background:var(--green); animation:lp 1.4s ease-in-out infinite; }
-    .live-lbl { font-size:11px; color:var(--green); letter-spacing:.1em; }
-    @keyframes lp { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(53,224,161,.4)} 50%{opacity:.6;box-shadow:0 0 0 4px rgba(53,224,161,0)} }
     .back-lnk {
       font-size:10px;
-      color:#9aa3af;
+      color:#6b7280;
       text-decoration:none;
       cursor:pointer;
       letter-spacing:.05em;
@@ -71,7 +67,7 @@
       border-bottom:1px solid transparent;
       transition:border-color .14s ease, color .14s ease;
     }
-    .back-lnk:hover { color:#d6dbe1; border-bottom-color:rgba(214,219,225,.28); }
+    .back-lnk:hover { color:#c1c7d0; border-bottom-color:rgba(193,199,208,.28); }
     .back-lnk.active {
       color:#f3f5f7;
       border-bottom-color:#f3f5f7;
@@ -498,10 +494,6 @@ html[data-theme="light"] .mbar::before {
       <span class="tag tag-p">Kairos Runtime</span>
     </div>
     <nav class="hdr-right">
-      <div class="live-ind">
-        <div class="live-dot"></div>
-        <span class="live-lbl">LIVE</span>
-      </div>
       <button id="theme-toggle" class="theme-toggle" type="button">☀</button>
       <a class="back-lnk" href="/kairos">Dashboard</a>
       <a class="back-lnk active" href="/transactions">Settlement Ledger</a>
