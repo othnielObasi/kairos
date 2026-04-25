@@ -601,7 +601,7 @@ html[data-theme="light"] .mbar::before {
       <div class="mi-val" id="mb-txns">0</div>
       <div class="tx-prog">
         <div class="tx-trk"><div class="tx-fill" id="mb-txbar" style="width:0%"></div></div>
-        <div class="tx-req" id="mb-txreq">0 / 50 required</div>
+        <div class="tx-req" id="mb-txreq">History proof</div>
       </div>
     </div>
     <div class="mi">
@@ -1214,12 +1214,10 @@ function updateBars(billing, status) {
   const latestArcscan = latestReceipt
     ? ` · <a href="${ARC_EXPLORER + latestReceipt.txHash}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none">latest Arcscan</a>`
     : "";
-  const txnLabel = pending > 0
-    ? txns + " / " + target + " required · " + pending + " pending (not verified yet)"
-    : txns + " / " + target + " required";
+  const txnLabel = "History proof";
 
   el("mb-cycles").textContent = cycles;
-  el("mb-cycle-sub").textContent = "decision loops · not Arc txns";
+  el("mb-cycle-sub").textContent = "decision loops";
   el("mb-txns").textContent   = txns;
   el("mb-spend").textContent  = fU(spend);
   el("mb-cpd").textContent    = fU(cpd);
