@@ -1077,7 +1077,7 @@ function renderT3(data, track) {
   const sage = track && track.sage ? track.sage : null;
   const geminiEvents = events.filter(e => /gemini/i.test(e.model || e.provider || e.eventName || "")).length;
   setTrackMetrics("t3-metrics", [
-    { label:"Model", value:geminiEvents ? "Gemini 3" : "No compute yet", tone:geminiEvents ? "live" : "warn" },
+    { label:"Model", value:geminiEvents ? "Gemini 3" : "—", tone:geminiEvents ? "live" : "warn" },
     { label:"Spend", value:fU(data.t3Spend), tone:"live" },
   ]);
 
