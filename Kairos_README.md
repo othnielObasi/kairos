@@ -35,7 +35,7 @@ This is not a billing feature. It is a new economic primitive: governance enforc
 | **Full Circle stack** | Arc · USDC · Circle Nanopayments · Circle Wallets · Circle Gateway — all five products in one system |
 | **Production runtime** | Node.js + TypeScript + PM2 on Vultr · KrakenFX CLI bridge · MCP interface · always-on |
 | **Two-surface proof** | `/transactions` for payment proof · `/execution` for action log — clearly separated |
-| **Gemini Commerce Studio** | Function Calling over live commerce tools · multimodal invoice analysis · Arc proof settlement |
+| **Commerce Studio** | Function Calling over live commerce tools · multimodal invoice analysis · Arc proof settlement |
 
 ---
 
@@ -78,7 +78,7 @@ Kairos has five layers working together:
 2. **Governance plane** — mandate, oracle, supervisory, simulator, risk-router, LLM, and SAGE stages that bill the runtime per action
 3. **Compute plane** — runtime reasoning and reflective learning billed like metered infrastructure
 4. **Execution plane** — approved actions settled on Arc, routed to Kraken, or recorded locally depending on readiness
-5. **Proof plane** — dashboard, Transaction History, Document Vault, MCP, and Arc explorer expose what happened in a judge-verifiable way
+5. **Proof plane** — dashboard, Settlement Ledger, Document Vault, MCP, and Arc explorer expose what happened in a judge-verifiable way
 
 ---
 
@@ -112,7 +112,7 @@ The $0.009 on-chain transfer is the settlement proof. The underlying trade notio
 | Term | Meaning |
 |---|---|
 | `Real Arc txns` | Verified Arc receipts counted as live proof |
-| `Pending hash` | A receipt exists but the final Arc hash has not yet been hydrated |
+| `Pending (not verified yet)` | A receipt exists but the final Arc hash has not yet been hydrated |
 | `Fallback` | The runtime recorded the event without a verifiable on-chain receipt |
 | `Runtime cycles` | Decision loops completed — not on-chain transactions |
 | `Track status` | Current proof state — e.g. `LIVE x402`, `COMPUTE BILLED`, `ARC SETTLED` |
@@ -256,7 +256,7 @@ Full documentation: [Architecture](docs/ARCHITECTURE.md) · [System Flows](docs/
 
 ---
 
-## Gemini Commerce Studio
+## Commerce Studio
 
 `/commerce` is the Google technology partner proof surface — a live page demonstrating Gemini Function Calling and multimodal commerce over real Arc settlement.
 
@@ -426,7 +426,7 @@ npm run pm2:stop     # stop
 |---|--- |
 | `/api/status` | Runtime status, track state, MCP summary, provider readiness |
 | `/api/billing` | Billing totals, real Arc txn count, track spend, receipt summaries |
-| `/api/transactions` | Consolidated transaction ledger for the History page |
+| `/api/transactions` | Consolidated transaction ledger for the Settlement Ledger page |
 | `/api/checkpoints` | Governance checkpoints and execution outcomes |
 | `/api/health` | Health summary for monitoring |
 | `/api/feeds/status` | Data feed and x402 integration status |
@@ -438,7 +438,7 @@ npm run pm2:stop     # stop
 | `/api/kraken/cli` | Kraken CLI health — installed, healthy, ready status |
 | `/api/kraken/snapshot` | Kraken balance, open orders, trades, ticker, and CLI status |
 | `/api/kraken/preflight` | Kraken bridge preflight validation |
-| `/api/commerce/status` | Gemini Commerce Studio health and model readiness |
+| `/api/commerce/status` | Commerce Studio health and model readiness |
 | `/api/gemini/commerce-assistant` | Gemini Function Calling — natural language over live commerce tools |
 | `/api/commerce/analyze` | Multimodal analysis — image → structured extraction → settlement gate |
 
