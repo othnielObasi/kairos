@@ -40,14 +40,14 @@ Kairos is not presented as a generic trading bot. The market loop is the workloa
 
 | Surface | URL | Purpose |
 |---|--- |---|
-| Dashboard | `https://kairos.nov-tia.com` | Judge-facing proof surface for the four hackathon tracks |
-| Settlement Ledger | `https://kairos.nov-tia.com/transactions` | Consolidated payment and settlement ledger |
-| Document routes | `https://kairos.nov-tia.com/documents` | Auxiliary document route; invoice, receipt, and proof links are surfaced directly in Settlement Ledger rows |
-| Execution History | `https://kairos.nov-tia.com/execution` | Underlying execution and position audit log |
-| Commerce Studio | `https://kairos.nov-tia.com/commerce` | Gemini function calling, multimodal receipt analysis, native commerce documents, and proof-settlement controls |
-| MCP endpoint | `https://kairos.nov-tia.com/mcp` | JSON-RPC tools, resources, and prompts for external agents |
-| Agent card | `https://kairos.nov-tia.com/.well-known/agent-card.json` | Public metadata for agent discovery |
-| Arc explorer | `https://testnet.arcscan.app` | External verifier for confirmed Arc transaction hashes |
+| Dashboard | `https://kairos.nov-tia.com` | Judge-facing proof surface for all four tracks |
+| Settlement Ledger | `https://kairos.nov-tia.com/transactions` | Every paid action in one audit trail; primary judge proof surface |
+| Execution History | `https://kairos.nov-tia.com/execution` | Governed action and outcome log (entry, exit, PnL, artifacts; `/trades` also works) |
+| Document Vault (auxiliary) | `https://kairos.nov-tia.com/documents` | Optional document-only view; invoice, receipt, and proof links are already available from Settlement Ledger rows |
+| Commerce Studio | `https://kairos.nov-tia.com/commerce` | Gemini Function Calling, multimodal receipt analysis, and Arc proof settlement |
+| MCP interface | `https://kairos.nov-tia.com/mcp` | JSON-RPC tools, resources, and prompts for agents/operators |
+| Agent card | `https://kairos.nov-tia.com/.well-known/agent-card.json` | Public agent discovery metadata |
+| Arc block explorer | `https://testnet.arcscan.app` | Independent verification of Arc transaction hashes |
 
 ---
 
