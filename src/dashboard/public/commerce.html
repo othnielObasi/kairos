@@ -53,11 +53,21 @@
     .hdr-logo { font-family: "IBM Plex Sans", sans-serif; font-size: 18px; font-weight: 600; letter-spacing: .12em; }
     .hdr-logo span { color: var(--blue); }
     .hdr-tags { display: flex; gap: 8px; margin-left: 4px; flex-wrap: wrap; }
-    .tag { font-size: 10px; letter-spacing: .1em; padding: 3px 9px; border-radius: 2px; font-weight: 500; text-transform: uppercase; }
-    .tag-p { background: transparent; color: var(--blue); border: none; }
-    .tag-t { background: transparent; color: var(--green); border: none; }
-    .tag-b { background: transparent; color: #2775ca; border: none; }
-    .tag-arc { background: transparent; color: var(--muted); border: none; }
+    .tag {
+      font-size: 11px;
+      letter-spacing: .06em;
+      padding: 0;
+      border-radius: 0;
+      font-weight: 500;
+      text-transform: none;
+      background: transparent;
+      border: none;
+      color: #6b7280;
+    }
+    .tag-p { color: #6b7280; }
+    .tag-t { color: #6b7280; }
+    .tag-b { color: #6b7280; }
+    .tag-arc { color: #6b7280; }
     .hdr-right {
       margin-left: auto;
       display: flex;
@@ -69,10 +79,10 @@
     }
     .back-lnk {
       font-size:10px;
-      color:#6b7280;
+      color:#4b5563;
       text-decoration:none;
       cursor:pointer;
-      letter-spacing:.05em;
+      letter-spacing:.04em;
       line-height:1.2;
       white-space:nowrap;
       padding:1px 0;
@@ -100,16 +110,16 @@
     }
     .sub-nav .back-lnk {
       font-size: 10px;
-      letter-spacing: .05em;
-      color: #6b7280;
+      letter-spacing: .04em;
+      color: #4b5563;
     }
     .sub-nav .back-lnk:hover { color:#d6dbe1; border-bottom-color:rgba(214,219,225,.28); }
 
     main { max-width: 1480px; margin: 0 auto; padding: 22px 18px 48px; }
     .hero { display: block; margin-bottom: 10px; }
     .page-intro { margin-bottom: 12px; }
-    .page-title { font-family: "IBM Plex Sans", sans-serif; font-size: 26px; font-weight: 600; letter-spacing: -.02em; margin-bottom: 6px; }
-    .page-copy { color: var(--muted); font-size: 12px; line-height: 1.7; max-width: 920px; }
+    .page-title { font-family: "IBM Plex Sans", sans-serif; font-size: 22px; font-weight: 600; letter-spacing: -.01em; margin-bottom: 6px; }
+    .page-copy { color: var(--muted); font-size: 11px; line-height: 1.6; max-width: 920px; }
     .page-guidance {
       margin-top: 10px;
       display: grid;

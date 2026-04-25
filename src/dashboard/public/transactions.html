@@ -50,24 +50,31 @@
     .hdr-logo { font-family: "IBM Plex Sans", sans-serif; font-size: 18px; font-weight: 600; letter-spacing: .12em; }
     .hdr-logo span { color: var(--blue); }
     .hdr-tags { display: flex; gap: 8px; margin-left: 4px; flex-wrap: wrap; }
-    .tag { font-size: 10px; letter-spacing: .1em; padding: 3px 9px; border-radius: 2px; font-weight: 500; text-transform: uppercase; background: transparent; border: none; }
-    .tag-p { color: var(--blue); }
-    .tag-t { color: var(--green); }
-    .tag-b { color: #2775ca; }
-    .tag-arc { color: var(--muted); }
+    .tag {
+      font-size: 10px;
+      letter-spacing: .08em;
+      padding: 2px 0;
+      border-radius: 0;
+      font-weight: 500;
+      text-transform: none;
+      background: transparent;
+      border: none;
+      color: #6b7280;
+    }
+    .tag-p, .tag-t, .tag-b, .tag-arc { color: #6b7280; }
     .hdr-right { margin-left:auto; display:flex; align-items:center; gap:10px; flex-wrap: wrap; }
     .back-lnk {
-      font-size:10px;
-      color:#6b7280;
+      font-size:11px;
+      color:#4b5563;
       text-decoration:none;
       cursor:pointer;
       letter-spacing:.05em;
       line-height:1.2;
-      padding:1px 0;
+      padding:2px 0;
       border-bottom:1px solid transparent;
       transition:border-color .14s ease, color .14s ease;
     }
-    .back-lnk:hover { color:#c1c7d0; border-bottom-color:rgba(193,199,208,.28); }
+    .back-lnk:hover { color:#d6dbe1; border-bottom-color:rgba(214,219,225,.28); }
     .back-lnk.active {
       color:#f3f5f7;
       border-bottom-color:#f3f5f7;
