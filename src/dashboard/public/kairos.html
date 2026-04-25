@@ -1128,12 +1128,25 @@ function renderT4(checkpoints, track) {
   setTrackStatus("t4", track);
   const settledTrades = trades.filter(t => t.execution && t.execution.executionMode === "arc_settled");
   const settledCommerce = commerceEvents.filter(e => e.status === "confirmed");
-  const settledVolume = settledTrades.reduce((sum, t) => sum + Number(t.positionSizeUsd || t.size || 0), 0);
   const actionCount = trades.length + commerceEvents.length;
   const settledCount = settledTrades.length + settledCommerce.length;
+  const latestMode = track?.latestMode || null;
+  const lastProofAt = track?.lastSettlementAt ? fTs(track.lastSettlementAt) : "none";
+  const settlementModeLabel = latestMode === "arc_settled"
+    ? "Arc settled"
+    : latestMode === "kraken_live"
+      ? "Kraken live"
+      : latestMode === "kraken_paper"
+        ? "Paper execution"
+        : latestMode === "local_only"
+          ? "Local only"
+          : latestMode === "pending"
+            ? "Verifying"
+            : "Awaiting";
   setTrackMetrics("t4-metrics", [
-    { label:"Arc settled", value:settledCount, tone:settledCount ? "live" : "warn" },
-    { label:"Volume", value:fU2(track?.settledVolumeUsd ?? settledVolume), tone:"live" },
+    { label:"Actions", value:actionCount, tone:actionCount ? "live" : "warn" },
+    { label:"Last proof", value:lastProofAt, tone:track?.lastSettlementAt ? "live" : "warn" },
+    { label:"Latest mode", value:settlementModeLabel, tone:latestMode === "arc_settled" ? "live" : "warn" },
   ]);
 
   if (!trades.length && !commerceEvents.length) {
