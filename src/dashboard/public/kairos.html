@@ -739,7 +739,7 @@ html[data-theme="light"] .mbar::before {
     <div class="pi">
       <div class="pi-lbl">Real Arc txns</div>
       <div class="pi-val p" id="p-txns">0</div>
-      <div class="pi-sub" id="p-tsub">0 / 50 required</div>
+      <div class="pi-sub" id="p-tsub">Arc receipts</div>
       <div class="pi-bar"><div class="pi-fill" id="p-tbar" style="width:0%"></div></div>
     </div>
     <div class="pi">
@@ -1222,7 +1222,7 @@ function updateBars(billing, status) {
   el("mb-spend").textContent  = fU(spend);
   el("mb-cpd").textContent    = fU(cpd);
   el("mb-txbar").style.width  = pct + "%";
-  el("mb-txreq").innerHTML  = txnLabel + ' · <a href="/transactions" style="color:var(--teal);text-decoration:none">History proof</a>' + latestArcscan;
+  el("mb-txreq").innerHTML  = '<a href="/transactions" style="color:var(--teal);text-decoration:none">' + txnLabel + '</a>' + latestArcscan;
   el("mb-trust").textContent  = runtimeLabel;
   el("mb-tsub").textContent   = runtimeSub;
   if (el("mb-stack")) {
@@ -1232,9 +1232,7 @@ function updateBars(billing, status) {
   }
 
   el("p-txns").textContent    = txns;
-  el("p-tsub").textContent    = pending > 0
-    ? txns + " / " + target + "+ required · " + pending + " pending (not verified yet)"
-    : txns + " / " + target + "+ required";
+  el("p-tsub").textContent    = "Arc receipts";
   el("p-spend").textContent   = fU(spend);
   el("p-cpd").textContent     = fU(cpd);
   el("p-cpd-sub").textContent = totalEvents + " billable events";
