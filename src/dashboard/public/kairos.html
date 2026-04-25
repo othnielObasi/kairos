@@ -967,7 +967,7 @@ function renderT1(data, track3) {
   }, 0);
   setTrackMetrics("t1-metrics", [
     { label:"Stages", value:activeStages + "/7", tone:activeStages >= 5 ? "live" : "warn" },
-    { label:"Receipts", value:events.length, tone:events.length ? "live" : "warn" },
+    { label:"Spend", value:fU(data.t1Spend), tone:"live" },
   ]);
   STAGE_NAMES.forEach((name,i) => {
     const sagePersisted = i === 6 && sage && Number(sage.reflectionCount || 0) > 0;
@@ -1035,7 +1035,7 @@ function renderT2(data, track) {
   const liveSources = API_SOURCES.filter(s => (breakdown[s.key]?.mode || s.mode) === "x402").length;
   setTrackMetrics("t2-metrics", [
     { label:"Sources", value:liveSources + "/" + API_SOURCES.length, tone:liveSources === API_SOURCES.length ? "live" : "warn" },
-    { label:"Events", value:events.length, tone:events.length ? "live" : "warn" },
+    { label:"Spend", value:fU(data.t2Spend), tone:"live" },
   ]);
   const allTrack2X402 = events.length > 0 && events.every(e => e.mode === "x402");
   noteEl.title = track && track.mode === "x402"
@@ -1078,7 +1078,7 @@ function renderT3(data, track) {
   const geminiEvents = events.filter(e => /gemini/i.test(e.model || e.provider || e.eventName || "")).length;
   setTrackMetrics("t3-metrics", [
     { label:"Model", value:geminiEvents ? "Gemini 3" : "Ready", tone:geminiEvents ? "live" : "warn" },
-    { label:"Events", value:events.length, tone:events.length ? "live" : "warn" },
+    { label:"Spend", value:fU(data.t3Spend), tone:"live" },
   ]);
 
   if (!events.length) {
@@ -1128,11 +1128,12 @@ function renderT4(checkpoints, track) {
   setTrackStatus("t4", track);
   const settledTrades = trades.filter(t => t.execution && t.execution.executionMode === "arc_settled");
   const settledCommerce = commerceEvents.filter(e => e.status === "confirmed");
+  const settledVolume = settledTrades.reduce((sum, t) => sum + Number(t.positionSizeUsd || t.size || 0), 0);
   const actionCount = trades.length + commerceEvents.length;
   const settledCount = settledTrades.length + settledCommerce.length;
   setTrackMetrics("t4-metrics", [
     { label:"Arc settled", value:settledCount, tone:settledCount ? "live" : "warn" },
-    { label:"Actions", value:actionCount, tone:actionCount ? "live" : "warn" },
+    { label:"Volume", value:fU2(track?.settledVolumeUsd ?? settledVolume), tone:"live" },
   ]);
 
   if (!trades.length && !commerceEvents.length) {
