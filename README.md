@@ -2,7 +2,10 @@
   <h1 align="center">Kairos</h1>
   <p align="center"><strong>The agent pays for its own governance.</strong></p>
   <p align="center">
+    <a href="#core-thesis">Core Thesis</a> &bull;
+    <a href="#tracks-covered">Tracks Covered</a> &bull;
     <a href="#what-kairos-proves">What Kairos Proves</a> &bull;
+    <a href="#why-kairos-is-different">Why Kairos Is Different</a> &bull;
     <a href="#detailed-track-mapping">Track Mapping</a> &bull;
     <a href="#commerce-studio">Commerce Studio</a> &bull;
     <a href="#production-deployment">Production</a> &bull;
@@ -16,9 +19,60 @@
 
 ---
 
-Kairos is an Arc-native agentic payments runtime built for high-frequency, usage-based USDC settlement. It is designed for the "Agentic Economy on Arc" hackathon and demonstrates that an autonomous system can pay for governance, paid data, compute, and micro-commerce actions one step at a time without gas overhead destroying the economics.
+Kairos is an Arc-native agentic payments runtime built for high-frequency, usage-based USDC settlement. It is designed for the "Agentic Economy on Arc" hackathon and covers all four tracks through one connected runtime: agent-to-agent governance payments, paid API monetization, usage-based compute billing, and real-time micro-commerce settlement.
 
-Kairos is not presented as a generic trading bot. The market loop is the workload that produces repeated, economically meaningful actions. The product being demonstrated is the payment and proof runtime around that workload.
+Kairos demonstrates that an autonomous system can pay for governance, paid data, compute, and micro-commerce actions one step at a time without gas overhead destroying the economics.
+
+Kairos is not presented as a generic trading bot. The market loop is the workload that produces repeated, economically meaningful actions. The product being demonstrated is the payment, governance, and proof runtime around that workload.
+
+The unique idea is simple:
+
+> The agent pays for its own governance.
+
+Most agent systems treat governance, safety, monitoring, and audit as hidden backend overhead. Kairos makes them visible, metered, and verifiable. The agent does not only pay for external services. It also pays for the oversight required before it can act.
+
+That means Kairos is not only showing that agents can make payments. It is showing that autonomous agents can become economically accountable before they act.
+
+## Core Thesis
+
+Autonomous agents will consume data, models, tools, APIs, settlement rails, and governance services at high frequency. If those actions are priced only through subscriptions, monthly invoices, or opaque platform costs, the economics of agentic systems become hard to inspect.
+
+Kairos makes the economics visible at the level of the individual action.
+
+In one runtime cycle, Kairos can produce paid events across four layers:
+
+1. **Governance**: the agent pays for mandate checks, oracle integrity, simulation, risk routing, supervisory review, and reflective oversight.
+2. **Data**: the agent pays for market, sentiment, news, and PRISM-style context through x402-backed sources.
+3. **Compute**: the agent pays for runtime reasoning and SAGE reflection as metered inference events.
+4. **Settlement**: the approved action produces an Arc USDC micro-commerce receipt.
+
+This creates a new operating model:
+
+> The agent pays for the right to act, and every paid step can be inspected.
+
+## Tracks Covered
+
+Kairos covers all four hackathon tracks in one connected runtime.
+
+The tracks are not implemented as separate demos. A single Kairos decision cycle can trigger paid data access, governance billing, compute billing, and Arc micro-commerce settlement.
+
+| Hackathon Track | Kairos Implementation | Proof Surface |
+|---|---|---|
+| **Track 1: Agent-to-Agent Payment Loop** | Kairos bills governance stages as sub-cent USDC events. The agent pays for mandate checks, oracle integrity, simulation, supervisory review, risk routing, LLM reasoning, and SAGE reflection. | Dashboard track card, `Settlement Ledger`, governance receipt rows, Arcscan links where confirmed |
+| **Track 2: Per-API Monetization Engine** | Kairos consumes paid data through AIsa/x402 for price, sentiment, financial news, PRISM-style context, and crypto spot fallback. Each paid data request can create a USDC receipt. | Track 2 source counters, x402 mode status, `Settlement Ledger`, paid API receipt rows |
+| **Track 3: Usage-Based Compute Billing** | Kairos bills runtime reasoning and SAGE reflection as metered compute events. Gemini 3 Flash handles runtime reasoning, while Gemini 3 Pro powers reflection with failover support. | Compute billing rows, model/provider readiness, `Settlement Ledger`, SAGE status |
+| **Track 4: Real-Time Micro-Commerce Flow** | Kairos settles approved actions or proof-commerce events using small Arc USDC receipts, by default `0.009 USDC`. It also generates invoice, receipt, and delivery-proof bundles. | Track 4 status, `Settlement Ledger`, `Execution History`, document links, Arcscan verification |
+
+The important point is that Kairos is not merely claiming track compatibility. It produces inspectable proof for each track:
+
+- Track 1 proves the agent pays for governance.
+- Track 2 proves the agent pays for data.
+- Track 3 proves the agent pays for reasoning and reflection.
+- Track 4 proves approved actions can generate Arc micro-commerce settlement receipts.
+
+Together, the four tracks show the full Kairos thesis:
+
+> An autonomous agent can pay for the full operating stack required to act safely: governance, data, compute, and settlement.
 
 ## Key Capabilities
 
@@ -39,7 +93,7 @@ Kairos is not presented as a generic trading bot. The market loop is the workloa
 ## Live
 
 | Surface | URL | Purpose |
-|---|--- |---|
+|---|---|---|
 | Dashboard | `https://kairos.nov-tia.com` | Judge-facing proof surface for all four tracks |
 | Settlement Ledger | `https://kairos.nov-tia.com/transactions` | Every paid action in one audit trail; primary judge proof surface |
 | Execution History | `https://kairos.nov-tia.com/execution` | Governed action and outcome log (entry, exit, PnL, artifacts; `/trades` also works) |
@@ -66,6 +120,34 @@ Kairos is built to prove an economic model, not only to render a UI:
 - A transparent margin story: this type of high-frequency agent activity works on Arc, but breaks on high-fee payment rails.
 
 Important: `Runtime cycles` on the dashboard are decision-loop counts. They are not the same thing as verified Arc transactions. Use `Real Arc txns`, the Settlement Ledger page, and Arcscan links for on-chain proof.
+
+## Why Kairos Is Different
+
+Kairos is different from a normal agent payment demo because the payment is not only for external services.
+
+The agent also pays for its own control layer.
+
+| Conventional agent system | Kairos model |
+|---|---|
+| Governance is hidden backend overhead | Governance is a paid, inspectable runtime event |
+| Safety checks are logged after the fact | Safety checks are metered before action |
+| Compute cost is bundled into platform spend | Reasoning and reflection are billed per use |
+| Payment is usually subscription-based | Payment happens per action |
+| Audit trails are secondary | Proof is part of the runtime loop |
+| The agent acts first and explains later | The agent pays for oversight before it acts |
+
+Kairos therefore proves a stronger thesis than "agents can pay for things."
+
+It proves that an autonomous runtime can expose the economics of its own operation:
+
+- what data was bought
+- what reasoning was used
+- what governance checks were paid for
+- what action was approved
+- what settlement proof was produced
+- which transaction can be independently verified
+
+That is why the trading loop should be understood as the workload, not the product. The product is the economic governance runtime around the workload.
 
 ## What Kairos Actually Is
 
@@ -752,4 +834,8 @@ Kairos is best understood as a programmable economic operating layer for an auto
 - It settles approved actions like a micro-commerce system.
 - It exposes all of that through a live proof surface that a judge, operator, or other agent can verify.
 
-That is the core claim of the project.
+That is the core claim of the project:
+
+> Kairos makes autonomous agents economically accountable before they act.
+
+The market loop is only the workload. Kairos is the payment, governance, and proof runtime around that workload.
