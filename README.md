@@ -12,14 +12,14 @@
     <a href="#runtime-api-highlights">API</a>
   </p>
   <p align="center">
-    Built for the <strong>Agentic Economy on Arc</strong> hackathon · Circle + LabLab.ai · April 2026<br>
+    Built for the <strong>Agentic Economy on Arc</strong>· Circle + LabLab.ai · April 2026<br>
     <strong>Live:</strong> <a href="https://kairos.nov-tia.com">kairos.nov-tia.com</a>
   </p>
 </p>
 
 ---
 
-Kairos is an Arc-native agentic payments runtime built for high-frequency, usage-based USDC settlement. It is designed for the "Agentic Economy on Arc" hackathon and covers all four tracks through one connected runtime: agent-to-agent governance payments, paid API monetization, usage-based compute billing, and real-time micro-commerce settlement.
+Kairos is an Arc-native agentic payments runtime built for high-frequency, usage-based USDC settlement. It is designed for the Agentic Economy on Arc and covers all four tracks through one connected runtime: agent-to-agent governance payments, paid API monetization, usage-based compute billing, and real-time micro-commerce settlement.
 
 Kairos demonstrates that an autonomous system can pay for governance, paid data, compute, and micro-commerce actions one step at a time without gas overhead destroying the economics.
 
@@ -52,7 +52,7 @@ This creates a new operating model:
 
 ## Tracks Covered
 
-Kairos covers all four hackathon tracks in one connected runtime.
+Kairos covers all four tracks in one connected runtime.
 
 The tracks are not implemented as separate demos. A single Kairos decision cycle can trigger paid data access, governance billing, compute billing, and Arc micro-commerce settlement.
 
@@ -94,8 +94,8 @@ Together, the four tracks show the full Kairos thesis:
 
 | Surface | URL | Purpose |
 |---|---|---|
-| Dashboard | `https://kairos.nov-tia.com` | Judge-facing proof surface for all four tracks |
-| Settlement Ledger | `https://kairos.nov-tia.com/transactions` | Every paid action in one audit trail; primary judge proof surface |
+| Dashboard | `https://kairos.nov-tia.com` | Surface for all four tracks |
+| Settlement Ledger | `https://kairos.nov-tia.com/transactions` | Every paid action in one audit trail; |
 | Execution History | `https://kairos.nov-tia.com/execution` | Governed action and outcome log (entry, exit, PnL, artifacts; `/trades` also works) |
 | Document Vault (auxiliary) | `https://kairos.nov-tia.com/documents` | Optional document-only view; invoice, receipt, and proof links are already available from Settlement Ledger rows |
 | Commerce Studio | `https://kairos.nov-tia.com/commerce` | Gemini Function Calling, multimodal receipt analysis, and Arc proof settlement |
