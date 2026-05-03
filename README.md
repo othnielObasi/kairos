@@ -12,7 +12,7 @@
     <a href="#runtime-api-highlights">API</a>
   </p>
   <p align="center">
-    Built for the <strong>Agentic Economy on Arc</strong>· Circle + LabLab.ai · April 2026<br>
+    Built for the <strong>Agentic Economy on Arc</strong>· April 2026<br>
     <strong>Live:</strong> <a href="https://kairos.nov-tia.com">kairos.nov-tia.com</a>
   </p>
 </p>
