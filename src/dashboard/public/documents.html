@@ -204,16 +204,14 @@
     .doc-title { font-weight: 800; font-size: 12px; margin-bottom: 6px; }
     .doc-desc { color: var(--muted); line-height: 1.7; }
     .meta-line { margin-top: 6px; color: var(--soft); font-size: 10px; line-height: 1.6; }
-    .doc-links { display: flex; flex-wrap: wrap; gap: 8px; }
+    .doc-links { display: flex; flex-wrap: wrap; gap: 6px; }
     .doc-link, .arc-link {
-      display: inline-flex; align-items: center; gap: 6px; padding: 8px 10px;
+      display: inline-flex; align-items: center; gap: 5px; padding: 4px 7px;
       border-radius: 999px; border: 1px solid rgba(255,255,255,.08);
-      background: rgba(255,255,255,.03); font-size: 10px; font-weight: 700;
-      transform: scale(0.9);
-      transform-origin: left center;
-      padding: 6px 8px;
-      font-size: 9px;
+      background: rgba(255,255,255,.03); font-size: 9px; font-weight: 700;
+      line-height: 1.2;
     }
+    .doc-link.mini-doc-link { font-size: 8px; padding: 2px 5px; }
     .doc-link { color: var(--green); }
     .arc-link { color: var(--blue); }
     .empty { padding: 40px 18px; text-align: center; color: var(--muted); }
@@ -676,9 +674,9 @@ initThemeToggle();
     }
     function docs(bundle) {
       const items = [];
-      if (bundle.documents && bundle.documents.invoiceUrl) items.push('<a class="doc-link" href="' + esc(bundle.documents.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a>');
-      if (bundle.documents && bundle.documents.receiptUrl) items.push('<a class="doc-link" href="' + esc(bundle.documents.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a>');
-      if (bundle.documents && bundle.documents.deliveryProofUrl) items.push('<a class="doc-link" href="' + esc(bundle.documents.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a>');
+      if (bundle.documents && bundle.documents.invoiceUrl) items.push('<a class="doc-link mini-doc-link" href="' + esc(bundle.documents.invoiceUrl) + '" target="_blank" rel="noopener">Invoice</a>');
+      if (bundle.documents && bundle.documents.receiptUrl) items.push('<a class="doc-link mini-doc-link" href="' + esc(bundle.documents.receiptUrl) + '" target="_blank" rel="noopener">Receipt</a>');
+      if (bundle.documents && bundle.documents.deliveryProofUrl) items.push('<a class="doc-link mini-doc-link" href="' + esc(bundle.documents.deliveryProofUrl) + '" target="_blank" rel="noopener">Proof</a>');
       if (bundle.settlement && bundle.settlement.explorerUrl) items.push('<a class="arc-link" href="' + esc(bundle.settlement.explorerUrl) + '" target="_blank" rel="noopener">Arcscan</a>');
       return items.join("");
     }
